@@ -7,7 +7,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatTimepickerModule } from '@angular/material/timepicker';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
-import { Match, MatchInput } from '../../../core/services/matches.service';
+import { COMPETITIONS, Match, MatchInput } from '../../../core/services/matches.service';
 import { Season } from '../../../core/services/seasons.service';
 
 export interface MatchFormDialogData {
@@ -43,6 +43,7 @@ export class MatchFormDialogComponent {
   readonly data = inject<MatchFormDialogData>(MAT_DIALOG_DATA);
 
   readonly isEdit = !!this.data.match;
+  readonly competitions = COMPETITIONS;
 
   private readonly initialMatchDate = this.data.match?.matchDate
     ? new Date(this.data.match.matchDate)

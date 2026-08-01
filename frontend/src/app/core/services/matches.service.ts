@@ -39,6 +39,8 @@ export interface MatchInput {
   notes?: string | null;
 }
 
+export const COMPETITIONS: string[] = ['Liga', 'Copa'];
+
 @Injectable({ providedIn: 'root' })
 export class MatchesService {
   private readonly http = inject(HttpClient);
