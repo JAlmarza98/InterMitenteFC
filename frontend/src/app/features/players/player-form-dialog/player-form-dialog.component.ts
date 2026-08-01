@@ -3,13 +3,21 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
-import { Player, PlayerInput } from '../../../core/services/players.service';
+import { FOOTBALL7_POSITIONS, Player, PlayerInput } from '../../../core/services/players.service';
 
 @Component({
   selector: 'app-player-form-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+  ],
   templateUrl: './player-form-dialog.component.html',
 })
 export class PlayerFormDialogComponent {
@@ -18,6 +26,7 @@ export class PlayerFormDialogComponent {
   readonly data = inject<{ player: Player | null }>(MAT_DIALOG_DATA);
 
   readonly isEdit = !!this.data.player;
+  readonly positions = FOOTBALL7_POSITIONS;
 
   readonly form = this.fb.nonNullable.group({
     firstName: [this.data.player?.firstName ?? '', [Validators.required]],

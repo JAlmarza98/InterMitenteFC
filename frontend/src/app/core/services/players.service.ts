@@ -18,6 +18,18 @@ export interface PlayerInput {
   position: string | null;
 }
 
+/** Standard fútbol 7 position labels, used to populate the position select. */
+export const FOOTBALL7_POSITIONS: string[] = [
+  'Portero',
+  'Defensa central',
+  'Lateral derecho',
+  'Lateral izquierdo',
+  'Centrocampista',
+  'Extremo derecho',
+  'Extremo izquierdo',
+  'Delantero',
+];
+
 @Injectable({ providedIn: 'root' })
 export class PlayersService {
   private readonly http = inject(HttpClient);
