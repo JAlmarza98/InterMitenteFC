@@ -1,0 +1,51 @@
+.page {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--mat-sys-primary);
+  text-decoration: none;
+  width: fit-content;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.stats-table,
+.segments-table {
+  width: 100%;
+}
+
+.stat-input {
+  width: 48px;
+  padding: 4px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+}
+
+.add-segment-btn {
+  margin-top: 16px;
+}
+
+.empty-state {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.spinner-row {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}

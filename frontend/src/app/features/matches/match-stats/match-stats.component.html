@@ -1,0 +1,191 @@
+<div class="page">
+  <a [routerLink]="['/matches', matchId]" class="back-link">
+    <mat-icon>arrow_back</mat-icon>
+    Volver al partido
+  </a>
+
+  @if (loading()) {
+    <div class="spinner-row">
+      <mat-spinner diameter="32" />
+    </div>
+  } @else {
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Estadísticas del partido</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (players().length === 0) {
+          <p class="empty-state">No hay jugadores convocados para este partido.</p>
+        } @else {
+          <div class="table-scroll">
+            <table mat-table [dataSource]="players()" class="stats-table">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>Jugador</th>
+                <td mat-cell *matCellDef="let row">{{ row.player.firstName }} {{ row.player.lastName }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="minutesPlayed">
+                <th mat-header-cell *matHeaderCellDef>Minutos</th>
+                <td mat-cell *matCellDef="let row">{{ row.minutesPlayed }}'</td>
+              </ng-container>
+
+              <ng-container matColumnDef="goals">
+                <th mat-header-cell *matHeaderCellDef>Goles</th>
+                <td mat-cell *matCellDef="let row">
+                  @if (canManage()) {
+                    <input
+                      class="stat-input"
+                      type="number"
+                      min="0"
+                      [value]="row.goals"
+                      (change)="updateStat(row, 'goals', $any($event.target).value)"
+                    />
+                  } @else {
+                    {{ row.goals }}
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="assists">
+                <th mat-header-cell *matHeaderCellDef>Asist.</th>
+                <td mat-cell *matCellDef="let row">
+                  @if (canManage()) {
+                    <input
+                      class="stat-input"
+                      type="number"
+                      min="0"
+                      [value]="row.assists"
+                      (change)="updateStat(row, 'assists', $any($event.target).value)"
+                    />
+                  } @else {
+                    {{ row.assists }}
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="yellowCards">
+                <th mat-header-cell *matHeaderCellDef>TA</th>
+                <td mat-cell *matCellDef="let row">
+                  @if (canManage()) {
+                    <input
+                      class="stat-input"
+                      type="number"
+                      min="0"
+                      max="2"
+                      [value]="row.yellowCards"
+                      (change)="updateStat(row, 'yellowCards', $any($event.target).value)"
+                    />
+                  } @else {
+                    {{ row.yellowCards }}
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="redCards">
+                <th mat-header-cell *matHeaderCellDef>TR</th>
+                <td mat-cell *matCellDef="let row">
+                  @if (canManage()) {
+                    <input
+                      class="stat-input"
+                      type="number"
+                      min="0"
+                      max="1"
+                      [value]="row.redCards"
+                      (change)="updateStat(row, 'redCards', $any($event.target).value)"
+                    />
+                  } @else {
+                    {{ row.redCards }}
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="ownGoals">
+                <th mat-header-cell *matHeaderCellDef>G. propia</th>
+                <td mat-cell *matCellDef="let row">
+                  @if (canManage()) {
+                    <input
+                      class="stat-input"
+                      type="number"
+                      min="0"
+                      [value]="row.ownGoals"
+                      (change)="updateStat(row, 'ownGoals', $any($event.target).value)"
+                    />
+                  } @else {
+                    {{ row.ownGoals }}
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="statColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: statColumns"></tr>
+            </table>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Tiempos de juego</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (segments().length === 0) {
+          <p class="empty-state">No hay tiempos de juego registrados todavía.</p>
+        } @else {
+          <div class="table-scroll">
+            <table mat-table [dataSource]="segments()" class="segments-table">
+              <ng-container matColumnDef="player">
+                <th mat-header-cell *matHeaderCellDef>Jugador</th>
+                <td mat-cell *matCellDef="let seg">{{ seg.player.firstName }} {{ seg.player.lastName }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="period">
+                <th mat-header-cell *matHeaderCellDef>Período</th>
+                <td mat-cell *matCellDef="let seg">{{ periodLabel(seg.periodType) }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="startMinute">
+                <th mat-header-cell *matHeaderCellDef>Entra</th>
+                <td mat-cell *matCellDef="let seg">{{ seg.startMinute }}'</td>
+              </ng-container>
+
+              <ng-container matColumnDef="endMinute">
+                <th mat-header-cell *matHeaderCellDef>Sale</th>
+                <td mat-cell *matCellDef="let seg">{{ seg.endMinute !== null ? seg.endMinute + "'" : '—' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="source">
+                <th mat-header-cell *matHeaderCellDef>Origen</th>
+                <td mat-cell *matCellDef="let seg">{{ seg.source === 'live' ? 'En vivo' : 'Manual' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let seg">
+                  @if (canManage()) {
+                    <button mat-icon-button (click)="openEditSegment(seg)" aria-label="Editar">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="deleteSegment(seg)" aria-label="Eliminar">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="segmentColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: segmentColumns"></tr>
+            </table>
+          </div>
+        }
+
+        @if (canManage()) {
+          <button mat-stroked-button (click)="openCreateSegment()" class="add-segment-btn">
+            <mat-icon>add</mat-icon>
+            Añadir tiempo de juego
+          </button>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

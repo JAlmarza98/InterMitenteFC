@@ -72,8 +72,12 @@
         }
       </mat-card-content>
 
-      @if (canManage()) {
-        <mat-card-actions align="end">
+      <mat-card-actions align="end">
+        <a mat-button [routerLink]="['/matches', m.id, 'stats']">
+          <mat-icon>bar_chart</mat-icon>
+          Estadísticas
+        </a>
+        @if (canManage()) {
           @if (m.status !== 'finished') {
             <a mat-flat-button color="primary" [routerLink]="['/matches', m.id, 'live']">
               <mat-icon>sports_soccer</mat-icon>
@@ -88,8 +92,8 @@
             <mat-icon>delete</mat-icon>
             Eliminar
           </button>
-        </mat-card-actions>
-      }
+        }
+      </mat-card-actions>
     </mat-card>
 
     <mat-card appearance="outlined" class="squad-card">

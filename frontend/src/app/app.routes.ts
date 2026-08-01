@@ -9,6 +9,7 @@ import { PlayerListComponent } from './features/players/player-list/player-list.
 import { MatchListComponent } from './features/matches/match-list/match-list.component';
 import { MatchDetailComponent } from './features/matches/match-detail/match-detail.component';
 import { LiveMatchComponent } from './features/live-match/live-match.component';
+import { MatchStatsComponent } from './features/matches/match-stats/match-stats.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
@@ -25,6 +26,7 @@ export const routes: Routes = [
     component: LiveMatchComponent,
     canActivate: [authGuard, roleGuard('admin', 'coach')],
   },
+  { path: 'matches/:id/stats', component: MatchStatsComponent, canActivate: [authGuard] },
   {
     path: 'admin/users',
     component: UserApprovalComponent,

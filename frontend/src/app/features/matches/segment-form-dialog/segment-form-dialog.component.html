@@ -1,0 +1,38 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Editar tiempo de juego' : 'Nuevo tiempo de juego' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="form-content">
+    <mat-form-field appearance="outline">
+      <mat-label>Jugador</mat-label>
+      <mat-select formControlName="playerId">
+        @for (player of data.players; track player.id) {
+          <mat-option [value]="player.id">{{ player.firstName }} {{ player.lastName }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Período</mat-label>
+      <mat-select formControlName="periodType">
+        @for (type of periodTypes; track type) {
+          <mat-option [value]="type">{{ periodLabels[type] }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Minuto de entrada</mat-label>
+      <input matInput type="number" min="0" formControlName="startMinute" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Minuto de salida</mat-label>
+      <input matInput type="number" min="0" formControlName="endMinute" />
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()">Cancelar</button>
+    <button mat-flat-button color="primary" type="submit">Guardar</button>
+  </mat-dialog-actions>
+</form>

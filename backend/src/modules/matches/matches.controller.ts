@@ -31,6 +31,14 @@ const squadSchema = z.object({
   ),
 });
 
+const playerStatSchema = z.object({
+  goals: z.number().int().nonnegative().optional(),
+  assists: z.number().int().nonnegative().optional(),
+  yellowCards: z.number().int().min(0).max(2).optional(),
+  redCards: z.number().int().min(0).max(1).optional(),
+  ownGoals: z.number().int().nonnegative().optional(),
+});
+
 export async function listMatches(req: Request, res: Response) {
   const { seasonId, status } = listQuerySchema.parse(req.query);
   const matches = await prisma.match.findMany({
@@ -85,4 +93,52 @@ export async function putSquad(req: Request, res: Response) {
     include: { player: true },
   });
   res.json({ squad });
+}
+
+export async function upsertPlayerStat(req: Request, res: Response) {
+  const data = playerStatSchema.parse(req.body);
+  const matchId = req.params.id;
+  const playerId = req.params.playerId;
+
+  const stat = await prisma.matchPlayerStat.upsert({
+    where: { matchId_playerId: { matchId, playerId } },
+    create: { matchId, playerId, ...data },
+    update: data,
+  });
+  res.json({ stat });
+}
+
+export async function getMatchStats(req: Request, res: Response) {
+  const matchId = req.params.id;
+
+  const [squad, playerStats, segments] = await Promise.all([
+    prisma.matchSquad.findMany({ where: { matchId }, include: { player: true } }),
+    prisma.matchPlayerStat.findMany({ where: { matchId } }),
+    prisma.playingTimeSegment.findMany({ where: { matchId } }),
+  ]);
+
+  const minutesByPlayer = new Map<string, number>();
+  for (const segment of segments) {
+    if (segment.endMinute === null) continue;
+    const prev = minutesByPlayer.get(segment.playerId) ?? 0;
+    minutesByPlayer.set(segment.playerId, prev + (segment.endMinute - segment.startMinute));
+  }
+  const statsByPlayer = new Map(playerStats.map((s) => [s.playerId, s]));
+
+  const players = squad.map((entry) => {
+    const stat = statsByPlayer.get(entry.playerId);
+    return {
+      playerId: entry.playerId,
+      player: entry.player,
+      isStarter: entry.isStarter,
+      minutesPlayed: minutesByPlayer.get(entry.playerId) ?? 0,
+      goals: stat?.goals ?? 0,
+      assists: stat?.assists ?? 0,
+      yellowCards: stat?.yellowCards ?? 0,
+      redCards: stat?.redCards ?? 0,
+      ownGoals: stat?.ownGoals ?? 0,
+    };
+  });
+
+  res.json({ players });
 }
