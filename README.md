@@ -56,6 +56,7 @@ En desarrollo, el backend habilita CORS para `http://localhost:4200` y las cooki
    | `SESSION_SECRET` | Cadena aleatoria larga (32+ caracteres) para firmar las cookies de sesión. Genera una con `openssl rand -base64 32`. |
    | `ADMIN_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD` | Credenciales del primer administrador. Se crea automáticamente al arrancar si no existe ya un admin en la base de datos. |
    | `WEB_PORT` | Puerto del host donde se publica la aplicación (por defecto `8080`). |
+   | `PGADMIN_EMAIL` / `PGADMIN_PASSWORD` / `PGADMIN_PORT` | Credenciales y puerto de pgAdmin (opcional, ver más abajo). |
 
 3. Levanta el stack:
 
@@ -91,6 +92,29 @@ Los datos viven en el volumen Docker `postgres_data`. Para un volcado manual:
 
 ```bash
 docker compose exec postgres pg_dump -U intermitente intermitente > backup.sql
+```
+
+### pgAdmin (opcional)
+
+Hay un servicio `pgadmin` para administrar la base de datos desde el navegador. No arranca con `docker compose up -d` normal porque está bajo el profile `tools`:
+
+```bash
+docker compose --profile tools up -d pgadmin
+```
+
+Se sirve en `http://<ip-del-servidor>:${PGADMIN_PORT}` (por defecto `5050`), publicado solo en `127.0.0.1` — si accedes desde otra máquina, haz un túnel SSH: `ssh -L 5050:localhost:5050 usuario@servidor`. Inicia sesión con `PGADMIN_EMAIL` / `PGADMIN_PASSWORD` de tu `.env`.
+
+Una vez dentro, para conectarlo a la base de datos del proyecto: **Add New Server** →
+- **General → Name**: cualquier nombre (p. ej. `intermitente`)
+- **Connection → Host**: `postgres` (nombre del servicio en la red interna de Docker)
+- **Port**: `5432`
+- **Maintenance database**: el valor de `POSTGRES_DB`
+- **Username** / **Password**: los valores de `POSTGRES_USER` / `POSTGRES_PASSWORD`
+
+Para convertir manualmente a un usuario ya registrado en administrador (por ejemplo, si prefieres registrarte desde la app con tu email real en vez de usar el admin de arranque), abre **Query Tool** sobre esa base de datos y ejecuta:
+
+```sql
+UPDATE "User" SET role = 'admin', status = 'approved' WHERE email = 'tu-email@example.com';
 ```
 
 ## Seguridad
