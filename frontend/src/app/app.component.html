@@ -11,6 +11,10 @@
       <mat-icon>groups</mat-icon>
       Plantilla
     </a>
+    <a mat-button routerLink="/stats">
+      <mat-icon>bar_chart</mat-icon>
+      Estadísticas
+    </a>
     @if (auth.role() === 'admin') {
       <a mat-button routerLink="/admin/seasons">
         <mat-icon>event</mat-icon>

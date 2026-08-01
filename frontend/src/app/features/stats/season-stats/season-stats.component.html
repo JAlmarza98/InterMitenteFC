@@ -1,0 +1,89 @@
+<div class="page">
+  <h1>Estadísticas de temporada</h1>
+
+  @if (loadingSeasons()) {
+    <div class="spinner-row">
+      <mat-spinner diameter="32" />
+    </div>
+  } @else if (seasons().length === 0) {
+    <p class="empty-state">Todavía no hay temporadas creadas.</p>
+  } @else {
+    <mat-form-field appearance="outline" class="season-select">
+      <mat-label>Temporada</mat-label>
+      <mat-select [value]="selectedSeasonId()" (selectionChange)="selectSeason($event.value)">
+        @for (season of seasons(); track season.id) {
+          <mat-option [value]="season.id">{{ season.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (loadingStats()) {
+      <div class="spinner-row">
+        <mat-spinner diameter="32" />
+      </div>
+    } @else if (stats()) {
+      @let s = stats()!;
+      <p class="matches-played">{{ s.matchesPlayed }} partido(s) finalizado(s) en esta temporada.</p>
+
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          @if (s.players.length === 0) {
+            <p class="empty-state">Todavía no hay estadísticas para esta temporada.</p>
+          } @else {
+            <div class="table-scroll">
+              <table mat-table [dataSource]="s.players" class="season-table">
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>Jugador</th>
+                  <td mat-cell *matCellDef="let row">{{ row.player.firstName }} {{ row.player.lastName }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="appearances">
+                  <th mat-header-cell *matHeaderCellDef>PJ</th>
+                  <td mat-cell *matCellDef="let row">{{ row.appearances }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="minutesPlayed">
+                  <th mat-header-cell *matHeaderCellDef>Min. totales</th>
+                  <td mat-cell *matCellDef="let row">{{ row.minutesPlayed }}'</td>
+                </ng-container>
+
+                <ng-container matColumnDef="avgMinutes">
+                  <th mat-header-cell *matHeaderCellDef>Min./partido</th>
+                  <td mat-cell *matCellDef="let row">{{ row.avgMinutesPerAppearance }}'</td>
+                </ng-container>
+
+                <ng-container matColumnDef="goals">
+                  <th mat-header-cell *matHeaderCellDef>Goles</th>
+                  <td mat-cell *matCellDef="let row">{{ row.goals }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="assists">
+                  <th mat-header-cell *matHeaderCellDef>Asist.</th>
+                  <td mat-cell *matCellDef="let row">{{ row.assists }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="yellowCards">
+                  <th mat-header-cell *matHeaderCellDef>TA</th>
+                  <td mat-cell *matCellDef="let row">{{ row.yellowCards }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="redCards">
+                  <th mat-header-cell *matHeaderCellDef>TR</th>
+                  <td mat-cell *matCellDef="let row">{{ row.redCards }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="ownGoals">
+                  <th mat-header-cell *matHeaderCellDef>G. propia</th>
+                  <td mat-cell *matCellDef="let row">{{ row.ownGoals }}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="columns"></tr>
+                <tr mat-row *matRowDef="let row; columns: columns"></tr>
+              </table>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+</div>

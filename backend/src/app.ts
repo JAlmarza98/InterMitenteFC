@@ -9,6 +9,7 @@ import { playersRouter } from "./modules/players/players.routes";
 import { seasonsRouter } from "./modules/seasons/seasons.routes";
 import { matchesRouter } from "./modules/matches/matches.routes";
 import { matchClockRouter } from "./modules/matchClock/matchClock.routes";
+import { statsRouter } from "./modules/stats/stats.routes";
 
 export const app = express();
 
@@ -36,5 +37,6 @@ app.use("/api/players", playersRouter);
 app.use("/api/seasons", seasonsRouter);
 app.use("/api/matches", matchesRouter);
 app.use("/api/matches/:matchId", matchClockRouter);
+app.use("/api/stats", statsRouter);
 
 app.use(errorHandler);
