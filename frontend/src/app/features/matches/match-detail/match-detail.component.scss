@@ -68,3 +68,8 @@
     border-top: 1px solid var(--mat-sys-outline-variant);
   }
 }
+
+.read-only-check {
+  color: var(--mat-sys-on-surface-variant);
+  vertical-align: middle;
+}

@@ -63,7 +63,7 @@ export class MatchDetailComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
 
-  readonly canManage = () => ['admin', 'coach'].includes(this.auth.role() ?? '');
+  readonly canManage = this.auth.canManage;
   readonly statuses: MatchStatus[] = ['scheduled', 'live', 'finished'];
 
   statusLabel(status: MatchStatus): string {

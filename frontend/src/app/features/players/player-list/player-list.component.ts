@@ -35,7 +35,7 @@ export class PlayerListComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
 
-  readonly canManage = () => ['admin', 'coach'].includes(this.auth.role() ?? '');
+  readonly canManage = this.auth.canManage;
   readonly displayedColumns = ['jerseyNumber', 'name', 'position', 'status', 'actions'];
 
   readonly players = signal<Player[]>([]);

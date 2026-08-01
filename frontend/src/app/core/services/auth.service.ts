@@ -25,6 +25,11 @@ export class AuthService {
   readonly isApproved = computed(() => this._user()?.status === 'approved');
   readonly isPending = computed(() => this._user()?.status === 'pending');
   readonly role = computed(() => this._user()?.role ?? null);
+  /** Single source of truth for "can manage players/matches/live tracking" — admin and coach only. */
+  readonly canManage = computed(() => {
+    const role = this._user()?.role;
+    return role === 'admin' || role === 'coach';
+  });
 
   /** Never throws: a 401 (not logged in) resolves to `{ user: null }` rather than an error. */
   fetchMe(): Observable<{ user: CurrentUser | null }> {

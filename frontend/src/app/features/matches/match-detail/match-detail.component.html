@@ -117,18 +117,22 @@
                 <tr>
                   <td>{{ row.player.firstName }} {{ row.player.lastName }}</td>
                   <td>
-                    <mat-checkbox
-                      [checked]="row.called"
-                      [disabled]="!canManage()"
-                      (change)="toggleCalled(row)"
-                    />
+                    @if (canManage()) {
+                      <mat-checkbox [checked]="row.called" (change)="toggleCalled(row)" />
+                    } @else {
+                      <mat-icon class="read-only-check">{{ row.called ? 'check' : 'remove' }}</mat-icon>
+                    }
                   </td>
                   <td>
-                    <mat-checkbox
-                      [checked]="row.starter"
-                      [disabled]="!canManage() || !row.called"
-                      (change)="toggleStarter(row)"
-                    />
+                    @if (canManage()) {
+                      <mat-checkbox
+                        [checked]="row.starter"
+                        [disabled]="!row.called"
+                        (change)="toggleStarter(row)"
+                      />
+                    } @else {
+                      <mat-icon class="read-only-check">{{ row.starter ? 'check' : 'remove' }}</mat-icon>
+                    }
                   </td>
                 </tr>
               }

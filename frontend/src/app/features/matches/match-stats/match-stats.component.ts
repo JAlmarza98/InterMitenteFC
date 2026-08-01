@@ -45,7 +45,7 @@ export class MatchStatsComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
 
-  readonly canManage = () => ['admin', 'coach'].includes(this.auth.role() ?? '');
+  readonly canManage = this.auth.canManage;
   readonly matchId = this.route.snapshot.paramMap.get('id')!;
 
   readonly statColumns = ['name', 'timePlayed', 'goals', 'assists', 'yellowCards', 'redCards', 'ownGoals'];
