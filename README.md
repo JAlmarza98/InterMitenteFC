@@ -1,20 +1,36 @@
 # Inter Mitente
 
-Aplicación web para gestionar el equipo: registro de usuarios con aprobación manual, plantilla de jugadores, partidos, cronómetro de tiempo de juego en vivo (con cambios) y estadísticas por partido y por temporada.
+Aplicación web para gestionar el equipo: registro de usuarios con aprobación manual, plantilla de jugadores, partidos, cronómetro de tiempo de juego en vivo (con cambios y estadísticas al momento) y estadísticas por partido y por temporada.
 
 ## Stack
 
 - **Backend**: Node.js + Express + TypeScript, Prisma ORM, PostgreSQL, sesiones (`express-session` + `connect-pg-simple`).
-- **Frontend**: Angular (standalone components) + Angular Material (Material 3 / M3 theming).
+- **Frontend**: Angular (standalone components) + Angular Material (Material 3 / M3 theming), diseño mobile-first.
 - **Despliegue**: Docker Compose (`postgres`, `api`, `web`), pensado para un servidor Proxmox propio.
 
 ## Roles
 
-- **admin**: aprueba/rechaza usuarios, gestiona roles, y todo lo que puede hacer `coach`.
+- **admin**: aprueba/rechaza usuarios, gestiona roles, temporadas, y todo lo que puede hacer `coach`.
 - **coach**: gestiona jugadores, partidos, cronómetro en vivo y estadísticas.
 - **member**: usuario aprobado con acceso de solo lectura a plantilla, partidos y estadísticas.
 
-Cualquiera puede registrarse, pero el usuario queda en estado `pending` hasta que un admin lo aprueba desde **Usuarios** en el panel de administración.
+Cualquiera puede registrarse, pero el usuario queda en estado `pending` hasta que un admin lo aprueba desde **Usuarios** en el panel de administración. La interfaz solo muestra las acciones que el rol del usuario puede realizar — si no puedes hacer algo, no aparece el botón (además de que el backend rechaza la petición igualmente si se intentara saltar la UI).
+
+## Funcionalidades
+
+- **Plantilla**: alta/baja de jugadores, dorsal, posición (desplegable con las posiciones de fútbol 7), activo/inactivo.
+- **Partidos**: crear/editar con selector de fecha y hora nativos de Material, rival, local/visitante, competición (Liga/Copa), temporada, y duración de cada parte configurable (por defecto 30 minutos, ajustable por partido). Convocatoria con titulares/suplentes.
+- **Partido en vivo**: cronómetro que arranca/pausa/termina cada parte, hace cambios (banquillo ↔ campo) y dispara goles/asistencias/tarjetas al momento con un toque, todo desde el móvil en la banda. El reloj se reconstruye desde el servidor en cada carga de página — sobrevive a recargas y cortes de conexión sin perder el tiempo transcurrido (ver "Diseño del cronómetro" más abajo).
+- **Estadísticas por partido**: minutos exactos jugados (con segundos) por jugador, goles, asistencias, tarjetas. La pantalla de "Estadísticas" del partido es para **corregir** datos mal apuntados a posteriori — anotar en directo se hace desde la pantalla de partido en vivo.
+- **Estadísticas de temporada**: totales y medias por jugador (partidos jugados, minutos, goles, tarjetas...) agregando solo los partidos finalizados.
+- **Temporadas** (admin): alta de temporadas con fecha de inicio/fin y cuál está activa.
+- **Aprobación de usuarios** (admin): pendientes/aprobados/rechazados, cambio de rol.
+
+## Diseño del cronómetro y tiempo de juego
+
+El reloj del partido nunca se guarda como un contador — siempre se recalcula a partir de timestamps (`MatchPeriod.startedAt`/`endedAt` + pausas), tanto en el backend como al mostrarlo en el navegador. Esto es lo que hace que sobreviva a un refresco de página o a que se cierre el móvil a mitad de partido: no hay ningún estado en memoria que se pueda perder.
+
+El tiempo jugado por cada jugador (`PlayingTimeSegment`) se guarda en segundos exactos (no minutos redondeados), y un jugador que sigue en el campo sin haber sido sustituido cuenta su tiempo en vivo en las estadísticas en vez de mostrar 0 hasta que sale. Tanto los cambios en vivo como la edición manual posterior escriben en la misma tabla, así que corregir un error de seguimiento en directo usa exactamente el mismo dato que ya se está mostrando.
 
 ## Desarrollo local
 
@@ -40,6 +56,10 @@ npm start                  # ng serve, http://localhost:4200
 En desarrollo, el backend habilita CORS para `http://localhost:4200` y las cookies de sesión no requieren HTTPS (`NODE_ENV=development`).
 
 > Nota: por defecto el servicio `postgres` de `docker-compose.yml` no publica ningún puerto al host (solo red interna, ver "Seguridad" más abajo). Para desarrollar contra él directamente añade temporalmente `ports: ["127.0.0.1:5433:5432"]` al servicio `postgres` y usa `DATABASE_URL=postgresql://intermitente:<password>@localhost:5433/intermitente`.
+
+### Migraciones de Prisma
+
+Los cambios de schema se gestionan con `prisma migrate dev` como es habitual. Una excepción: si Prisma detecta "drift" porque `connect-pg-simple` crea su propia tabla `session` fuera del control de Prisma, no uses `migrate reset` (borra todos los datos) — escribe el SQL de la migración a mano en `prisma/migrations/<timestamp>_nombre/migration.sql`, aplícalo con `docker compose exec postgres psql -U intermitente -d intermitente -f ...` (o pegando el SQL), y regístralo con `npx prisma migrate resolve --applied <timestamp>_nombre`.
 
 ## Despliegue en Proxmox
 
@@ -75,7 +95,7 @@ El contenedor `web` sirve la app entera (frontend + proxy a la API) en el puerto
 - **Reverse proxy fuera de Docker** (Nginx/Traefik/Nginx Proxy Manager en otra VM/LXC, o en el host): apunta un `proxy_pass`/host de destino a `http://<ip-del-servidor-docker>:${WEB_PORT}`.
 - **Reverse proxy que corre como contenedor Docker en la misma máquina**: puedes en su lugar conectar el servicio `web` a la red Docker de ese proxy (añadiendo una entrada `networks` en `docker-compose.yml`) y quitar la publicación de `ports`, apuntando el proxy a `web:80` directamente.
 
-En ambos casos, para que las cookies de sesión (`secure`) funcionen correctamente, el reverse proxy debe terminar HTTPS y reenviar la cabecera `X-Forwarded-Proto: https` — el `nginx.conf` del contenedor `web` ya la respeta si te llega, y si no está presente asume la conexión tal cual la recibe.
+En ambos casos, para que las cookies de sesión funcionen correctamente, el reverse proxy debe terminar HTTPS y reenviar la cabecera `X-Forwarded-Proto: https` — el `nginx.conf` del contenedor `web` ya la respeta si te llega. La cookie de sesión usa `secure: 'auto'`, así que funciona tanto detrás de HTTPS como en HTTP plano (por ejemplo, mientras pruebas sin el reverse proxy delante todavía) sin necesitar tocar configuración.
 
 ### Actualizar la aplicación
 
@@ -122,3 +142,4 @@ UPDATE "User" SET role = 'admin', status = 'approved' WHERE email = 'tu-email@ex
 - El contenedor `postgres` no publica ningún puerto al host por defecto: solo es accesible desde `api` a través de la red interna de Docker Compose.
 - El contenedor `api` tampoco publica puerto: el navegador solo habla con `web`, que hace de proxy interno hacia `api:3000`. Esto evita problemas de CORS y mantiene la cookie de sesión como same-origin.
 - Las contraseñas se guardan con `bcryptjs`; las sesiones se guardan en Postgres (tabla gestionada por `connect-pg-simple`), no en JWT.
+- Cada endpoint de escritura exige el rol adecuado (`coach`/`admin` según el recurso) en el propio backend, no solo en la interfaz — ocultar un botón en el frontend es una ayuda de UX, no el control de acceso real.
