@@ -45,7 +45,6 @@ export class MatchListComponent {
 
   readonly canManage = () => ['admin', 'coach'].includes(this.auth.role() ?? '');
   readonly displayedColumns = ['date', 'opponent', 'competition', 'status', 'score', 'actions'];
-  readonly statusLabels = STATUS_LABELS;
 
   readonly matches = signal<Match[]>([]);
   readonly loading = signal(false);

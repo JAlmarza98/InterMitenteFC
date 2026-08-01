@@ -1,34 +1,13 @@
-.page {
-  padding: 24px;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
 .season-select {
   width: 260px;
-  margin-bottom: 8px;
+  max-width: 100%;
 }
 
 .matches-played {
   color: var(--mat-sys-on-surface-variant);
-  margin: 0 0 16px;
-}
-
-.table-scroll {
-  overflow-x: auto;
+  margin: 0;
 }
 
 .season-table {
   width: 100%;
-}
-
-.empty-state {
-  color: var(--mat-sys-on-surface-variant);
-  padding: 16px 0;
-}
-
-.spinner-row {
-  display: flex;
-  justify-content: center;
-  padding: 32px;
 }

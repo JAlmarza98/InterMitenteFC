@@ -1,30 +1,21 @@
 <mat-toolbar color="primary" class="app-toolbar">
-  <a routerLink="/" class="app-title">Inter Mitente</a>
+  <a routerLink="/" class="app-title">
+    <mat-icon class="app-title-icon">sports_soccer</mat-icon>
+    <span>Inter Mitente</span>
+  </a>
   <span class="spacer"></span>
 
   @if (auth.isApproved()) {
-    <a mat-button routerLink="/matches">
-      <mat-icon>sports_soccer</mat-icon>
-      Partidos
-    </a>
-    <a mat-button routerLink="/players">
-      <mat-icon>groups</mat-icon>
-      Plantilla
-    </a>
-    <a mat-button routerLink="/stats">
-      <mat-icon>bar_chart</mat-icon>
-      Estadísticas
-    </a>
-    @if (auth.role() === 'admin') {
-      <a mat-button routerLink="/admin/seasons">
-        <mat-icon>event</mat-icon>
-        Temporadas
-      </a>
-      <a mat-button routerLink="/admin/users">
-        <mat-icon>how_to_reg</mat-icon>
-        Usuarios
-      </a>
-    }
+    <nav class="desktop-nav">
+      <a mat-button routerLink="/matches" routerLinkActive="active-link">Partidos</a>
+      <a mat-button routerLink="/players" routerLinkActive="active-link">Plantilla</a>
+      <a mat-button routerLink="/stats" routerLinkActive="active-link">Estadísticas</a>
+      @if (auth.role() === 'admin') {
+        <a mat-button routerLink="/admin/seasons" routerLinkActive="active-link">Temporadas</a>
+        <a mat-button routerLink="/admin/users" routerLinkActive="active-link">Usuarios</a>
+      }
+    </nav>
+
     <span class="user-name">{{ auth.user()?.name }}</span>
     <button mat-icon-button (click)="logout()" aria-label="Cerrar sesión">
       <mat-icon>logout</mat-icon>
@@ -35,3 +26,41 @@
 <main class="app-content">
   <router-outlet />
 </main>
+
+@if (auth.isApproved()) {
+  <nav class="bottom-nav">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      <mat-icon>home</mat-icon>
+      <span>Inicio</span>
+    </a>
+    <a routerLink="/matches" routerLinkActive="active">
+      <mat-icon>sports_soccer</mat-icon>
+      <span>Partidos</span>
+    </a>
+    <a routerLink="/players" routerLinkActive="active">
+      <mat-icon>groups</mat-icon>
+      <span>Plantilla</span>
+    </a>
+    <a routerLink="/stats" routerLinkActive="active">
+      <mat-icon>bar_chart</mat-icon>
+      <span>Stats</span>
+    </a>
+    @if (auth.role() === 'admin') {
+      <button class="bottom-nav-more" [matMenuTriggerFor]="moreMenu">
+        <mat-icon>more_horiz</mat-icon>
+        <span>Más</span>
+      </button>
+    }
+  </nav>
+}
+
+<mat-menu #moreMenu="matMenu">
+  <a mat-menu-item routerLink="/admin/seasons">
+    <mat-icon>event</mat-icon>
+    Temporadas
+  </a>
+  <a mat-menu-item routerLink="/admin/users">
+    <mat-icon>how_to_reg</mat-icon>
+    Usuarios
+  </a>
+</mat-menu>

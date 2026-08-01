@@ -14,6 +14,7 @@
   } @else if (seasons().length === 0) {
     <p class="empty-state">Todavía no hay temporadas.</p>
   } @else {
+    <div class="table-scroll">
     <table mat-table [dataSource]="seasons()" class="seasons-table">
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef>Nombre</th>
@@ -48,5 +49,6 @@
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
+    </div>
   }
 </div>

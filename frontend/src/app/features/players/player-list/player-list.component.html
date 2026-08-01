@@ -21,6 +21,7 @@
   } @else if (players().length === 0) {
     <p class="empty-state">Todavía no hay jugadores en la plantilla.</p>
   } @else {
+    <div class="table-scroll">
     <table mat-table [dataSource]="players()" class="players-table">
       <ng-container matColumnDef="jerseyNumber">
         <th mat-header-cell *matHeaderCellDef>#</th>
@@ -65,5 +66,6 @@
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
+    </div>
   }
 </div>

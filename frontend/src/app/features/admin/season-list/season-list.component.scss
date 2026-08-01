@@ -1,28 +1,3 @@
-.page {
-  padding: 24px;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
 .seasons-table {
   width: 100%;
-  margin-top: 16px;
-}
-
-.actions-cell {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.spinner-row {
-  display: flex;
-  justify-content: center;
-  padding: 32px;
-}
-
-.empty-state {
-  color: var(--mat-sys-on-surface-variant);
-  padding: 32px 0;
-  text-align: center;
 }

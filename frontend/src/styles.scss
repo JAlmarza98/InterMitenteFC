@@ -1,10 +1,23 @@
-
 // Material 3 theming for Inter Mitente.
 // https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
 html {
   color-scheme: light dark;
+
+  // Consistent spacing scale used across all feature pages instead of
+  // ad-hoc pixel values, so density reads the same everywhere.
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  // Page content never grows wider than this on desktop, and always
+  // gets breathing room on mobile — every feature page uses this
+  // instead of redefining its own max-width/padding.
+  --page-max-width: 880px;
+  --page-padding: var(--space-lg);
 
   @include mat.theme((
     color: (
@@ -17,6 +30,12 @@ html {
   ));
 }
 
+@media (max-width: 599px) {
+  html {
+    --page-padding: var(--space-md);
+  }
+}
+
 html, body {
   height: 100%;
 }
@@ -26,4 +45,186 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
   background: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
+}
+
+h1, h2, h3 {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+// Shared page shell: every feature component wraps its content in
+// `.page` and gets consistent max-width/padding/vertical rhythm for free.
+.page {
+  box-sizing: border-box;
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: var(--page-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+// Shared header row (title + primary action) used by every list page —
+// wraps onto its own line on narrow screens instead of squeezing the button.
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+
+  h1 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+// NOTE: .mobile-only/.desktop-only toggling is intentionally NOT a shared
+// global utility here — a component's own scoped style on the same element
+// (e.g. `.match-cards { display: flex }`) carries an Angular content
+// attribute selector, which out-specifies a plain global class and silently
+// wins regardless of media query state. Each component instead pairs these
+// marker classes with its own local @media rule at matching specificity.
+
+.spinner-row {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xl);
+}
+
+.empty-state {
+  color: var(--mat-sys-on-surface-variant);
+  padding: var(--space-xl) 0;
+  text-align: center;
+}
+
+// Shared shell for login/register/pending-approval: a branded header
+// above a centered card, on a subtle tinted background so auth screens
+// don't look like a bare, unbranded form floating on white.
+.auth-page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--mat-sys-primary) 10%, var(--mat-sys-surface)) 0%,
+    var(--mat-sys-surface) 320px
+  );
+}
+
+.auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+
+  .auth-brand-badge {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+
+    mat-icon {
+      font-size: 30px;
+      width: 30px;
+      height: 30px;
+    }
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+
+  button {
+    margin-top: var(--space-sm);
+    width: 100%;
+    height: 44px;
+  }
+}
+
+.auth-error {
+  color: var(--mat-sys-error);
+  font-size: 0.875rem;
+  margin: 0 0 var(--space-sm);
+}
+
+// Color-code match status chips instead of leaving every chip identical —
+// scheduled stays neutral, live pops in primary green, finished settles
+// into the tertiary orange accent.
+.status-chip.status-scheduled {
+  --mdc-chip-elevated-container-color: var(--mat-sys-surface-container-high);
+  --mdc-chip-label-text-color: var(--mat-sys-on-surface-variant);
+}
+
+.status-chip.status-live {
+  --mdc-chip-elevated-container-color: var(--mat-sys-primary-container);
+  --mdc-chip-label-text-color: var(--mat-sys-on-primary-container);
+}
+
+.status-chip.status-finished {
+  --mdc-chip-elevated-container-color: var(--mat-sys-tertiary-container);
+  --mdc-chip-label-text-color: var(--mat-sys-on-tertiary-container);
+}
+
+// Consistent field spacing inside every create/edit dialog.
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-top: var(--space-xs);
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+// Material dialogs go full-screen on small viewports so forms are
+// comfortable to fill in on a phone instead of a cramped floating box.
+@media (max-width: 599px) {
+  .mat-mdc-dialog-container {
+    --mat-dialog-container-max-width: 100vw;
+  }
+
+  .cdk-overlay-pane:has(.mat-mdc-dialog-container) {
+    max-width: 100vw !important;
+    width: 100vw;
+    height: 100%;
+    margin: 0;
+  }
+
+  .mat-mdc-dialog-surface {
+    border-radius: 0 !important;
+    height: 100%;
+  }
 }

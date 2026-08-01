@@ -16,56 +16,80 @@
   } @else if (matches().length === 0) {
     <p class="empty-state">Todavía no hay partidos.</p>
   } @else {
-    <table mat-table [dataSource]="matches()" class="matches-table">
-      <ng-container matColumnDef="date">
-        <th mat-header-cell *matHeaderCellDef>Fecha</th>
-        <td mat-cell *matCellDef="let match">{{ match.matchDate | date: 'dd/MM/yyyy HH:mm' }}</td>
-      </ng-container>
+    <div class="table-scroll desktop-only">
+      <table mat-table [dataSource]="matches()" class="matches-table">
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let match">{{ match.matchDate | date: 'dd/MM/yyyy HH:mm' }}</td>
+        </ng-container>
 
-      <ng-container matColumnDef="opponent">
-        <th mat-header-cell *matHeaderCellDef>Rival</th>
-        <td mat-cell *matCellDef="let match">
-          {{ match.opponent }}
-          <span class="home-away">({{ match.homeAway === 'home' ? 'local' : 'visitante' }})</span>
-        </td>
-      </ng-container>
+        <ng-container matColumnDef="opponent">
+          <th mat-header-cell *matHeaderCellDef>Rival</th>
+          <td mat-cell *matCellDef="let match">
+            {{ match.opponent }}
+            <span class="home-away">({{ match.homeAway === 'home' ? 'local' : 'visitante' }})</span>
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="competition">
-        <th mat-header-cell *matHeaderCellDef>Competición</th>
-        <td mat-cell *matCellDef="let match">{{ match.competition ?? '—' }}</td>
-      </ng-container>
+        <ng-container matColumnDef="competition">
+          <th mat-header-cell *matHeaderCellDef>Competición</th>
+          <td mat-cell *matCellDef="let match">{{ match.competition ?? '—' }}</td>
+        </ng-container>
 
-      <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>Estado</th>
-        <td mat-cell *matCellDef="let match">
-          <mat-chip>{{ statusLabel(match.status) }}</mat-chip>
-        </td>
-      </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let match">
+            <mat-chip [class]="'status-chip status-' + match.status">{{ statusLabel(match.status) }}</mat-chip>
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="score">
-        <th mat-header-cell *matHeaderCellDef>Resultado</th>
-        <td mat-cell *matCellDef="let match">
-          @if (match.teamScore !== null && match.opponentScore !== null) {
-            {{ match.teamScore }} - {{ match.opponentScore }}
-          } @else {
-            —
-          }
-        </td>
-      </ng-container>
+        <ng-container matColumnDef="score">
+          <th mat-header-cell *matHeaderCellDef>Resultado</th>
+          <td mat-cell *matCellDef="let match">
+            @if (match.teamScore !== null && match.opponentScore !== null) {
+              {{ match.teamScore }} - {{ match.opponentScore }}
+            } @else {
+              —
+            }
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let match">
-          @if (canManage()) {
-            <button mat-icon-button (click)="deleteMatch($event, match)" aria-label="Eliminar">
-              <mat-icon>delete</mat-icon>
-            </button>
-          }
-        </td>
-      </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let match">
+            @if (canManage()) {
+              <button mat-icon-button (click)="deleteMatch($event, match)" aria-label="Eliminar">
+                <mat-icon>delete</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns" (click)="openMatch(row)" class="clickable-row"></tr>
-    </table>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          (click)="openMatch(row)"
+          class="clickable-row"
+        ></tr>
+      </table>
+    </div>
+
+    <div class="match-cards mobile-only">
+      @for (match of matches(); track match.id) {
+        <button class="match-card" (click)="openMatch(match)">
+          <div class="match-card-main">
+            <span class="match-card-opponent">{{ match.opponent }}</span>
+            <span class="match-card-date">{{ match.matchDate | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="match-card-side">
+            @if (match.teamScore !== null && match.opponentScore !== null) {
+              <span class="match-card-score">{{ match.teamScore }}-{{ match.opponentScore }}</span>
+            }
+            <mat-chip [class]="'status-chip status-' + match.status">{{ statusLabel(match.status) }}</mat-chip>
+          </div>
+        </button>
+      }
+    </div>
   }
 </div>

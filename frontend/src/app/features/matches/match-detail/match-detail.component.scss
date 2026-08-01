@@ -1,16 +1,11 @@
 .page {
-  padding: 24px;
-  max-width: 700px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  --page-max-width: 700px;
 }
 
 .back-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-xs);
   color: var(--mat-sys-primary);
   text-decoration: none;
   width: fit-content;
@@ -25,22 +20,25 @@
 .status-row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-md);
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-sm);
 }
 
 .status-select {
   width: 200px;
+  max-width: 100%;
 }
 
 .score-row {
   display: flex;
-  gap: 12px;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 
 .score-field {
-  width: 140px;
+  flex: 1 1 120px;
+  max-width: 160px;
 }
 
 .score-display {
@@ -59,24 +57,14 @@
 
   th {
     text-align: left;
-    padding: 8px;
+    padding: var(--space-sm);
     color: var(--mat-sys-on-surface-variant);
     font-weight: 500;
     font-size: 0.875rem;
   }
 
   td {
-    padding: 4px 8px;
+    padding: var(--space-xs) var(--space-sm);
     border-top: 1px solid var(--mat-sys-outline-variant);
   }
-}
-
-.empty-state {
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.spinner-row {
-  display: flex;
-  justify-content: center;
-  padding: 32px;
 }

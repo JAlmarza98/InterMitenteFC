@@ -1,5 +1,47 @@
 .page {
-  padding: 24px;
-  max-width: 700px;
-  margin: 0 auto;
+  --page-max-width: 640px;
+}
+
+.welcome {
+  h1 {
+    margin: 0 0 4px;
+    font-size: 1.6rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-md);
+}
+
+.shortcut-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-md);
+  border-radius: 16px;
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-on-surface);
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: var(--mat-sys-primary);
+  }
+
+  &:hover {
+    background: var(--mat-sys-surface-container-highest);
+  }
 }

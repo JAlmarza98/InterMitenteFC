@@ -1,4 +1,9 @@
 <div class="auth-page">
+  <div class="auth-brand">
+    <div class="auth-brand-badge"><mat-icon>sports_soccer</mat-icon></div>
+    <h1>Inter Mitente</h1>
+  </div>
+
   <mat-card class="auth-card" appearance="outlined">
     <mat-card-header>
       <mat-card-title>Crear cuenta</mat-card-title>
@@ -38,7 +43,7 @@
         </mat-form-field>
 
         @if (errorMessage()) {
-          <p class="error-text">{{ errorMessage() }}</p>
+          <p class="auth-error">{{ errorMessage() }}</p>
         }
 
         <button mat-flat-button color="primary" type="submit" [disabled]="loading()">

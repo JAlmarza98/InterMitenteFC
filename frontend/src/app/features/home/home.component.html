@@ -1,11 +1,21 @@
 <div class="page">
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      <mat-card-title>Hola, {{ auth.user()?.name }}</mat-card-title>
-      <mat-card-subtitle>Bienvenido a Inter Mitente</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <p>La gestión de jugadores y partidos estará disponible próximamente.</p>
-    </mat-card-content>
-  </mat-card>
+  <div class="welcome">
+    <h1>Hola, {{ auth.user()?.name }} 👋</h1>
+    <p>¿Qué quieres hacer hoy?</p>
+  </div>
+
+  <div class="shortcuts">
+    <a routerLink="/matches" class="shortcut-card">
+      <mat-icon>sports_soccer</mat-icon>
+      <span>Partidos</span>
+    </a>
+    <a routerLink="/players" class="shortcut-card">
+      <mat-icon>groups</mat-icon>
+      <span>Plantilla</span>
+    </a>
+    <a routerLink="/stats" class="shortcut-card">
+      <mat-icon>bar_chart</mat-icon>
+      <span>Estadísticas</span>
+    </a>
+  </div>
 </div>

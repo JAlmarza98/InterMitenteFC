@@ -17,14 +17,14 @@
           <span class="home-away">({{ m.homeAway === 'home' ? 'local' : 'visitante' }})</span>
         </mat-card-title>
         <mat-card-subtitle>
-          {{ m.matchDate | date: 'EEEE d MMMM yyyy, HH:mm' }}
+          {{ m.matchDate | date: "EEEE d 'de' MMMM 'de' yyyy, HH:mm" }}
           @if (m.competition) { · {{ m.competition }} }
         </mat-card-subtitle>
       </mat-card-header>
 
       <mat-card-content>
         <div class="status-row">
-          <mat-chip>{{ statusLabel(m.status) }}</mat-chip>
+          <mat-chip [class]="'status-chip status-' + m.status">{{ statusLabel(m.status) }}</mat-chip>
 
           @if (canManage()) {
             <mat-form-field appearance="outline" class="status-select">
