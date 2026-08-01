@@ -1,1 +1,21 @@
-<router-outlet />
+<mat-toolbar color="primary" class="app-toolbar">
+  <a routerLink="/" class="app-title">Inter Mitente</a>
+  <span class="spacer"></span>
+
+  @if (auth.isApproved()) {
+    @if (auth.role() === 'admin') {
+      <a mat-button routerLink="/admin/users">
+        <mat-icon>how_to_reg</mat-icon>
+        Usuarios
+      </a>
+    }
+    <span class="user-name">{{ auth.user()?.name }}</span>
+    <button mat-icon-button (click)="logout()" aria-label="Cerrar sesión">
+      <mat-icon>logout</mat-icon>
+    </button>
+  }
+</mat-toolbar>
+
+<main class="app-content">
+  <router-outlet />
+</main>

@@ -1,22 +1,14 @@
-import { Component, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Component, inject } from '@angular/core';
+import { MatCardModule } from '@angular/material/card';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  template: `
-    <h1>Inter Mitente</h1>
-    <p>Estado de la API: {{ apiStatus() }}</p>
-  `,
+  imports: [MatCardModule],
+  templateUrl: './home.component.html',
+  styleUrl: './home.component.scss',
 })
 export class HomeComponent {
-  private readonly http = inject(HttpClient);
-  readonly apiStatus = signal('comprobando...');
-
-  constructor() {
-    this.http.get<{ status: string }>('/api/health').subscribe({
-      next: (res) => this.apiStatus.set(res.status),
-      error: () => this.apiStatus.set('no disponible'),
-    });
-  }
+  readonly auth = inject(AuthService);
 }

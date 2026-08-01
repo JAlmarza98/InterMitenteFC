@@ -1,0 +1,68 @@
+<div class="page">
+  <h1>Aprobación de usuarios</h1>
+
+  <mat-tab-group (selectedIndexChange)="onTabChange($event)">
+    <mat-tab label="Pendientes" />
+    <mat-tab label="Aprobados" />
+    <mat-tab label="Rechazados" />
+  </mat-tab-group>
+
+  @if (loading()) {
+    <div class="spinner-row">
+      <mat-spinner diameter="32" />
+    </div>
+  } @else if (users().length === 0) {
+    <p class="empty-state">No hay usuarios en este estado.</p>
+  } @else {
+    <table mat-table [dataSource]="users()" class="users-table">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let user">{{ user.name }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="role">
+        <th mat-header-cell *matHeaderCellDef>Rol</th>
+        <td mat-cell *matCellDef="let user">
+          @if (user.status === 'approved') {
+            <mat-select
+              [value]="user.role"
+              (selectionChange)="changeRole(user, $event.value)"
+            >
+              @for (role of roles; track role) {
+                <mat-option [value]="role">{{ role }}</mat-option>
+              }
+            </mat-select>
+          } @else {
+            <mat-chip>{{ user.role }}</mat-chip>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let user" class="actions-cell">
+          @if (user.status !== 'approved') {
+            <button mat-flat-button color="primary" (click)="approve(user)">
+              <mat-icon>check</mat-icon>
+              Aprobar
+            </button>
+          }
+          @if (user.status !== 'rejected') {
+            <button mat-stroked-button color="warn" (click)="reject(user)">
+              <mat-icon>close</mat-icon>
+              Rechazar
+            </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  }
+</div>

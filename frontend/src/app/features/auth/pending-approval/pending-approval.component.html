@@ -1,0 +1,23 @@
+<div class="auth-page">
+  <mat-card class="auth-card" appearance="outlined">
+    <mat-card-content class="pending-content">
+      <mat-icon class="pending-icon">hourglass_top</mat-icon>
+
+      @if (status()?.status === 'rejected') {
+        <h2>Solicitud rechazada</h2>
+        <p>Un administrador ha rechazado tu solicitud de acceso. Contacta con el equipo si crees que es un error.</p>
+      } @else {
+        <h2>Cuenta pendiente de aprobación</h2>
+        <p>Tu cuenta ha sido creada correctamente. Un administrador debe aprobarla antes de que puedas acceder.</p>
+      }
+
+      <div class="actions">
+        <button mat-stroked-button [disabled]="checking()" (click)="refresh()">
+          <mat-icon>refresh</mat-icon>
+          Comprobar de nuevo
+        </button>
+        <button mat-button (click)="logout()">Cerrar sesión</button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

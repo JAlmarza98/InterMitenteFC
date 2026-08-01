@@ -1,0 +1,29 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-toolbar {
+  flex: 0 0 auto;
+}
+
+.app-title {
+  color: inherit;
+  text-decoration: none;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.user-name {
+  margin-right: 8px;
+}
+
+.app-content {
+  flex: 1 1 auto;
+  overflow: auto;
+}
