@@ -78,13 +78,19 @@ Los cambios de schema se gestionan con `prisma migrate dev` como es habitual. Un
    | `WEB_PORT` | Puerto del host donde se publica la aplicación (por defecto `8080`). |
    | `PGADMIN_EMAIL` / `PGADMIN_PASSWORD` / `PGADMIN_PORT` | Credenciales y puerto de pgAdmin (opcional, ver más abajo). |
 
-3. Levanta el stack:
+3. Levanta el stack. Hay dos formas, según prefieras compilar en el propio Proxmox o usar las imágenes ya publicadas en Docker Hub:
 
    ```bash
+   # Opción A: compilar en el servidor
    docker compose up -d --build
+
+   # Opción B (más rápido en un LXC/VM con pocos recursos): usar las imágenes
+   # ya publicadas en Docker Hub (jalmarza98/inter-mitente-api y -web, linux/amd64)
+   docker compose pull
+   docker compose up -d
    ```
 
-   Esto compila las imágenes, aplica las migraciones de Prisma automáticamente (`entrypoint.sh`) y crea el primer admin si no existe ninguno.
+   Ambas aplican las migraciones de Prisma automáticamente (`entrypoint.sh`) y crean el primer admin si no existe ninguno.
 
 4. La aplicación queda disponible en `http://<ip-del-servidor>:${WEB_PORT}`.
 
@@ -101,10 +107,26 @@ En ambos casos, para que las cookies de sesión funcionen correctamente, el reve
 
 ```bash
 git pull
-docker compose up -d --build
+docker compose up -d --build   # o `docker compose pull && docker compose up -d` si usas las imágenes de Docker Hub
 ```
 
 Las migraciones pendientes de Prisma se aplican automáticamente al arrancar `api`.
+
+### Publicar nuevas imágenes en Docker Hub
+
+Las imágenes (`jalmarza98/inter-mitente-api` y `jalmarza98/inter-mitente-web`) se publican para `linux/amd64` explícitamente, porque el desarrollo se hace en Mac con Apple Silicon (arm64) y Proxmox corre en x86. Hace falta `docker buildx` (incluido en Docker Desktop) y estar logueado (`docker login`):
+
+```bash
+docker buildx build --platform linux/amd64 --push \
+  -t jalmarza98/inter-mitente-api:<version> -t jalmarza98/inter-mitente-api:latest \
+  ./backend
+
+docker buildx build --platform linux/amd64 --push \
+  -t jalmarza98/inter-mitente-web:<version> -t jalmarza98/inter-mitente-web:latest \
+  ./frontend
+```
+
+Sustituye `<version>` por la versión correspondiente (coincidiendo con el tag de git, p. ej. `1.0.0`).
 
 ### Copias de seguridad
 

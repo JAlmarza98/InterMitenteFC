@@ -15,6 +15,7 @@ services:
       retries: 10
 
   api:
+    image: jalmarza98/inter-mitente-api:latest
     build: ./backend
     restart: unless-stopped
     environment:
@@ -35,6 +36,7 @@ services:
       start_period: 10s
 
   web:
+    image: jalmarza98/inter-mitente-web:latest
     build: ./frontend
     restart: unless-stopped
     depends_on:
