@@ -14,7 +14,11 @@ export const sessionMiddleware = session({
   cookie: {
     httpOnly: true,
     sameSite: "lax",
-    secure: env.NODE_ENV === "production",
+    // 'auto': only marks the cookie Secure when the request is actually
+    // HTTPS (directly or via the trusted X-Forwarded-Proto set in app.ts).
+    // A hardcoded `true` here made the browser silently drop the cookie
+    // whenever the app was reached over plain HTTP, breaking login.
+    secure: "auto",
     maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
   },
 });
