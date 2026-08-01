@@ -1,0 +1,30 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Editar temporada' : 'Nueva temporada' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="form-content">
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="name" placeholder="2025/2026" />
+      @if (form.controls.name.hasError('required') && form.controls.name.touched) {
+        <mat-error>Obligatorio</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha de inicio</mat-label>
+      <input matInput type="date" formControlName="startDate" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha de fin</mat-label>
+      <input matInput type="date" formControlName="endDate" />
+    </mat-form-field>
+
+    <mat-checkbox formControlName="isActive">Temporada activa</mat-checkbox>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()">Cancelar</button>
+    <button mat-flat-button color="primary" type="submit">Guardar</button>
+  </mat-dialog-actions>
+</form>

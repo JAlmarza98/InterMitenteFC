@@ -1,0 +1,54 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Editar partido' : 'Nuevo partido' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="form-content">
+    <mat-form-field appearance="outline">
+      <mat-label>Rival</mat-label>
+      <input matInput formControlName="opponent" />
+      @if (form.controls.opponent.hasError('required') && form.controls.opponent.touched) {
+        <mat-error>Obligatorio</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha y hora</mat-label>
+      <input matInput type="datetime-local" formControlName="matchDate" />
+      @if (form.controls.matchDate.hasError('required') && form.controls.matchDate.touched) {
+        <mat-error>Obligatorio</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Local / Visitante</mat-label>
+      <mat-select formControlName="homeAway">
+        <mat-option value="home">Local</mat-option>
+        <mat-option value="away">Visitante</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Competición</mat-label>
+      <input matInput formControlName="competition" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Temporada</mat-label>
+      <mat-select formControlName="seasonId">
+        <mat-option [value]="null">Sin temporada</mat-option>
+        @for (season of data.seasons; track season.id) {
+          <mat-option [value]="season.id">{{ season.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Notas</mat-label>
+      <textarea matInput formControlName="notes" rows="2"></textarea>
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()">Cancelar</button>
+    <button mat-flat-button color="primary" type="submit">Guardar</button>
+  </mat-dialog-actions>
+</form>

@@ -1,0 +1,141 @@
+<div class="page">
+  <a routerLink="/matches" class="back-link">
+    <mat-icon>arrow_back</mat-icon>
+    Partidos
+  </a>
+
+  @if (loading()) {
+    <div class="spinner-row">
+      <mat-spinner diameter="32" />
+    </div>
+  } @else if (match()) {
+    @let m = match()!;
+    <mat-card appearance="outlined" class="info-card">
+      <mat-card-header>
+        <mat-card-title>
+          {{ m.opponent }}
+          <span class="home-away">({{ m.homeAway === 'home' ? 'local' : 'visitante' }})</span>
+        </mat-card-title>
+        <mat-card-subtitle>
+          {{ m.matchDate | date: 'EEEE d MMMM yyyy, HH:mm' }}
+          @if (m.competition) { · {{ m.competition }} }
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="status-row">
+          <mat-chip>{{ statusLabel(m.status) }}</mat-chip>
+
+          @if (canManage()) {
+            <mat-form-field appearance="outline" class="status-select">
+              <mat-label>Cambiar estado</mat-label>
+              <mat-select [value]="m.status" (selectionChange)="changeStatus($event.value)">
+                @for (status of statuses; track status) {
+                  <mat-option [value]="status">{{ statusLabel(status) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+        </div>
+
+        @if (canManage()) {
+          <div class="score-row">
+            <mat-form-field appearance="outline" class="score-field">
+              <mat-label>Goles equipo</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                [value]="m.teamScore ?? ''"
+                #teamScoreInput
+                (change)="updateScore(teamScoreInput.value, opponentScoreInput.value)"
+              />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="score-field">
+              <mat-label>Goles rival</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                [value]="m.opponentScore ?? ''"
+                #opponentScoreInput
+                (change)="updateScore(teamScoreInput.value, opponentScoreInput.value)"
+              />
+            </mat-form-field>
+          </div>
+        } @else if (m.teamScore !== null && m.opponentScore !== null) {
+          <p class="score-display">{{ m.teamScore }} - {{ m.opponentScore }}</p>
+        }
+
+        @if (m.notes) {
+          <p class="notes">{{ m.notes }}</p>
+        }
+      </mat-card-content>
+
+      @if (canManage()) {
+        <mat-card-actions align="end">
+          <button mat-button (click)="editMatch()">
+            <mat-icon>edit</mat-icon>
+            Editar
+          </button>
+          <button mat-button color="warn" (click)="deleteMatch()">
+            <mat-icon>delete</mat-icon>
+            Eliminar
+          </button>
+        </mat-card-actions>
+      }
+    </mat-card>
+
+    <mat-card appearance="outlined" class="squad-card">
+      <mat-card-header>
+        <mat-card-title>Convocatoria</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (squadRows().length === 0) {
+          <p class="empty-state">No hay jugadores activos en la plantilla.</p>
+        } @else {
+          <table class="squad-table">
+            <thead>
+              <tr>
+                <th>Jugador</th>
+                <th>Convocado</th>
+                <th>Titular</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of squadRows(); track row.player.id) {
+                <tr>
+                  <td>{{ row.player.firstName }} {{ row.player.lastName }}</td>
+                  <td>
+                    <mat-checkbox
+                      [checked]="row.called"
+                      [disabled]="!canManage()"
+                      (change)="toggleCalled(row)"
+                    />
+                  </td>
+                  <td>
+                    <mat-checkbox
+                      [checked]="row.starter"
+                      [disabled]="!canManage() || !row.called"
+                      (change)="toggleStarter(row)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          @if (canManage()) {
+            <button mat-flat-button color="primary" [disabled]="savingSquad()" (click)="saveSquad()">
+              @if (savingSquad()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                Guardar convocatoria
+              }
+            </button>
+          }
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

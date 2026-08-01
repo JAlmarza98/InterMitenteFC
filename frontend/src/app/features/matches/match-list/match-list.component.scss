@@ -1,0 +1,43 @@
+.page {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.matches-table {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background: var(--mat-sys-surface-container-highest);
+}
+
+.home-away {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85em;
+}
+
+.spinner-row {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.empty-state {
+  color: var(--mat-sys-on-surface-variant);
+  padding: 32px 0;
+  text-align: center;
+}

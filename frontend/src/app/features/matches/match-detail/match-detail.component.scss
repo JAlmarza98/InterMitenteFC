@@ -1,0 +1,82 @@
+.page {
+  padding: 24px;
+  max-width: 700px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--mat-sys-primary);
+  text-decoration: none;
+  width: fit-content;
+}
+
+.home-away {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85em;
+  font-weight: 400;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.status-select {
+  width: 200px;
+}
+
+.score-row {
+  display: flex;
+  gap: 12px;
+}
+
+.score-field {
+  width: 140px;
+}
+
+.score-display {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.notes {
+  color: var(--mat-sys-on-surface-variant);
+  white-space: pre-wrap;
+}
+
+.squad-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    padding: 8px;
+    color: var(--mat-sys-on-surface-variant);
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+
+  td {
+    padding: 4px 8px;
+    border-top: 1px solid var(--mat-sys-outline-variant);
+  }
+}
+
+.empty-state {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.spinner-row {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}

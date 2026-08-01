@@ -6,6 +6,8 @@ import { errorHandler } from "./middleware/errorHandler";
 import { authRouter } from "./modules/auth/auth.routes";
 import { usersRouter } from "./modules/users/users.routes";
 import { playersRouter } from "./modules/players/players.routes";
+import { seasonsRouter } from "./modules/seasons/seasons.routes";
+import { matchesRouter } from "./modules/matches/matches.routes";
 
 export const app = express();
 
@@ -23,5 +25,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/admin/users", usersRouter);
 app.use("/api/players", playersRouter);
+app.use("/api/seasons", seasonsRouter);
+app.use("/api/matches", matchesRouter);
 
 app.use(errorHandler);

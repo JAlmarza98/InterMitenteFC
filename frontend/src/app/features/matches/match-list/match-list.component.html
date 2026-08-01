@@ -1,0 +1,71 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Partidos</h1>
+    @if (canManage()) {
+      <button mat-flat-button color="primary" (click)="openCreate()">
+        <mat-icon>add</mat-icon>
+        Nuevo partido
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="spinner-row">
+      <mat-spinner diameter="32" />
+    </div>
+  } @else if (matches().length === 0) {
+    <p class="empty-state">Todavía no hay partidos.</p>
+  } @else {
+    <table mat-table [dataSource]="matches()" class="matches-table">
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <td mat-cell *matCellDef="let match">{{ match.matchDate | date: 'dd/MM/yyyy HH:mm' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="opponent">
+        <th mat-header-cell *matHeaderCellDef>Rival</th>
+        <td mat-cell *matCellDef="let match">
+          {{ match.opponent }}
+          <span class="home-away">({{ match.homeAway === 'home' ? 'local' : 'visitante' }})</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="competition">
+        <th mat-header-cell *matHeaderCellDef>Competición</th>
+        <td mat-cell *matCellDef="let match">{{ match.competition ?? '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let match">
+          <mat-chip>{{ statusLabel(match.status) }}</mat-chip>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="score">
+        <th mat-header-cell *matHeaderCellDef>Resultado</th>
+        <td mat-cell *matCellDef="let match">
+          @if (match.teamScore !== null && match.opponentScore !== null) {
+            {{ match.teamScore }} - {{ match.opponentScore }}
+          } @else {
+            —
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let match">
+          @if (canManage()) {
+            <button mat-icon-button (click)="deleteMatch($event, match)" aria-label="Eliminar">
+              <mat-icon>delete</mat-icon>
+            </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" (click)="openMatch(row)" class="clickable-row"></tr>
+    </table>
+  }
+</div>

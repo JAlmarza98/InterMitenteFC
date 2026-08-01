@@ -3,11 +3,19 @@
   <span class="spacer"></span>
 
   @if (auth.isApproved()) {
+    <a mat-button routerLink="/matches">
+      <mat-icon>sports_soccer</mat-icon>
+      Partidos
+    </a>
     <a mat-button routerLink="/players">
       <mat-icon>groups</mat-icon>
       Plantilla
     </a>
     @if (auth.role() === 'admin') {
+      <a mat-button routerLink="/admin/seasons">
+        <mat-icon>event</mat-icon>
+        Temporadas
+      </a>
       <a mat-button routerLink="/admin/users">
         <mat-icon>how_to_reg</mat-icon>
         Usuarios
