@@ -74,6 +74,12 @@
 
       @if (canManage()) {
         <mat-card-actions align="end">
+          @if (m.status !== 'finished') {
+            <a mat-flat-button color="primary" [routerLink]="['/matches', m.id, 'live']">
+              <mat-icon>sports_soccer</mat-icon>
+              Ir al partido en vivo
+            </a>
+          }
           <button mat-button (click)="editMatch()">
             <mat-icon>edit</mat-icon>
             Editar

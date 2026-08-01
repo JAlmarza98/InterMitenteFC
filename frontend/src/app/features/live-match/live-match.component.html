@@ -1,0 +1,113 @@
+<div class="page">
+  <a [routerLink]="['/matches', matchId]" class="back-link">
+    <mat-icon>arrow_back</mat-icon>
+    Volver al partido
+  </a>
+
+  @if (loading()) {
+    <div class="spinner-row">
+      <mat-spinner diameter="32" />
+    </div>
+  } @else if (match()) {
+    @let m = match()!;
+    <mat-card appearance="outlined" class="clock-card">
+      <mat-card-content>
+        <div class="clock-header">
+          <div>
+            <p class="opponent">vs {{ m.opponent }}</p>
+            @if (clockState()?.activePeriodType; as periodType) {
+              <mat-chip>{{ periodLabels[periodType] }}</mat-chip>
+              @if (clockState()?.isPaused) {
+                <mat-chip class="paused-chip">Pausado</mat-chip>
+              }
+            }
+          </div>
+          <div class="time-display">{{ elapsedDisplay() ?? '—' }}</div>
+        </div>
+
+        <div class="controls-row">
+          @if (canStartNext()) {
+            <button mat-flat-button color="primary" [disabled]="actionLoading()" (click)="startNextPeriod()">
+              <mat-icon>play_arrow</mat-icon>
+              Iniciar {{ periodLabels[nextPeriodType()!] }}
+            </button>
+          }
+
+          @if (clockState()?.activePeriodType) {
+            @if (clockState()?.isPaused) {
+              <button mat-stroked-button (click)="resume()">
+                <mat-icon>play_arrow</mat-icon>
+                Reanudar
+              </button>
+            } @else {
+              <button mat-stroked-button (click)="pause()">
+                <mat-icon>pause</mat-icon>
+                Pausar
+              </button>
+            }
+            <button mat-stroked-button (click)="endPeriod()">
+              <mat-icon>stop</mat-icon>
+              Terminar {{ periodLabels[clockState()!.activePeriodType!] }}
+            </button>
+          }
+
+          <button mat-stroked-button color="warn" (click)="finishMatch()">
+            <mat-icon>sports_score</mat-icon>
+            Finalizar partido
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="roster-columns">
+      <mat-card appearance="outlined" class="roster-card">
+        <mat-card-header>
+          <mat-card-title>En el campo ({{ onPitch().length }})</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (onPitch().length === 0) {
+            <p class="empty-state">Nadie en el campo todavía.</p>
+          }
+          @for (row of onPitch(); track row.playerId) {
+            <button
+              class="player-row"
+              [class.selectable]="selectedIncomingId()"
+              (click)="substituteWith(row.playerId)"
+            >
+              <span>{{ row.name }}</span>
+              @if (selectedIncomingId()) {
+                <mat-icon>swap_horiz</mat-icon>
+              }
+            </button>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined" class="roster-card">
+        <mat-card-header>
+          <mat-card-title>Banquillo ({{ bench().length }})</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (bench().length === 0) {
+            <p class="empty-state">No hay suplentes convocados.</p>
+          }
+          @for (row of bench(); track row.playerId) {
+            <button
+              class="player-row"
+              [class.selected]="selectedIncomingId() === row.playerId"
+              (click)="selectIncoming(row.playerId)"
+            >
+              <span>{{ row.name }}</span>
+              @if (selectedIncomingId() === row.playerId) {
+                <mat-icon>check_circle</mat-icon>
+              }
+            </button>
+          }
+          @if (selectedIncomingId()) {
+            <p class="hint">Ahora toca al jugador del campo que sale.</p>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</div>

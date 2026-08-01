@@ -8,6 +8,7 @@ import { SeasonListComponent } from './features/admin/season-list/season-list.co
 import { PlayerListComponent } from './features/players/player-list/player-list.component';
 import { MatchListComponent } from './features/matches/match-list/match-list.component';
 import { MatchDetailComponent } from './features/matches/match-detail/match-detail.component';
+import { LiveMatchComponent } from './features/live-match/live-match.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
@@ -19,6 +20,11 @@ export const routes: Routes = [
   { path: 'players', component: PlayerListComponent, canActivate: [authGuard] },
   { path: 'matches', component: MatchListComponent, canActivate: [authGuard] },
   { path: 'matches/:id', component: MatchDetailComponent, canActivate: [authGuard] },
+  {
+    path: 'matches/:id/live',
+    component: LiveMatchComponent,
+    canActivate: [authGuard, roleGuard('admin', 'coach')],
+  },
   {
     path: 'admin/users',
     component: UserApprovalComponent,
