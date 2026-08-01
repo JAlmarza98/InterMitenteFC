@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  coach
+  member
+}
+
+enum UserStatus {
+  pending
+  approved
+  rejected
+}
+
+enum HomeAway {
+  home
+  away
+}
+
+enum MatchStatus {
+  scheduled
+  live
+  finished
+}
+
+enum PeriodType {
+  first_half
+  second_half
+  extra_first
+  extra_second
+}
+
+enum SegmentSource {
+  live
+  manual
+}
+
+model User {
+  id               String     @id @default(uuid())
+  email            String     @unique
+  passwordHash     String
+  name             String
+  role             UserRole   @default(member)
+  status           UserStatus @default(pending)
+  approvedByUserId String?
+  approvedBy       User?      @relation("UserApprovals", fields: [approvedByUserId], references: [id])
+  approvedUsers    User[]     @relation("UserApprovals")
+  approvedAt       DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  createdMatches   Match[]              @relation("MatchCreatedBy")
+  createdSegments  PlayingTimeSegment[] @relation("SegmentCreatedBy")
+}
+
+model Player {
+  id           String    @id @default(uuid())
+  firstName    String
+  lastName     String
+  jerseyNumber Int?
+  position     String?
+  birthDate    DateTime?
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  squadEntries MatchSquad[]
+  stats        MatchPlayerStat[]
+  segments     PlayingTimeSegment[]
+}
+
+model Season {
+  id        String   @id @default(uuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  matches Match[]
+}
+
+model Match {
+  id             String      @id @default(uuid())
+  seasonId       String?
+  season         Season?     @relation(fields: [seasonId], references: [id])
+  opponent       String
+  matchDate      DateTime
+  homeAway       HomeAway
+  competition    String?
+  teamScore      Int?
+  opponentScore  Int?
+  notes          String?
+  status         MatchStatus @default(scheduled)
+  createdByUserId String?
+  createdBy      User?       @relation("MatchCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  squad      MatchSquad[]
+  stats      MatchPlayerStat[]
+  periods    MatchPeriod[]
+  segments   PlayingTimeSegment[]
+}
+
+model MatchSquad {
+  id        String  @id @default(uuid())
+  matchId   String
+  match     Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  playerId  String
+  player    Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  isStarter Boolean @default(false)
+
+  @@unique([matchId, playerId])
+}
+
+model MatchPlayerStat {
+  id         String @id @default(uuid())
+  matchId    String
+  match      Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  playerId   String
+  player     Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  goals      Int    @default(0)
+  assists    Int    @default(0)
+  yellowCards Int   @default(0)
+  redCards   Int    @default(0)
+  ownGoals   Int    @default(0)
+
+  @@unique([matchId, playerId])
+}
+
+model MatchPeriod {
+  id        String     @id @default(uuid())
+  matchId   String
+  match     Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  type      PeriodType
+  startedAt DateTime?
+  endedAt   DateTime?
+
+  pauses MatchClockPause[]
+
+  @@unique([matchId, type])
+}
+
+model MatchClockPause {
+  id         String      @id @default(uuid())
+  periodId   String
+  period     MatchPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  pausedAt   DateTime
+  resumedAt  DateTime?
+}
+
+model PlayingTimeSegment {
+  id              String        @id @default(uuid())
+  matchId         String
+  match           Match         @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  playerId        String
+  player          Player        @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  periodType      PeriodType
+  startMinute     Int
+  endMinute       Int?
+  startedAt       DateTime?
+  endedAt         DateTime?
+  source          SegmentSource
+  createdByUserId String?
+  createdBy       User?         @relation("SegmentCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([matchId, playerId])
+}
