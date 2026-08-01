@@ -7,24 +7,37 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatchesService, MatchWithSquad } from '../../core/services/matches.service';
+import { StatsService } from '../../core/services/stats.service';
 import {
   ClockState,
   MatchClockService,
   PERIOD_LABELS,
-  PERIOD_OFFSET_MINUTES,
   PERIOD_ORDER,
   PeriodType,
   Segment,
   elapsedSecondsInPeriod,
   formatMinuteSeconds,
+  periodOffsetSeconds,
 } from '../../core/services/match-clock.service';
+
+type StatField = 'goals' | 'assists' | 'yellowCards' | 'redCards';
+
+interface LiveStatCounts {
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+}
 
 interface RosterRow {
   playerId: string;
   name: string;
   isStarter: boolean;
   onPitch: boolean;
+  stats: LiveStatCounts;
 }
+
+const EMPTY_STATS: LiveStatCounts = { goals: 0, assists: 0, yellowCards: 0, redCards: 0 };
 
 @Component({
   selector: 'app-live-match',
@@ -46,6 +59,7 @@ export class LiveMatchComponent {
   private readonly router = inject(Router);
   private readonly matchesService = inject(MatchesService);
   private readonly clockService = inject(MatchClockService);
+  private readonly statsService = inject(StatsService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -57,6 +71,7 @@ export class LiveMatchComponent {
   readonly match = signal<MatchWithSquad | null>(null);
   readonly clockState = signal<ClockState | null>(null);
   readonly segments = signal<Segment[]>([]);
+  readonly statsByPlayer = signal<Map<string, LiveStatCounts>>(new Map());
   readonly selectedIncomingId = signal<string | null>(null);
 
   private offsetMs = 0;
@@ -71,9 +86,10 @@ export class LiveMatchComponent {
   readonly elapsedDisplay = computed(() => {
     const period = this.activePeriod();
     if (!period) return null;
+    const periodLengthMinutes = this.match()?.periodLengthMinutes ?? 30;
     const now = new Date(this.nowTick() + this.offsetMs);
     const seconds = elapsedSecondsInPeriod(period, now);
-    return formatMinuteSeconds(PERIOD_OFFSET_MINUTES[period.type] * 60 + seconds);
+    return formatMinuteSeconds(periodOffsetSeconds(periodLengthMinutes, period.type) + seconds);
   });
 
   readonly nextPeriodType = computed<PeriodType | null>(() => {
@@ -93,12 +109,14 @@ export class LiveMatchComponent {
   private readonly roster = computed<RosterRow[]>(() => {
     const match = this.match();
     if (!match) return [];
-    const onPitchIds = new Set(this.segments().filter((s) => s.endMinute === null).map((s) => s.playerId));
+    const onPitchIds = new Set(this.segments().filter((s) => s.endSecond === null).map((s) => s.playerId));
+    const statsMap = this.statsByPlayer();
     return match.squad.map((entry) => ({
       playerId: entry.playerId,
       name: `${entry.player.firstName} ${entry.player.lastName}`,
       isStarter: entry.isStarter,
       onPitch: onPitchIds.has(entry.playerId),
+      stats: statsMap.get(entry.playerId) ?? EMPTY_STATS,
     }));
   });
 
@@ -126,6 +144,7 @@ export class LiveMatchComponent {
         this.match.set(res.match);
         this.loadClock();
         this.loadSegments();
+        this.loadStats();
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -141,6 +160,21 @@ export class LiveMatchComponent {
 
   private loadSegments() {
     this.clockService.listSegments(this.matchId).subscribe((res) => this.segments.set(res.segments));
+  }
+
+  private loadStats() {
+    this.statsService.getMatchStats(this.matchId).subscribe((res) => {
+      const map = new Map<string, LiveStatCounts>();
+      for (const row of res.players) {
+        map.set(row.playerId, {
+          goals: row.goals,
+          assists: row.assists,
+          yellowCards: row.yellowCards,
+          redCards: row.redCards,
+        });
+      }
+      this.statsByPlayer.set(map);
+    });
   }
 
   private refreshClockAndSegments() {
@@ -198,6 +232,22 @@ export class LiveMatchComponent {
       },
       error: (err) => {
         this.snackBar.open(err.error?.error ?? 'No se pudo realizar el cambio', 'Cerrar', { duration: 3000 });
+      },
+    });
+  }
+
+  incrementStat(event: Event, row: RosterRow, field: StatField) {
+    event.stopPropagation();
+    const newValue = row.stats[field] + 1;
+
+    const updated = new Map(this.statsByPlayer());
+    updated.set(row.playerId, { ...row.stats, [field]: newValue });
+    this.statsByPlayer.set(updated);
+
+    this.statsService.upsertPlayerStat(this.matchId, row.playerId, { [field]: newValue }).subscribe({
+      error: () => {
+        this.snackBar.open('No se pudo guardar la estadística', 'Cerrar', { duration: 3000 });
+        this.loadStats();
       },
     });
   }

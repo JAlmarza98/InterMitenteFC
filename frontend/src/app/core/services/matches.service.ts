@@ -16,6 +16,7 @@ export interface Match {
   opponentScore: number | null;
   notes: string | null;
   status: MatchStatus;
+  periodLengthMinutes: number;
 }
 
 export interface MatchSquadEntry {
@@ -37,6 +38,7 @@ export interface MatchInput {
   homeAway: HomeAway;
   competition?: string | null;
   notes?: string | null;
+  periodLengthMinutes?: number;
 }
 
 export const COMPETITIONS: string[] = ['Liga', 'Copa'];

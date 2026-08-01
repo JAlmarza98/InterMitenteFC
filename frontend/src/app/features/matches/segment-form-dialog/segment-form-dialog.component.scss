@@ -1,0 +1,14 @@
+.minute-second-row {
+  display: flex;
+  gap: var(--space-sm);
+
+  mat-form-field {
+    flex: 1 1 0;
+  }
+}
+
+.hint {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8rem;
+  margin: 0;
+}

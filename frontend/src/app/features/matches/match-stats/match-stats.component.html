@@ -9,6 +9,14 @@
       <mat-spinner diameter="32" />
     </div>
   } @else {
+    @if (canManage()) {
+      <p class="corrections-hint">
+        <mat-icon>info</mat-icon>
+        Esta pantalla es para corregir datos mal apuntados. Para anotar goles, tarjetas y cambios mientras
+        se juega, usa la pantalla de <a [routerLink]="['/matches', matchId, 'live']">partido en vivo</a>.
+      </p>
+    }
+
     <mat-card appearance="outlined">
       <mat-card-header>
         <mat-card-title>Estadísticas del partido</mat-card-title>
@@ -24,9 +32,9 @@
                 <td mat-cell *matCellDef="let row">{{ row.player.firstName }} {{ row.player.lastName }}</td>
               </ng-container>
 
-              <ng-container matColumnDef="minutesPlayed">
-                <th mat-header-cell *matHeaderCellDef>Minutos</th>
-                <td mat-cell *matCellDef="let row">{{ row.minutesPlayed }}'</td>
+              <ng-container matColumnDef="timePlayed">
+                <th mat-header-cell *matHeaderCellDef>Tiempo jugado</th>
+                <td mat-cell *matCellDef="let row">{{ formatTime(row.secondsPlayed) }}</td>
               </ng-container>
 
               <ng-container matColumnDef="goals">
@@ -144,14 +152,14 @@
                 <td mat-cell *matCellDef="let seg">{{ periodLabel(seg.periodType) }}</td>
               </ng-container>
 
-              <ng-container matColumnDef="startMinute">
+              <ng-container matColumnDef="start">
                 <th mat-header-cell *matHeaderCellDef>Entra</th>
-                <td mat-cell *matCellDef="let seg">{{ seg.startMinute }}'</td>
+                <td mat-cell *matCellDef="let seg">{{ formatTime(seg.startSecond) }}</td>
               </ng-container>
 
-              <ng-container matColumnDef="endMinute">
+              <ng-container matColumnDef="end">
                 <th mat-header-cell *matHeaderCellDef>Sale</th>
-                <td mat-cell *matCellDef="let seg">{{ seg.endMinute !== null ? seg.endMinute + "'" : '—' }}</td>
+                <td mat-cell *matCellDef="let seg">{{ seg.endSecond !== null ? formatTime(seg.endSecond) : '—' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="source">

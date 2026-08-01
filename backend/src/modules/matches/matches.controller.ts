@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../db/prisma";
+import { computeLiveElapsedSeconds, segmentDurationSeconds } from "../matchClock/matchClock.service";
 
 const matchSchema = z.object({
   seasonId: z.string().uuid().nullable().optional(),
@@ -9,6 +10,7 @@ const matchSchema = z.object({
   homeAway: z.enum(["home", "away"]),
   competition: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+  periodLengthMinutes: z.number().int().positive().optional(),
 });
 
 const updateMatchSchema = matchSchema.partial().extend({
@@ -111,17 +113,20 @@ export async function upsertPlayerStat(req: Request, res: Response) {
 export async function getMatchStats(req: Request, res: Response) {
   const matchId = req.params.id;
 
-  const [squad, playerStats, segments] = await Promise.all([
+  const [match, squad, playerStats, segments] = await Promise.all([
+    prisma.match.findUniqueOrThrow({ where: { id: matchId }, select: { status: true } }),
     prisma.matchSquad.findMany({ where: { matchId }, include: { player: true } }),
     prisma.matchPlayerStat.findMany({ where: { matchId } }),
     prisma.playingTimeSegment.findMany({ where: { matchId } }),
   ]);
 
-  const minutesByPlayer = new Map<string, number>();
+  const liveCurrentSecond = match.status === "live" ? await computeLiveElapsedSeconds(matchId) : null;
+
+  const secondsByPlayer = new Map<string, number>();
   for (const segment of segments) {
-    if (segment.endMinute === null) continue;
-    const prev = minutesByPlayer.get(segment.playerId) ?? 0;
-    minutesByPlayer.set(segment.playerId, prev + (segment.endMinute - segment.startMinute));
+    const duration = segmentDurationSeconds(segment, liveCurrentSecond);
+    const prev = secondsByPlayer.get(segment.playerId) ?? 0;
+    secondsByPlayer.set(segment.playerId, prev + duration);
   }
   const statsByPlayer = new Map(playerStats.map((s) => [s.playerId, s]));
 
@@ -131,7 +136,7 @@ export async function getMatchStats(req: Request, res: Response) {
       playerId: entry.playerId,
       player: entry.player,
       isStarter: entry.isStarter,
-      minutesPlayed: minutesByPlayer.get(entry.playerId) ?? 0,
+      secondsPlayed: secondsByPlayer.get(entry.playerId) ?? 0,
       goals: stat?.goals ?? 0,
       assists: stat?.assists ?? 0,
       yellowCards: stat?.yellowCards ?? 0,

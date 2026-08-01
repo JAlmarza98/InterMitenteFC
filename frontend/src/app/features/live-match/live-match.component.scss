@@ -104,6 +104,59 @@
   outline: 1px dashed var(--mat-sys-outline-variant);
 }
 
+.on-pitch-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  cursor: default;
+}
+
+.player-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 36px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.stat-actions {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.stat-btn {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  background: transparent;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
+
+.stat-btn:active {
+  background: var(--mat-sys-surface-container-highest);
+}
+
+.stat-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
 .hint {
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.875rem;

@@ -6,6 +6,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SeasonStats, StatsService } from '../../../core/services/stats.service';
 import { Season, SeasonsService } from '../../../core/services/seasons.service';
+import { formatMinuteSeconds } from '../../../core/services/match-clock.service';
 
 @Component({
   selector: 'app-season-stats',
@@ -27,14 +28,18 @@ export class SeasonStatsComponent {
   readonly columns = [
     'name',
     'appearances',
-    'minutesPlayed',
-    'avgMinutes',
+    'timePlayed',
+    'avgTime',
     'goals',
     'assists',
     'yellowCards',
     'redCards',
     'ownGoals',
   ];
+
+  formatTime(totalSeconds: number): string {
+    return formatMinuteSeconds(totalSeconds);
+  }
 
   readonly seasons = signal<Season[]>([]);
   readonly selectedSeasonId = signal<string | null>(null);

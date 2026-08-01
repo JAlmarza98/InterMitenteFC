@@ -42,14 +42,14 @@
                   <td mat-cell *matCellDef="let row">{{ row.appearances }}</td>
                 </ng-container>
 
-                <ng-container matColumnDef="minutesPlayed">
-                  <th mat-header-cell *matHeaderCellDef>Min. totales</th>
-                  <td mat-cell *matCellDef="let row">{{ row.minutesPlayed }}'</td>
+                <ng-container matColumnDef="timePlayed">
+                  <th mat-header-cell *matHeaderCellDef>Tiempo total</th>
+                  <td mat-cell *matCellDef="let row">{{ formatTime(row.secondsPlayed) }}</td>
                 </ng-container>
 
-                <ng-container matColumnDef="avgMinutes">
-                  <th mat-header-cell *matHeaderCellDef>Min./partido</th>
-                  <td mat-cell *matCellDef="let row">{{ row.avgMinutesPerAppearance }}'</td>
+                <ng-container matColumnDef="avgTime">
+                  <th mat-header-cell *matHeaderCellDef>Media/partido</th>
+                  <td mat-cell *matCellDef="let row">{{ formatTime(row.avgSecondsPerAppearance) }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="goals">

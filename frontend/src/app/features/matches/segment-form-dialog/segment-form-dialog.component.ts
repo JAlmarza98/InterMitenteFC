@@ -18,6 +18,7 @@ export interface SegmentFormDialogData {
   standalone: true,
   imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule],
   templateUrl: './segment-form-dialog.component.html',
+  styleUrl: './segment-form-dialog.component.scss',
 })
 export class SegmentFormDialogComponent {
   private readonly fb = inject(FormBuilder);
@@ -28,11 +29,19 @@ export class SegmentFormDialogComponent {
   readonly periodTypes = PERIOD_ORDER;
   readonly periodLabels = PERIOD_LABELS;
 
+  private readonly startMin = this.data.segment ? Math.floor(this.data.segment.startSecond / 60) : 0;
+  private readonly startSec = this.data.segment ? this.data.segment.startSecond % 60 : 0;
+  private readonly endMin =
+    this.data.segment?.endSecond != null ? Math.floor(this.data.segment.endSecond / 60) : null;
+  private readonly endSec = this.data.segment?.endSecond != null ? this.data.segment.endSecond % 60 : null;
+
   readonly form = this.fb.nonNullable.group({
     playerId: [this.data.segment?.playerId ?? '', [Validators.required]],
     periodType: [this.data.segment?.periodType ?? PERIOD_ORDER[0], [Validators.required]],
-    startMinute: [this.data.segment?.startMinute ?? 0, [Validators.required, Validators.min(0)]],
-    endMinute: [this.data.segment?.endMinute ?? (null as number | null)],
+    startMinute: [this.startMin, [Validators.required, Validators.min(0)]],
+    startSecond: [this.startSec, [Validators.min(0), Validators.max(59)]],
+    endMinute: [this.endMin as number | null],
+    endSecond: [this.endSec as number | null, [Validators.min(0), Validators.max(59)]],
   });
 
   submit() {
@@ -44,8 +53,8 @@ export class SegmentFormDialogComponent {
     const result: ManualSegmentInput = {
       playerId: raw.playerId,
       periodType: raw.periodType,
-      startMinute: raw.startMinute,
-      endMinute: raw.endMinute,
+      startSecond: raw.startMinute * 60 + (raw.startSecond || 0),
+      endSecond: raw.endMinute != null ? raw.endMinute * 60 + (raw.endSecond || 0) : null,
     };
     this.dialogRef.close(result);
   }

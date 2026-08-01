@@ -51,6 +51,14 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
+      <mat-label>Duración de cada parte (min)</mat-label>
+      <input matInput type="number" min="1" formControlName="periodLengthMinutes" />
+      @if (form.controls.periodLengthMinutes.hasError('required') && form.controls.periodLengthMinutes.touched) {
+        <mat-error>Obligatorio</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
       <mat-label>Temporada</mat-label>
       <mat-select formControlName="seasonId">
         <mat-option [value]="null">Sin temporada</mat-option>

@@ -56,6 +56,10 @@ export class MatchFormDialogComponent {
     homeAway: [this.data.match?.homeAway ?? ('home' as 'home' | 'away'), [Validators.required]],
     competition: [this.data.match?.competition ?? ''],
     seasonId: [this.data.match?.seasonId ?? (null as string | null)],
+    periodLengthMinutes: [
+      this.data.match?.periodLengthMinutes ?? 30,
+      [Validators.required, Validators.min(1)],
+    ],
     notes: [this.data.match?.notes ?? ''],
   });
 
@@ -71,6 +75,7 @@ export class MatchFormDialogComponent {
       homeAway: raw.homeAway,
       competition: raw.competition || null,
       seasonId: raw.seasonId || null,
+      periodLengthMinutes: raw.periodLengthMinutes,
       notes: raw.notes || null,
     };
     this.dialogRef.close(result);

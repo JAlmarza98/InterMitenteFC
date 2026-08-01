@@ -14,8 +14,8 @@ const substitutionSchema = z.object({
 const manualSegmentSchema = z.object({
   playerId: z.string().uuid(),
   periodType: periodTypeSchema,
-  startMinute: z.number().int().nonnegative(),
-  endMinute: z.number().int().nonnegative().nullable(),
+  startSecond: z.number().int().nonnegative(),
+  endSecond: z.number().int().nonnegative().nullable(),
 });
 
 const updateManualSegmentSchema = manualSegmentSchema.partial();

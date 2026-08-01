@@ -2,19 +2,28 @@ import { MatchClockPause, MatchPeriod, PeriodType } from "@prisma/client";
 import { prisma } from "../../db/prisma";
 import { HttpError } from "../../middleware/errorHandler";
 
-/**
- * Nominal minute at which each period begins, following the usual football
- * convention (45' halves). Lets stored minutes read like a normal match
- * clock without needing to track "added time" precisely.
- */
-const PERIOD_OFFSET_MINUTES: Record<PeriodType, number> = {
-  first_half: 0,
-  second_half: 45,
-  extra_first: 90,
-  extra_second: 105,
-};
-
 const PERIOD_ORDER: PeriodType[] = ["first_half", "second_half", "extra_first", "extra_second"];
+
+/**
+ * Elapsed match seconds at which each period begins, given the match's
+ * configured period length (e.g. 30' halves for this league instead of the
+ * traditional 45'). Extra-time periods are half a regular period. Lets
+ * stored seconds read like a normal match clock without needing to track
+ * "added time" precisely.
+ */
+function periodOffsetSeconds(periodLengthMinutes: number, type: PeriodType): number {
+  const regular = periodLengthMinutes * 60;
+  switch (type) {
+    case "first_half":
+      return 0;
+    case "second_half":
+      return regular;
+    case "extra_first":
+      return regular * 2;
+    case "extra_second":
+      return regular * 2 + Math.floor(regular / 2);
+  }
+}
 
 function elapsedSecondsInPeriod(period: MatchPeriod, pauses: MatchClockPause[], now: Date): number {
   if (!period.startedAt) return 0;
@@ -31,6 +40,14 @@ function isPeriodPaused(pauses: MatchClockPause[]): boolean {
   return pauses.some((p) => p.resumedAt === null);
 }
 
+async function getMatchPeriodLength(matchId: string): Promise<number> {
+  const match = await prisma.match.findUniqueOrThrow({
+    where: { id: matchId },
+    select: { periodLengthMinutes: true },
+  });
+  return match.periodLengthMinutes;
+}
+
 async function getActivePeriod(matchId: string) {
   return prisma.matchPeriod.findFirst({
     where: { matchId, startedAt: { not: null }, endedAt: null },
@@ -38,36 +55,64 @@ async function getActivePeriod(matchId: string) {
   });
 }
 
-/** Current match minute (nominal, offset by period), used to stamp segments/substitutions. */
-async function computeCurrentMinute(matchId: string, now: Date): Promise<{ period: MatchPeriod; minute: number }> {
-  const active = await getActivePeriod(matchId);
+/**
+ * The furthest-along period that has been started, whether it's still
+ * running or already ended (e.g. at half-time, between periods). Used to
+ * compute a frozen "as of now" elapsed time even when the clock isn't
+ * actively ticking, so a player left open across a break doesn't lose the
+ * time they already accrued.
+ */
+async function getMostAdvancedPeriod(matchId: string) {
+  const periods = await prisma.matchPeriod.findMany({
+    where: { matchId, startedAt: { not: null } },
+    include: { pauses: true },
+  });
+  if (periods.length === 0) return null;
+  return periods.reduce((latest, p) =>
+    PERIOD_ORDER.indexOf(p.type) > PERIOD_ORDER.indexOf(latest.type) ? p : latest
+  );
+}
+
+/** Current elapsed match second (offset by period), used to stamp segments/substitutions. */
+async function computeCurrentElapsedSeconds(
+  matchId: string,
+  now: Date
+): Promise<{ period: MatchPeriod; second: number }> {
+  const [active, periodLengthMinutes] = await Promise.all([
+    getActivePeriod(matchId),
+    getMatchPeriodLength(matchId),
+  ]);
   if (!active) {
     throw new HttpError(400, "No hay ningún período en curso");
   }
-  const elapsedMinutes = Math.floor(elapsedSecondsInPeriod(active, active.pauses, now) / 60);
-  return { period: active, minute: PERIOD_OFFSET_MINUTES[active.type] + elapsedMinutes };
+  const elapsed = elapsedSecondsInPeriod(active, active.pauses, now);
+  return { period: active, second: periodOffsetSeconds(periodLengthMinutes, active.type) + elapsed };
 }
 
 export async function getClockState(matchId: string) {
   const now = new Date();
-  const periods = await prisma.matchPeriod.findMany({
-    where: { matchId },
-    include: { pauses: true },
-    orderBy: { type: "asc" },
-  });
+  const [periods, periodLengthMinutes] = await Promise.all([
+    prisma.matchPeriod.findMany({
+      where: { matchId },
+      include: { pauses: true },
+      orderBy: { type: "asc" },
+    }),
+    getMatchPeriodLength(matchId),
+  ]);
 
   const active = periods.find((p) => p.startedAt && !p.endedAt) ?? null;
 
-  let currentMinute: number | null = null;
+  let currentSecond: number | null = null;
   let isPaused = false;
   if (active) {
-    const elapsedMinutes = Math.floor(elapsedSecondsInPeriod(active, active.pauses, now) / 60);
-    currentMinute = PERIOD_OFFSET_MINUTES[active.type] + elapsedMinutes;
+    const elapsed = elapsedSecondsInPeriod(active, active.pauses, now);
+    currentSecond = periodOffsetSeconds(periodLengthMinutes, active.type) + elapsed;
     isPaused = isPeriodPaused(active.pauses);
   }
 
   return {
     serverNow: now.toISOString(),
+    periodLengthMinutes,
     periods: periods.map((p) => ({
       type: p.type,
       startedAt: p.startedAt,
@@ -76,7 +121,7 @@ export async function getClockState(matchId: string) {
     })),
     activePeriodType: active?.type ?? null,
     isPaused,
-    currentMinute,
+    currentSecond,
   };
 }
 
@@ -94,6 +139,7 @@ export async function startPeriod(matchId: string, type: PeriodType) {
   }
 
   const isFirstPeriodOfMatch = type === PERIOD_ORDER[0];
+  const periodLengthMinutes = await getMatchPeriodLength(matchId);
 
   await prisma.$transaction(async (tx) => {
     await tx.matchPeriod.upsert({
@@ -112,7 +158,7 @@ export async function startPeriod(matchId: string, type: PeriodType) {
             matchId,
             playerId: s.playerId,
             periodType: type,
-            startMinute: PERIOD_OFFSET_MINUTES[type],
+            startSecond: periodOffsetSeconds(periodLengthMinutes, type),
             startedAt: now,
             source: "live",
           })),
@@ -159,17 +205,17 @@ export async function endPeriod(matchId: string) {
 
 export async function substitute(matchId: string, playerOutId: string, playerInId: string, userId: string) {
   const now = new Date();
-  const { period, minute } = await computeCurrentMinute(matchId, now);
+  const { period, second } = await computeCurrentElapsedSeconds(matchId, now);
 
   const openOutSegment = await prisma.playingTimeSegment.findFirst({
-    where: { matchId, playerId: playerOutId, endMinute: null },
+    where: { matchId, playerId: playerOutId, endSecond: null },
   });
   if (!openOutSegment) {
     throw new HttpError(400, "El jugador que sale no está actualmente en el campo");
   }
 
   const openInSegment = await prisma.playingTimeSegment.findFirst({
-    where: { matchId, playerId: playerInId, endMinute: null },
+    where: { matchId, playerId: playerInId, endSecond: null },
   });
   if (openInSegment) {
     throw new HttpError(400, "El jugador que entra ya está en el campo");
@@ -178,14 +224,14 @@ export async function substitute(matchId: string, playerOutId: string, playerInI
   await prisma.$transaction([
     prisma.playingTimeSegment.update({
       where: { id: openOutSegment.id },
-      data: { endMinute: minute, endedAt: now },
+      data: { endSecond: second, endedAt: now },
     }),
     prisma.playingTimeSegment.create({
       data: {
         matchId,
         playerId: playerInId,
         periodType: period.type,
-        startMinute: minute,
+        startSecond: second,
         startedAt: now,
         source: "live",
         createdByUserId: userId,
@@ -198,22 +244,26 @@ export async function substitute(matchId: string, playerOutId: string, playerInI
 
 export async function finishMatch(matchId: string) {
   const now = new Date();
-  const active = await getActivePeriod(matchId);
+  const [active, periodLengthMinutes] = await Promise.all([
+    getActivePeriod(matchId),
+    getMatchPeriodLength(matchId),
+  ]);
 
   await prisma.$transaction(async (tx) => {
     if (active) {
       await tx.matchPeriod.update({ where: { id: active.id }, data: { endedAt: now } });
     }
 
-    const finalMinute = active
-      ? PERIOD_OFFSET_MINUTES[active.type] + Math.floor(elapsedSecondsInPeriod(active, active.pauses, now) / 60)
+    const finalSecond = active
+      ? periodOffsetSeconds(periodLengthMinutes, active.type) +
+        elapsedSecondsInPeriod(active, active.pauses, now)
       : null;
 
-    const openSegments = await tx.playingTimeSegment.findMany({ where: { matchId, endMinute: null } });
+    const openSegments = await tx.playingTimeSegment.findMany({ where: { matchId, endSecond: null } });
     for (const segment of openSegments) {
       await tx.playingTimeSegment.update({
         where: { id: segment.id },
-        data: { endMinute: finalMinute ?? segment.startMinute, endedAt: now },
+        data: { endSecond: finalSecond ?? segment.startSecond, endedAt: now },
       });
     }
 
@@ -226,21 +276,21 @@ export async function finishMatch(matchId: string) {
 export interface ManualSegmentInput {
   playerId: string;
   periodType: PeriodType;
-  startMinute: number;
-  endMinute: number | null;
+  startSecond: number;
+  endSecond: number | null;
 }
 
 export async function listSegments(matchId: string) {
   return prisma.playingTimeSegment.findMany({
     where: { matchId },
     include: { player: true },
-    orderBy: [{ startMinute: "asc" }],
+    orderBy: [{ startSecond: "asc" }],
   });
 }
 
 export async function createManualSegment(matchId: string, data: ManualSegmentInput, userId: string) {
-  if (data.endMinute !== null && data.endMinute < data.startMinute) {
-    throw new HttpError(400, "El minuto de salida no puede ser anterior al de entrada");
+  if (data.endSecond !== null && data.endSecond < data.startSecond) {
+    throw new HttpError(400, "El momento de salida no puede ser anterior al de entrada");
   }
   return prisma.playingTimeSegment.create({
     data: { matchId, ...data, source: "manual", createdByUserId: userId },
@@ -254,12 +304,12 @@ export async function updateManualSegment(
   data: Partial<ManualSegmentInput>
 ) {
   if (
-    data.startMinute !== undefined &&
-    data.endMinute !== undefined &&
-    data.endMinute !== null &&
-    data.endMinute < data.startMinute
+    data.startSecond !== undefined &&
+    data.endSecond !== undefined &&
+    data.endSecond !== null &&
+    data.endSecond < data.startSecond
   ) {
-    throw new HttpError(400, "El minuto de salida no puede ser anterior al de entrada");
+    throw new HttpError(400, "El momento de salida no puede ser anterior al de entrada");
   }
   return prisma.playingTimeSegment.update({
     where: { id: segmentId, matchId },
@@ -270,4 +320,40 @@ export async function updateManualSegment(
 
 export async function deleteSegment(matchId: string, segmentId: string) {
   await prisma.playingTimeSegment.delete({ where: { id: segmentId, matchId } });
+}
+
+/**
+ * Elapsed match seconds as of right now (or as of the last period that
+ * ended, e.g. at half-time), for a match that has kicked off at least once.
+ * Returns null if no period has been started yet. Meant to be computed
+ * once and reused across every open segment of a match, rather than
+ * re-querying per segment.
+ */
+export async function computeLiveElapsedSeconds(matchId: string): Promise<number | null> {
+  const [period, periodLengthMinutes] = await Promise.all([
+    getMostAdvancedPeriod(matchId),
+    getMatchPeriodLength(matchId),
+  ]);
+  if (!period) return null;
+  const elapsed = elapsedSecondsInPeriod(period, period.pauses, new Date());
+  return periodOffsetSeconds(periodLengthMinutes, period.type) + elapsed;
+}
+
+/**
+ * Duration in seconds a segment represents. For an open segment, uses
+ * `liveCurrentSecond` (from `computeLiveElapsedSeconds`) instead of 0 — a
+ * player currently on the pitch, or left on across a break, should show
+ * running minutes, not nothing.
+ */
+export function segmentDurationSeconds(
+  segment: { startSecond: number; endSecond: number | null },
+  liveCurrentSecond: number | null
+): number {
+  if (segment.endSecond !== null) {
+    return segment.endSecond - segment.startSecond;
+  }
+  if (liveCurrentSecond === null) {
+    return 0;
+  }
+  return Math.max(0, liveCurrentSecond - segment.startSecond);
 }

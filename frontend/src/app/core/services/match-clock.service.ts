@@ -18,10 +18,11 @@ export interface ClockPeriod {
 
 export interface ClockState {
   serverNow: string;
+  periodLengthMinutes: number;
   periods: ClockPeriod[];
   activePeriodType: PeriodType | null;
   isPaused: boolean;
-  currentMinute: number | null;
+  currentSecond: number | null;
 }
 
 export interface Segment {
@@ -29,8 +30,8 @@ export interface Segment {
   matchId: string;
   playerId: string;
   periodType: PeriodType;
-  startMinute: number;
-  endMinute: number | null;
+  startSecond: number;
+  endSecond: number | null;
   startedAt: string | null;
   endedAt: string | null;
   source: 'live' | 'manual';
@@ -40,8 +41,8 @@ export interface Segment {
 export interface ManualSegmentInput {
   playerId: string;
   periodType: PeriodType;
-  startMinute: number;
-  endMinute: number | null;
+  startSecond: number;
+  endSecond: number | null;
 }
 
 export const PERIOD_LABELS: Record<PeriodType, string> = {
@@ -53,12 +54,24 @@ export const PERIOD_LABELS: Record<PeriodType, string> = {
 
 export const PERIOD_ORDER: PeriodType[] = ['first_half', 'second_half', 'extra_first', 'extra_second'];
 
-export const PERIOD_OFFSET_MINUTES: Record<PeriodType, number> = {
-  first_half: 0,
-  second_half: 45,
-  extra_first: 90,
-  extra_second: 105,
-};
+/**
+ * Elapsed match seconds at which each period begins, given the match's
+ * configured period length. Extra-time periods are half a regular period.
+ * Mirrors the backend formula in matchClock.service.ts.
+ */
+export function periodOffsetSeconds(periodLengthMinutes: number, type: PeriodType): number {
+  const regular = periodLengthMinutes * 60;
+  switch (type) {
+    case 'first_half':
+      return 0;
+    case 'second_half':
+      return regular;
+    case 'extra_first':
+      return regular * 2;
+    case 'extra_second':
+      return regular * 2 + Math.floor(regular / 2);
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class MatchClockService {

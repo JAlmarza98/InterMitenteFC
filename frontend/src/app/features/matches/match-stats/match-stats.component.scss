@@ -11,6 +11,30 @@
   width: fit-content;
 }
 
+.corrections-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+
+  mat-icon {
+    flex-shrink: 0;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+  }
+
+  a {
+    color: var(--mat-sys-primary);
+  }
+}
+
 .stats-table,
 .segments-table {
   width: 100%;

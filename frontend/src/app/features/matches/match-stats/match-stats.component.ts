@@ -15,6 +15,7 @@ import {
   MatchClockService,
   PERIOD_LABELS,
   Segment,
+  formatMinuteSeconds,
 } from '../../../core/services/match-clock.service';
 import { SegmentFormDialogComponent } from '../segment-form-dialog/segment-form-dialog.component';
 
@@ -47,11 +48,15 @@ export class MatchStatsComponent {
   readonly canManage = () => ['admin', 'coach'].includes(this.auth.role() ?? '');
   readonly matchId = this.route.snapshot.paramMap.get('id')!;
 
-  readonly statColumns = ['name', 'minutesPlayed', 'goals', 'assists', 'yellowCards', 'redCards', 'ownGoals'];
-  readonly segmentColumns = ['player', 'period', 'startMinute', 'endMinute', 'source', 'actions'];
+  readonly statColumns = ['name', 'timePlayed', 'goals', 'assists', 'yellowCards', 'redCards', 'ownGoals'];
+  readonly segmentColumns = ['player', 'period', 'start', 'end', 'source', 'actions'];
 
   periodLabel(type: Segment['periodType']): string {
     return PERIOD_LABELS[type];
+  }
+
+  formatTime(totalSeconds: number): string {
+    return formatMinuteSeconds(totalSeconds);
   }
 
   readonly players = signal<MatchPlayerStatRow[]>([]);

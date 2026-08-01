@@ -7,7 +7,7 @@ export interface MatchPlayerStatRow {
   playerId: string;
   player: Player;
   isStarter: boolean;
-  minutesPlayed: number;
+  secondsPlayed: number;
   goals: number;
   assists: number;
   yellowCards: number;
@@ -27,8 +27,8 @@ export interface SeasonStatRow {
   playerId: string;
   player: Player;
   appearances: number;
-  minutesPlayed: number;
-  avgMinutesPerAppearance: number;
+  secondsPlayed: number;
+  avgSecondsPerAppearance: number;
   goals: number;
   assists: number;
   yellowCards: number;

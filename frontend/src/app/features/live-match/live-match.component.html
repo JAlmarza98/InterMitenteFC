@@ -69,16 +69,56 @@
             <p class="empty-state">Nadie en el campo todavía.</p>
           }
           @for (row of onPitch(); track row.playerId) {
-            <button
-              class="player-row"
-              [class.selectable]="selectedIncomingId()"
-              (click)="substituteWith(row.playerId)"
-            >
-              <span>{{ row.name }}</span>
-              @if (selectedIncomingId()) {
-                <mat-icon>swap_horiz</mat-icon>
-              }
-            </button>
+            <div class="player-row on-pitch-row" [class.selectable]="selectedIncomingId()">
+              <button class="player-row-main" (click)="substituteWith(row.playerId)">
+                <span>{{ row.name }}</span>
+                @if (selectedIncomingId()) {
+                  <mat-icon>swap_horiz</mat-icon>
+                }
+              </button>
+              <div class="stat-actions">
+                <button
+                  type="button"
+                  class="stat-btn"
+                  (click)="incrementStat($event, row, 'goals')"
+                  aria-label="Añadir gol"
+                >
+                  ⚽ @if (row.stats.goals) {
+                    <span class="stat-count">{{ row.stats.goals }}</span>
+                  }
+                </button>
+                <button
+                  type="button"
+                  class="stat-btn"
+                  (click)="incrementStat($event, row, 'assists')"
+                  aria-label="Añadir asistencia"
+                >
+                  🅰️ @if (row.stats.assists) {
+                    <span class="stat-count">{{ row.stats.assists }}</span>
+                  }
+                </button>
+                <button
+                  type="button"
+                  class="stat-btn"
+                  (click)="incrementStat($event, row, 'yellowCards')"
+                  aria-label="Añadir tarjeta amarilla"
+                >
+                  🟨 @if (row.stats.yellowCards) {
+                    <span class="stat-count">{{ row.stats.yellowCards }}</span>
+                  }
+                </button>
+                <button
+                  type="button"
+                  class="stat-btn"
+                  (click)="incrementStat($event, row, 'redCards')"
+                  aria-label="Añadir tarjeta roja"
+                >
+                  🟥 @if (row.stats.redCards) {
+                    <span class="stat-count">{{ row.stats.redCards }}</span>
+                  }
+                </button>
+              </div>
+            </div>
           }
         </mat-card-content>
       </mat-card>

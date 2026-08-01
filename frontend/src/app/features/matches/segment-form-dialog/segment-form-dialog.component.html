@@ -20,15 +20,28 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Minuto de entrada</mat-label>
-      <input matInput type="number" min="0" formControlName="startMinute" />
-    </mat-form-field>
+    <div class="minute-second-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Entra (min)</mat-label>
+        <input matInput type="number" min="0" formControlName="startMinute" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Entra (seg)</mat-label>
+        <input matInput type="number" min="0" max="59" formControlName="startSecond" />
+      </mat-form-field>
+    </div>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Minuto de salida</mat-label>
-      <input matInput type="number" min="0" formControlName="endMinute" />
-    </mat-form-field>
+    <div class="minute-second-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Sale (min)</mat-label>
+        <input matInput type="number" min="0" formControlName="endMinute" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Sale (seg)</mat-label>
+        <input matInput type="number" min="0" max="59" formControlName="endSecond" />
+      </mat-form-field>
+    </div>
+    <p class="hint">Deja "Sale" vacío si el jugador terminó el partido en el campo.</p>
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">

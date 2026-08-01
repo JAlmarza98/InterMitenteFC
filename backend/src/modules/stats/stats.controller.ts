@@ -19,17 +19,17 @@ export async function getSeasonStats(req: Request, res: Response) {
   const [playerStats, segments, players] = await Promise.all([
     prisma.matchPlayerStat.findMany({ where: { matchId: { in: matchIds } } }),
     prisma.playingTimeSegment.findMany({
-      where: { matchId: { in: matchIds }, endMinute: { not: null } },
+      where: { matchId: { in: matchIds }, endSecond: { not: null } },
     }),
     prisma.player.findMany({ where: { active: true } }),
   ]);
 
-  const minutesByPlayer = new Map<string, number>();
+  const secondsByPlayer = new Map<string, number>();
   const appearancesByPlayer = new Map<string, Set<string>>();
   for (const segment of segments) {
-    minutesByPlayer.set(
+    secondsByPlayer.set(
       segment.playerId,
-      (minutesByPlayer.get(segment.playerId) ?? 0) + (segment.endMinute! - segment.startMinute)
+      (secondsByPlayer.get(segment.playerId) ?? 0) + (segment.endSecond! - segment.startSecond)
     );
     if (!appearancesByPlayer.has(segment.playerId)) appearancesByPlayer.set(segment.playerId, new Set());
     appearancesByPlayer.get(segment.playerId)!.add(segment.matchId);
@@ -57,7 +57,7 @@ export async function getSeasonStats(req: Request, res: Response) {
 
   const rows = players
     .map((player) => {
-      const minutesPlayed = minutesByPlayer.get(player.id) ?? 0;
+      const secondsPlayed = secondsByPlayer.get(player.id) ?? 0;
       const appearances = appearancesByPlayer.get(player.id)?.size ?? 0;
       const counters = countersByPlayer.get(player.id) ?? {
         goals: 0,
@@ -70,12 +70,12 @@ export async function getSeasonStats(req: Request, res: Response) {
         playerId: player.id,
         player,
         appearances,
-        minutesPlayed,
-        avgMinutesPerAppearance: appearances > 0 ? Math.round(minutesPlayed / appearances) : 0,
+        secondsPlayed,
+        avgSecondsPerAppearance: appearances > 0 ? Math.round(secondsPlayed / appearances) : 0,
         ...counters,
       };
     })
-    .sort((a, b) => b.minutesPlayed - a.minutesPlayed);
+    .sort((a, b) => b.secondsPlayed - a.secondsPlayed);
 
   res.json({ season, matchesPlayed: matchIds.length, players: rows });
 }
