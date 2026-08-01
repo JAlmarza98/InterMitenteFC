@@ -12,12 +12,22 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Fecha de inicio</mat-label>
-      <input matInput type="date" formControlName="startDate" />
+      <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
+      <mat-datepicker-toggle matIconSuffix [for]="startPicker" />
+      <mat-datepicker #startPicker />
+      @if (form.controls.startDate.hasError('required') && form.controls.startDate.touched) {
+        <mat-error>Obligatorio</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
       <mat-label>Fecha de fin</mat-label>
-      <input matInput type="date" formControlName="endDate" />
+      <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
+      <mat-datepicker-toggle matIconSuffix [for]="endPicker" />
+      <mat-datepicker #endPicker />
+      @if (form.controls.endDate.hasError('required') && form.controls.endDate.touched) {
+        <mat-error>Obligatorio</mat-error>
+      }
     </mat-form-field>
 
     <mat-checkbox formControlName="isActive">Temporada activa</mat-checkbox>

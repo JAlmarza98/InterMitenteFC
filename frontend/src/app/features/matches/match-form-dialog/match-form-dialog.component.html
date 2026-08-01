@@ -10,13 +10,27 @@
       }
     </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Fecha y hora</mat-label>
-      <input matInput type="datetime-local" formControlName="matchDate" />
-      @if (form.controls.matchDate.hasError('required') && form.controls.matchDate.touched) {
-        <mat-error>Obligatorio</mat-error>
-      }
-    </mat-form-field>
+    <div class="date-time-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha</mat-label>
+        <input matInput [matDatepicker]="datePicker" formControlName="matchDate" />
+        <mat-datepicker-toggle matIconSuffix [for]="datePicker" />
+        <mat-datepicker #datePicker />
+        @if (form.controls.matchDate.hasError('required') && form.controls.matchDate.touched) {
+          <mat-error>Obligatorio</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hora</mat-label>
+        <input matInput [matTimepicker]="timePicker" formControlName="matchTime" />
+        <mat-timepicker-toggle matIconSuffix [for]="timePicker" />
+        <mat-timepicker #timePicker interval="15m" />
+        @if (form.controls.matchTime.hasError('required') && form.controls.matchTime.touched) {
+          <mat-error>Obligatorio</mat-error>
+        }
+      </mat-form-field>
+    </div>
 
     <mat-form-field appearance="outline">
       <mat-label>Local / Visitante</mat-label>

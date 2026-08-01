@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Season, SeasonInput } from '../../../core/services/seasons.service';
@@ -15,6 +16,7 @@ import { Season, SeasonInput } from '../../../core/services/seasons.service';
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
+    MatDatepickerModule,
     MatButtonModule,
     MatCheckboxModule,
   ],
@@ -29,8 +31,14 @@ export class SeasonFormDialogComponent {
 
   readonly form = this.fb.nonNullable.group({
     name: [this.data.season?.name ?? '', [Validators.required]],
-    startDate: [this.data.season?.startDate?.slice(0, 10) ?? '', [Validators.required]],
-    endDate: [this.data.season?.endDate?.slice(0, 10) ?? '', [Validators.required]],
+    startDate: [
+      this.data.season?.startDate ? new Date(this.data.season.startDate) : (null as Date | null),
+      [Validators.required],
+    ],
+    endDate: [
+      this.data.season?.endDate ? new Date(this.data.season.endDate) : (null as Date | null),
+      [Validators.required],
+    ],
     isActive: [this.data.season?.isActive ?? false],
   });
 
@@ -42,8 +50,8 @@ export class SeasonFormDialogComponent {
     const raw = this.form.getRawValue();
     const result: SeasonInput = {
       name: raw.name,
-      startDate: raw.startDate,
-      endDate: raw.endDate,
+      startDate: raw.startDate!.toISOString(),
+      endDate: raw.endDate!.toISOString(),
       isActive: raw.isActive,
     };
     this.dialogRef.close(result);

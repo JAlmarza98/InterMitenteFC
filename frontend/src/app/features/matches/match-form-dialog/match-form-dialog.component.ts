@@ -3,6 +3,8 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatTimepickerModule } from '@angular/material/timepicker';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { Match, MatchInput } from '../../../core/services/matches.service';
@@ -13,11 +15,10 @@ export interface MatchFormDialogData {
   seasons: Season[];
 }
 
-function toDatetimeLocal(iso: string | null | undefined): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function combineDateAndTime(date: Date, time: Date): Date {
+  const combined = new Date(date);
+  combined.setHours(time.getHours(), time.getMinutes(), 0, 0);
+  return combined;
 }
 
 @Component({
@@ -28,10 +29,13 @@ function toDatetimeLocal(iso: string | null | undefined): string {
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
+    MatDatepickerModule,
+    MatTimepickerModule,
     MatSelectModule,
     MatButtonModule,
   ],
   templateUrl: './match-form-dialog.component.html',
+  styleUrl: './match-form-dialog.component.scss',
 })
 export class MatchFormDialogComponent {
   private readonly fb = inject(FormBuilder);
@@ -40,9 +44,14 @@ export class MatchFormDialogComponent {
 
   readonly isEdit = !!this.data.match;
 
+  private readonly initialMatchDate = this.data.match?.matchDate
+    ? new Date(this.data.match.matchDate)
+    : null;
+
   readonly form = this.fb.nonNullable.group({
     opponent: [this.data.match?.opponent ?? '', [Validators.required]],
-    matchDate: [toDatetimeLocal(this.data.match?.matchDate), [Validators.required]],
+    matchDate: [this.initialMatchDate, [Validators.required]],
+    matchTime: [this.initialMatchDate, [Validators.required]],
     homeAway: [this.data.match?.homeAway ?? ('home' as 'home' | 'away'), [Validators.required]],
     competition: [this.data.match?.competition ?? ''],
     seasonId: [this.data.match?.seasonId ?? (null as string | null)],
@@ -57,7 +66,7 @@ export class MatchFormDialogComponent {
     const raw = this.form.getRawValue();
     const result: MatchInput = {
       opponent: raw.opponent,
-      matchDate: new Date(raw.matchDate).toISOString(),
+      matchDate: combineDateAndTime(raw.matchDate!, raw.matchTime!).toISOString(),
       homeAway: raw.homeAway,
       competition: raw.competition || null,
       seasonId: raw.seasonId || null,
