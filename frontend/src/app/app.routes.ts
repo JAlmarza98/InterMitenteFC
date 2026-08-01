@@ -4,6 +4,7 @@ import { LoginComponent } from './features/auth/login/login.component';
 import { RegisterComponent } from './features/auth/register/register.component';
 import { PendingApprovalComponent } from './features/auth/pending-approval/pending-approval.component';
 import { UserApprovalComponent } from './features/admin/user-approval/user-approval.component';
+import { PlayerListComponent } from './features/players/player-list/player-list.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
@@ -12,6 +13,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'pending-approval', component: PendingApprovalComponent },
+  { path: 'players', component: PlayerListComponent, canActivate: [authGuard] },
   {
     path: 'admin/users',
     component: UserApprovalComponent,

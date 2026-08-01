@@ -3,6 +3,10 @@
   <span class="spacer"></span>
 
   @if (auth.isApproved()) {
+    <a mat-button routerLink="/players">
+      <mat-icon>groups</mat-icon>
+      Plantilla
+    </a>
     @if (auth.role() === 'admin') {
       <a mat-button routerLink="/admin/users">
         <mat-icon>how_to_reg</mat-icon>
