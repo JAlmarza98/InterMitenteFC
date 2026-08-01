@@ -49,16 +49,18 @@
 
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let player" class="actions-cell">
+        <td mat-cell *matCellDef="let player">
           @if (canManage()) {
-            <button mat-icon-button (click)="openEdit(player)" aria-label="Editar">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <mat-slide-toggle
-              [checked]="player.active"
-              (change)="toggleActive(player)"
-              [matTooltip]="player.active ? 'Desactivar' : 'Activar'"
-            />
+            <div class="actions-cell">
+              <button mat-icon-button (click)="openEdit(player)" aria-label="Editar">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <mat-slide-toggle
+                [checked]="player.active"
+                (change)="toggleActive(player)"
+                [matTooltip]="player.active ? 'Desactivar' : 'Activar'"
+              />
+            </div>
           }
         </td>
       </ng-container>

@@ -46,19 +46,21 @@
 
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let user" class="actions-cell">
-          @if (user.status !== 'approved') {
-            <button mat-flat-button color="primary" (click)="approve(user)">
-              <mat-icon>check</mat-icon>
-              Aprobar
-            </button>
-          }
-          @if (user.status !== 'rejected') {
-            <button mat-stroked-button color="warn" (click)="reject(user)">
-              <mat-icon>close</mat-icon>
-              Rechazar
-            </button>
-          }
+        <td mat-cell *matCellDef="let user">
+          <div class="actions-cell">
+            @if (user.status !== 'approved') {
+              <button mat-flat-button color="primary" (click)="approve(user)">
+                <mat-icon>check</mat-icon>
+                Aprobar
+              </button>
+            }
+            @if (user.status !== 'rejected') {
+              <button mat-stroked-button color="warn" (click)="reject(user)">
+                <mat-icon>close</mat-icon>
+                Rechazar
+              </button>
+            }
+          </div>
         </td>
       </ng-container>
 
