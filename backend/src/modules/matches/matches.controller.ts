@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../db/prisma";
+import { HttpError } from "../../middleware/errorHandler";
 import {
+  closeOpenClockState,
   computeLiveElapsedSeconds,
   getEventStamp,
   segmentDurationSeconds,
@@ -66,6 +69,13 @@ const STAT_FIELD_BY_EVENT_TYPE: Record<(typeof STAT_EVENT_TYPES)[number], string
   own_goal: "ownGoals",
 };
 
+// A "goal" adds to our score; an "own_goal" (autogol) is put into our own
+// net by one of our players, so it counts for the opponent instead.
+const SCORE_FIELD_BY_EVENT_TYPE: Partial<Record<(typeof STAT_EVENT_TYPES)[number], "teamScore" | "opponentScore">> = {
+  goal: "teamScore",
+  own_goal: "opponentScore",
+};
+
 export async function listMatches(req: Request, res: Response) {
   const { seasonId, status } = listQuerySchema.parse(req.query);
   const matches = await prisma.match.findMany({
@@ -95,7 +105,34 @@ export async function createMatch(req: Request, res: Response) {
 
 export async function updateMatch(req: Request, res: Response) {
   const data = updateMatchSchema.parse(req.body);
-  const match = await prisma.match.update({ where: { id: req.params.id }, data });
+  const matchId = req.params.id;
+
+  if (data.periodLengthMinutes !== undefined) {
+    const hasStartedPeriod = await prisma.matchPeriod.findFirst({
+      where: { matchId, startedAt: { not: null } },
+      select: { id: true },
+    });
+    if (hasStartedPeriod) {
+      throw new HttpError(
+        400,
+        "No se puede cambiar la duración del período: el partido ya tiene tiempo registrado"
+      );
+    }
+  }
+
+  if (data.status === "finished") {
+    const current = await prisma.match.findUniqueOrThrow({ where: { id: matchId }, select: { status: true } });
+    if (current.status !== "finished") {
+      const match = await prisma.$transaction(async (tx) => {
+        await closeOpenClockState(tx, matchId, new Date());
+        return tx.match.update({ where: { id: matchId }, data });
+      });
+      res.json({ match });
+      return;
+    }
+  }
+
+  const match = await prisma.match.update({ where: { id: matchId }, data });
   res.json({ match });
 }
 
@@ -181,14 +218,11 @@ export async function logMatchEvent(req: Request, res: Response) {
 
   if (type === "opponent_goal") {
     const [match, event] = await prisma.$transaction(async (tx) => {
-      const current = await tx.match.findUniqueOrThrow({
-        where: { id: matchId },
-        select: { opponentScore: true },
-      });
-      const updatedMatch = await tx.match.update({
-        where: { id: matchId },
-        data: { opponentScore: (current.opponentScore ?? 0) + 1 },
-      });
+      // Atomic SQL increment (vs. read-then-write) so two near-simultaneous
+      // goals can't both read the same starting value and lose one.
+      // COALESCE handles the score still being NULL (match not yet scored).
+      await tx.$executeRaw`UPDATE "Match" SET "opponentScore" = COALESCE("opponentScore", 0) + 1 WHERE id = ${matchId}`;
+      const updatedMatch = await tx.match.findUniqueOrThrow({ where: { id: matchId } });
       const createdEvent = await tx.matchEvent.create({
         data: { matchId, type, periodType, second, createdByUserId: req.user!.id },
         include: { player: true, relatedPlayer: true },
@@ -201,20 +235,27 @@ export async function logMatchEvent(req: Request, res: Response) {
   }
 
   const field = STAT_FIELD_BY_EVENT_TYPE[type as (typeof STAT_EVENT_TYPES)[number]];
+  const scoreField = SCORE_FIELD_BY_EVENT_TYPE[type as (typeof STAT_EVENT_TYPES)[number]];
 
-  const [stat, event] = await prisma.$transaction([
-    prisma.matchPlayerStat.upsert({
+  const [match, stat, event] = await prisma.$transaction(async (tx) => {
+    if (scoreField) {
+      const column = Prisma.raw(`"${scoreField}"`);
+      await tx.$executeRaw`UPDATE "Match" SET ${column} = COALESCE(${column}, 0) + 1 WHERE id = ${matchId}`;
+    }
+    const updatedMatch = scoreField ? await tx.match.findUniqueOrThrow({ where: { id: matchId } }) : null;
+    const upsertedStat = await tx.matchPlayerStat.upsert({
       where: { matchId_playerId: { matchId, playerId: playerId! } },
       create: { matchId, playerId: playerId!, [field]: 1 },
       update: { [field]: { increment: 1 } },
-    }),
-    prisma.matchEvent.create({
+    });
+    const createdEvent = await tx.matchEvent.create({
       data: { matchId, playerId, type, periodType, second, createdByUserId: req.user!.id },
       include: { player: true },
-    }),
-  ]);
+    });
+    return [updatedMatch, upsertedStat, createdEvent] as const;
+  });
 
-  res.status(201).json({ stat, event });
+  res.status(201).json({ match, stat, event });
 }
 
 export async function listMatchEvents(req: Request, res: Response) {

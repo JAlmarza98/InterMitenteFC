@@ -236,27 +236,47 @@ export class LiveMatchComponent {
         this.actionLoading.set(false);
         this.refreshClockAndSegments();
       },
-      error: () => this.actionLoading.set(false),
+      error: (err) => {
+        this.actionLoading.set(false);
+        this.showActionError(err, 'No se pudo iniciar el período');
+      },
     });
   }
 
+  private showActionError(err: unknown, fallback: string) {
+    const message = (err as { error?: { error?: string } })?.error?.error ?? fallback;
+    this.snackBar.open(message, 'Cerrar', { duration: 3000 });
+  }
+
   pause() {
-    this.clockService.pause(this.matchId).subscribe(() => this.loadClock());
+    this.clockService.pause(this.matchId).subscribe({
+      next: () => this.loadClock(),
+      error: (err) => this.showActionError(err, 'No se pudo pausar el partido'),
+    });
   }
 
   resume() {
-    this.clockService.resume(this.matchId).subscribe(() => this.loadClock());
+    this.clockService.resume(this.matchId).subscribe({
+      next: () => this.loadClock(),
+      error: (err) => this.showActionError(err, 'No se pudo reanudar el partido'),
+    });
   }
 
   endPeriod() {
-    this.clockService.endPeriod(this.matchId).subscribe(() => this.refreshClockAndSegments());
+    this.clockService.endPeriod(this.matchId).subscribe({
+      next: () => this.refreshClockAndSegments(),
+      error: (err) => this.showActionError(err, 'No se pudo terminar el período'),
+    });
   }
 
   finishMatch() {
     if (!confirm('¿Finalizar el partido? Se cerrará el tiempo de juego de los jugadores en pista.')) return;
-    this.clockService.finish(this.matchId).subscribe(() => {
-      this.snackBar.open('Partido finalizado', 'Cerrar', { duration: 3000 });
-      this.router.navigate(['/matches', this.matchId]);
+    this.clockService.finish(this.matchId).subscribe({
+      next: () => {
+        this.snackBar.open('Partido finalizado', 'Cerrar', { duration: 3000 });
+        this.router.navigate(['/matches', this.matchId]);
+      },
+      error: (err) => this.showActionError(err, 'No se pudo finalizar el partido'),
     });
   }
 

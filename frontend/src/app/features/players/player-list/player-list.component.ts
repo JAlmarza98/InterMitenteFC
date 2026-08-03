@@ -62,13 +62,21 @@ export class PlayerListComponent {
     this.load();
   }
 
+  private showError(err: unknown, fallback: string) {
+    const message = (err as { error?: { error?: string } })?.error?.error ?? fallback;
+    this.snackBar.open(message, 'Cerrar', { duration: 3000 });
+  }
+
   openCreate() {
     const ref = this.dialog.open(PlayerFormDialogComponent, { data: { player: null }, width: '420px' });
     ref.afterClosed().subscribe((result) => {
       if (!result) return;
-      this.playersService.create(result).subscribe(() => {
-        this.snackBar.open('Jugador creado', 'Cerrar', { duration: 3000 });
-        this.load();
+      this.playersService.create(result).subscribe({
+        next: () => {
+          this.snackBar.open('Jugador creado', 'Cerrar', { duration: 3000 });
+          this.load();
+        },
+        error: (err) => this.showError(err, 'No se pudo crear el jugador'),
       });
     });
   }
@@ -77,19 +85,25 @@ export class PlayerListComponent {
     const ref = this.dialog.open(PlayerFormDialogComponent, { data: { player }, width: '420px' });
     ref.afterClosed().subscribe((result) => {
       if (!result) return;
-      this.playersService.update(player.id, result).subscribe(() => {
-        this.snackBar.open('Jugador actualizado', 'Cerrar', { duration: 3000 });
-        this.load();
+      this.playersService.update(player.id, result).subscribe({
+        next: () => {
+          this.snackBar.open('Jugador actualizado', 'Cerrar', { duration: 3000 });
+          this.load();
+        },
+        error: (err) => this.showError(err, 'No se pudo actualizar el jugador'),
       });
     });
   }
 
   toggleActive(player: Player) {
-    this.playersService.update(player.id, { active: !player.active }).subscribe(() => {
-      this.snackBar.open(player.active ? 'Jugador desactivado' : 'Jugador activado', 'Cerrar', {
-        duration: 3000,
-      });
-      this.load();
+    this.playersService.update(player.id, { active: !player.active }).subscribe({
+      next: () => {
+        this.snackBar.open(player.active ? 'Jugador desactivado' : 'Jugador activado', 'Cerrar', {
+          duration: 3000,
+        });
+        this.load();
+      },
+      error: (err) => this.showError(err, 'No se pudo actualizar el estado del jugador'),
     });
   }
 }

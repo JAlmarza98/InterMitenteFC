@@ -42,6 +42,9 @@
       </mat-form-field>
     </div>
     <p class="hint">Deja "Sale" vacío si el jugador terminó el partido en el campo.</p>
+    @if (form.errors?.['endBeforeStart']) {
+      <p class="error">El momento de salida no puede ser anterior al de entrada.</p>
+    }
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">

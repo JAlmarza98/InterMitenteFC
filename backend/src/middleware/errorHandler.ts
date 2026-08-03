@@ -36,6 +36,12 @@ export function errorHandler(
     if (err.code === "P2002") {
       return res.status(409).json({ error: "Conflict: duplicate value" });
     }
+    if (err.code === "P2003") {
+      return res.status(400).json({ error: "Invalid reference: related record does not exist" });
+    }
+    if (err.code === "P2034") {
+      return res.status(409).json({ error: "Conflict: concurrent update, please retry" });
+    }
   }
   console.error(err);
   return res.status(500).json({ error: "Internal server error" });

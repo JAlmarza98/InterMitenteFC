@@ -50,13 +50,21 @@ export class SeasonListComponent {
     });
   }
 
+  private showError(err: unknown, fallback: string) {
+    const message = (err as { error?: { error?: string } })?.error?.error ?? fallback;
+    this.snackBar.open(message, 'Cerrar', { duration: 3000 });
+  }
+
   openCreate() {
     const ref = this.dialog.open(SeasonFormDialogComponent, { data: { season: null }, width: '420px' });
     ref.afterClosed().subscribe((result) => {
       if (!result) return;
-      this.seasonsService.create(result).subscribe(() => {
-        this.snackBar.open('Temporada creada', 'Cerrar', { duration: 3000 });
-        this.load();
+      this.seasonsService.create(result).subscribe({
+        next: () => {
+          this.snackBar.open('Temporada creada', 'Cerrar', { duration: 3000 });
+          this.load();
+        },
+        error: (err) => this.showError(err, 'No se pudo crear la temporada'),
       });
     });
   }
@@ -65,9 +73,12 @@ export class SeasonListComponent {
     const ref = this.dialog.open(SeasonFormDialogComponent, { data: { season }, width: '420px' });
     ref.afterClosed().subscribe((result) => {
       if (!result) return;
-      this.seasonsService.update(season.id, result).subscribe(() => {
-        this.snackBar.open('Temporada actualizada', 'Cerrar', { duration: 3000 });
-        this.load();
+      this.seasonsService.update(season.id, result).subscribe({
+        next: () => {
+          this.snackBar.open('Temporada actualizada', 'Cerrar', { duration: 3000 });
+          this.load();
+        },
+        error: (err) => this.showError(err, 'No se pudo actualizar la temporada'),
       });
     });
   }

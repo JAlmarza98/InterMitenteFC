@@ -145,6 +145,11 @@ export class MatchDetailComponent {
     this.squadRows.set([...this.squadRows()]);
   }
 
+  private showError(err: unknown, fallback: string) {
+    const message = (err as { error?: { error?: string } })?.error?.error ?? fallback;
+    this.snackBar.open(message, 'Cerrar', { duration: 3000 });
+  }
+
   saveSquad() {
     const players = this.squadRows()
       .filter((r) => r.called)
@@ -157,7 +162,10 @@ export class MatchDetailComponent {
         this.snackBar.open('Convocatoria guardada', 'Cerrar', { duration: 3000 });
         this.load();
       },
-      error: () => this.savingSquad.set(false),
+      error: (err) => {
+        this.savingSquad.set(false);
+        this.showError(err, 'No se pudo guardar la convocatoria');
+      },
     });
   }
 
@@ -171,31 +179,45 @@ export class MatchDetailComponent {
       });
       ref.afterClosed().subscribe((result) => {
         if (!result) return;
-        this.matchesService.update(this.matchId, result).subscribe(() => {
-          this.snackBar.open('Partido actualizado', 'Cerrar', { duration: 3000 });
-          this.load();
+        this.matchesService.update(this.matchId, result).subscribe({
+          next: () => {
+            this.snackBar.open('Partido actualizado', 'Cerrar', { duration: 3000 });
+            this.load();
+          },
+          error: (err) => this.showError(err, 'No se pudo actualizar el partido'),
         });
       });
     });
   }
 
   changeStatus(status: MatchStatus) {
-    this.matchesService.update(this.matchId, { status }).subscribe(() => this.load());
+    this.matchesService.update(this.matchId, { status }).subscribe({
+      next: () => this.load(),
+      error: (err) => {
+        this.showError(err, 'No se pudo cambiar el estado del partido');
+        this.load(); // revert the select back to the actual stored status
+      },
+    });
   }
 
   updateScore(teamScore: string, opponentScore: string) {
     const team = teamScore === '' ? null : Number(teamScore);
     const opponent = opponentScore === '' ? null : Number(opponentScore);
-    this.matchesService.update(this.matchId, { teamScore: team, opponentScore: opponent }).subscribe(() =>
-      this.load()
-    );
+    this.matchesService.update(this.matchId, { teamScore: team, opponentScore: opponent }).subscribe({
+      next: () => this.load(),
+      error: (err) => {
+        this.showError(err, 'No se pudo guardar el marcador');
+        this.load(); // revert the inputs back to the actual stored score
+      },
+    });
   }
 
   deleteMatch() {
     const match = this.match();
     if (!match || !confirm(`¿Eliminar el partido contra ${match.opponent}?`)) return;
-    this.matchesService.delete(this.matchId).subscribe(() => {
-      this.router.navigateByUrl('/matches');
+    this.matchesService.delete(this.matchId).subscribe({
+      next: () => this.router.navigateByUrl('/matches'),
+      error: (err) => this.showError(err, 'No se pudo eliminar el partido'),
     });
   }
 }

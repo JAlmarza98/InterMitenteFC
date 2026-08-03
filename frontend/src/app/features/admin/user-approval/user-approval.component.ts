@@ -58,24 +58,41 @@ export class UserApprovalComponent {
     });
   }
 
+  private showError(err: unknown, fallback: string) {
+    const message = (err as { error?: { error?: string } })?.error?.error ?? fallback;
+    this.snackBar.open(message, 'Cerrar', { duration: 3000 });
+  }
+
   approve(user: CurrentUser) {
-    this.adminUsers.approve(user.id).subscribe(() => {
-      this.snackBar.open(`${user.name} aprobado`, 'Cerrar', { duration: 3000 });
-      this.load();
+    this.adminUsers.approve(user.id).subscribe({
+      next: () => {
+        this.snackBar.open(`${user.name} aprobado`, 'Cerrar', { duration: 3000 });
+        this.load();
+      },
+      error: (err) => this.showError(err, `No se pudo aprobar a ${user.name}`),
     });
   }
 
   reject(user: CurrentUser) {
-    this.adminUsers.reject(user.id).subscribe(() => {
-      this.snackBar.open(`${user.name} rechazado`, 'Cerrar', { duration: 3000 });
-      this.load();
+    this.adminUsers.reject(user.id).subscribe({
+      next: () => {
+        this.snackBar.open(`${user.name} rechazado`, 'Cerrar', { duration: 3000 });
+        this.load();
+      },
+      error: (err) => this.showError(err, `No se pudo rechazar a ${user.name}`),
     });
   }
 
   changeRole(user: CurrentUser, role: UserRole) {
-    this.adminUsers.updateRole(user.id, role).subscribe(() => {
-      this.snackBar.open(`Rol de ${user.name} actualizado a ${role}`, 'Cerrar', { duration: 3000 });
-      this.load();
+    this.adminUsers.updateRole(user.id, role).subscribe({
+      next: () => {
+        this.snackBar.open(`Rol de ${user.name} actualizado a ${role}`, 'Cerrar', { duration: 3000 });
+        this.load();
+      },
+      error: (err) => {
+        this.showError(err, `No se pudo actualizar el rol de ${user.name}`);
+        this.load(); // revert the select back to the actual stored role
+      },
     });
   }
 }

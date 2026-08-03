@@ -72,6 +72,11 @@ export class MatchListComponent {
     this.router.navigate(['/matches', match.id]);
   }
 
+  private showError(err: unknown, fallback: string) {
+    const message = (err as { error?: { error?: string } })?.error?.error ?? fallback;
+    this.snackBar.open(message, 'Cerrar', { duration: 3000 });
+  }
+
   openCreate() {
     this.seasonsService.list().subscribe((seasonsRes) => {
       const ref = this.dialog.open(MatchFormDialogComponent, {
@@ -80,9 +85,12 @@ export class MatchListComponent {
       });
       ref.afterClosed().subscribe((result) => {
         if (!result) return;
-        this.matchesService.create(result).subscribe(() => {
-          this.snackBar.open('Partido creado', 'Cerrar', { duration: 3000 });
-          this.load();
+        this.matchesService.create(result).subscribe({
+          next: () => {
+            this.snackBar.open('Partido creado', 'Cerrar', { duration: 3000 });
+            this.load();
+          },
+          error: (err) => this.showError(err, 'No se pudo crear el partido'),
         });
       });
     });
@@ -91,9 +99,12 @@ export class MatchListComponent {
   deleteMatch(event: Event, match: Match) {
     event.stopPropagation();
     if (!confirm(`¿Eliminar el partido contra ${match.opponent}?`)) return;
-    this.matchesService.delete(match.id).subscribe(() => {
-      this.snackBar.open('Partido eliminado', 'Cerrar', { duration: 3000 });
-      this.load();
+    this.matchesService.delete(match.id).subscribe({
+      next: () => {
+        this.snackBar.open('Partido eliminado', 'Cerrar', { duration: 3000 });
+        this.load();
+      },
+      error: (err) => this.showError(err, 'No se pudo eliminar el partido'),
     });
   }
 }

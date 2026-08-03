@@ -8,6 +8,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Season, SeasonInput } from '../../../core/services/seasons.service';
 
+/** Formats using the datepicker's local y/m/d, not `toISOString()` — that
+ * converts local midnight to UTC, which silently shifts the date back a day
+ * in any timezone ahead of UTC (e.g. Jan 1 local becomes Dec 31T23:00Z). */
+function toDateOnlyString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 @Component({
   selector: 'app-season-form-dialog',
   standalone: true,
@@ -50,8 +60,8 @@ export class SeasonFormDialogComponent {
     const raw = this.form.getRawValue();
     const result: SeasonInput = {
       name: raw.name,
-      startDate: raw.startDate!.toISOString(),
-      endDate: raw.endDate!.toISOString(),
+      startDate: toDateOnlyString(raw.startDate!),
+      endDate: toDateOnlyString(raw.endDate!),
       isActive: raw.isActive,
     };
     this.dialogRef.close(result);
