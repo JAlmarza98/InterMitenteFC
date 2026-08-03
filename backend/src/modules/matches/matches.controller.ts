@@ -31,6 +31,10 @@ const listQuerySchema = z.object({
   status: z.enum(["scheduled", "live", "finished"]).optional(),
 });
 
+// Fútbol 7: the starting XI is 7 players, no more, no less — also the cap
+// on how many can ever be on the pitch at once during the match.
+const SQUAD_SIZE = 7;
+
 const squadSchema = z.object({
   players: z.array(
     z.object({
@@ -145,6 +149,11 @@ export async function putSquad(req: Request, res: Response) {
   const { players } = squadSchema.parse(req.body);
   const matchId = req.params.id;
 
+  const startersCount = players.filter((p) => p.isStarter).length;
+  if (startersCount !== SQUAD_SIZE) {
+    throw new HttpError(400, `El equipo titular debe tener exactamente ${SQUAD_SIZE} jugadores (fútbol 7)`);
+  }
+
   await prisma.$transaction([
     prisma.matchSquad.deleteMany({ where: { matchId } }),
     prisma.matchSquad.createMany({
@@ -252,6 +261,17 @@ export async function logMatchEvent(req: Request, res: Response) {
       data: { matchId, playerId, type, periodType, second, createdByUserId: req.user!.id },
       include: { player: true },
     });
+
+    // A red card sends the player off for the rest of the match: close
+    // their playing-time segment right now instead of leaving it open (and
+    // ticking) until someone remembers to substitute them out.
+    if (type === "red_card") {
+      await tx.playingTimeSegment.updateMany({
+        where: { matchId, playerId: playerId!, endSecond: null },
+        data: { endSecond: second, endedAt: new Date() },
+      });
+    }
+
     return [updatedMatch, upsertedStat, createdEvent] as const;
   });
 

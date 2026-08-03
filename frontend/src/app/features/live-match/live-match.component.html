@@ -144,10 +144,14 @@
             <button
               class="player-row"
               [class.selected]="selectedIncomingId() === row.playerId"
+              [disabled]="row.isRedCarded"
+              [attr.aria-label]="row.isRedCarded ? row.name + ' (expulsado)' : row.name"
               (click)="selectIncoming(row.playerId)"
             >
               <span>{{ row.name }}</span>
-              @if (selectedIncomingId() === row.playerId) {
+              @if (row.isRedCarded) {
+                <span aria-hidden="true">🟥</span>
+              } @else if (selectedIncomingId() === row.playerId) {
                 <mat-icon>check_circle</mat-icon>
               }
             </button>

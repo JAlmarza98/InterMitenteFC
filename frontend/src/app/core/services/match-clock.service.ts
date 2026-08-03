@@ -55,22 +55,24 @@ export const PERIOD_LABELS: Record<PeriodType, string> = {
 export const PERIOD_ORDER: PeriodType[] = ['first_half', 'second_half', 'extra_first', 'extra_second'];
 
 /**
- * Elapsed match seconds at which each period begins, given the match's
- * configured period length. Extra-time periods are half a regular period.
- * Mirrors the backend formula in matchClock.service.ts.
+ * Cumulative elapsed seconds at which `type` begins: the sum of the
+ * actual recorded duration of every period preceding it in PERIOD_ORDER —
+ * not the configured period length. Mirrors the backend formula in
+ * matchClock.service.ts; see that file for why the configured length
+ * can't be used here (a half ended early or late would otherwise lose or
+ * fabricate playing time for anyone on the pitch across the boundary).
  */
-export function periodOffsetSeconds(periodLengthMinutes: number, type: PeriodType): number {
-  const regular = periodLengthMinutes * 60;
-  switch (type) {
-    case 'first_half':
-      return 0;
-    case 'second_half':
-      return regular;
-    case 'extra_first':
-      return regular * 2;
-    case 'extra_second':
-      return regular * 2 + Math.floor(regular / 2);
+export function periodOffsetSeconds(periods: ClockPeriod[], type: PeriodType, now: Date): number {
+  const byType = new Map(periods.map((p) => [p.type, p]));
+  let offset = 0;
+  for (const priorType of PERIOD_ORDER) {
+    if (priorType === type) break;
+    const prior = byType.get(priorType);
+    if (prior?.startedAt) {
+      offset += elapsedSecondsInPeriod(prior, now);
+    }
   }
+  return offset;
 }
 
 @Injectable({ providedIn: 'root' })

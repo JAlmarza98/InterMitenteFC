@@ -117,17 +117,17 @@
                 <tr>
                   <td>{{ row.player.firstName }} {{ row.player.lastName }}</td>
                   <td>
-                    @if (canManage()) {
+                    @if (canEditSquad()) {
                       <mat-checkbox [checked]="row.called" (change)="toggleCalled(row)" />
                     } @else {
                       <mat-icon class="read-only-check">{{ row.called ? 'check' : 'remove' }}</mat-icon>
                     }
                   </td>
                   <td>
-                    @if (canManage()) {
+                    @if (canEditSquad()) {
                       <mat-checkbox
                         [checked]="row.starter"
-                        [disabled]="!row.called"
+                        [disabled]="!row.called || (!row.starter && startersCount() >= requiredStarters)"
                         (change)="toggleStarter(row)"
                       />
                     } @else {
@@ -139,14 +139,24 @@
             </tbody>
           </table>
 
-          @if (canManage()) {
-            <button mat-flat-button color="primary" [disabled]="savingSquad()" (click)="saveSquad()">
+          @if (canEditSquad()) {
+            <p class="starters-count" [class.starters-count-invalid]="startersCount() !== requiredStarters">
+              Titulares: {{ startersCount() }}/{{ requiredStarters }}
+            </p>
+            <button
+              mat-flat-button
+              color="primary"
+              [disabled]="savingSquad() || startersCount() !== requiredStarters"
+              (click)="saveSquad()"
+            >
               @if (savingSquad()) {
                 <mat-spinner diameter="18" />
               } @else {
                 Guardar convocatoria
               }
             </button>
+          } @else if (canManage()) {
+            <p class="empty-state">La convocatoria ya no se puede modificar una vez el partido no está programado.</p>
           }
         }
       </mat-card-content>
@@ -165,6 +175,42 @@
               <span class="event-desc">{{ eventDescription(event) }}</span>
             </div>
           }
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (playedPlayerStats().length > 0) {
+      <mat-card appearance="outlined" class="player-stats-card">
+        <mat-card-header>
+          <mat-card-title>Estadísticas de jugadores</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <table class="squad-table">
+            <thead>
+              <tr>
+                <th>Jugador</th>
+                <th>Minutos</th>
+                <th>Goles</th>
+                <th>Asist.</th>
+                <th>TA</th>
+                <th>TR</th>
+                <th>En propia</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of playedPlayerStats(); track row.playerId) {
+                <tr>
+                  <td>{{ row.player.firstName }} {{ row.player.lastName }}</td>
+                  <td>{{ formatPlayedTime(row.secondsPlayed) }}</td>
+                  <td>{{ row.goals }}</td>
+                  <td>{{ row.assists }}</td>
+                  <td>{{ row.yellowCards }}</td>
+                  <td>{{ row.redCards }}</td>
+                  <td>{{ row.ownGoals }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </mat-card-content>
       </mat-card>
     }

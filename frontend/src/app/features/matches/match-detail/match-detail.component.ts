@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -24,6 +24,7 @@ import {
   MatchEventsService,
 } from '../../../core/services/match-events.service';
 import { formatMinuteSeconds } from '../../../core/services/match-clock.service';
+import { MatchPlayerStatRow, StatsService } from '../../../core/services/stats.service';
 import { MatchFormDialogComponent } from '../match-form-dialog/match-form-dialog.component';
 
 interface SquadRow {
@@ -67,18 +68,42 @@ export class MatchDetailComponent {
   private readonly playersService = inject(PlayersService);
   private readonly seasonsService = inject(SeasonsService);
   private readonly matchEventsService = inject(MatchEventsService);
+  private readonly statsService = inject(StatsService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
 
   readonly canManage = this.auth.canManage;
+  /** The squad (called up / starter) only makes sense to edit before kickoff
+   * — once the match is live or finished, who actually played is tracked
+   * via substitutions and playing-time segments instead. */
+  readonly canEditSquad = computed(() => this.canManage() && this.match()?.status === 'scheduled');
   readonly statuses: MatchStatus[] = ['scheduled', 'live', 'finished'];
   readonly eventIcons = MATCH_EVENT_ICONS;
   readonly eventLabels = MATCH_EVENT_LABELS;
   readonly events = signal<MatchEvent[]>([]);
+  readonly playerStats = signal<MatchPlayerStatRow[]>([]);
+
+  /** Only players who actually stepped on the pitch or racked up a stat —
+   * `playerStats` also includes called-up players who never left the bench. */
+  readonly playedPlayerStats = computed(() =>
+    this.playerStats().filter(
+      (row) =>
+        row.secondsPlayed > 0 ||
+        row.goals > 0 ||
+        row.assists > 0 ||
+        row.yellowCards > 0 ||
+        row.redCards > 0 ||
+        row.ownGoals > 0
+    )
+  );
 
   formatEventTime(event: MatchEvent): string {
     return formatMinuteSeconds(event.second);
+  }
+
+  formatPlayedTime(seconds: number): string {
+    return formatMinuteSeconds(seconds);
   }
 
   eventPlayerName(event: MatchEvent): string {
@@ -104,6 +129,10 @@ export class MatchDetailComponent {
   readonly loading = signal(false);
   readonly savingSquad = signal(false);
 
+  /** Fútbol 7: the starting XI is always exactly 7. */
+  readonly requiredStarters = 7;
+  readonly startersCount = computed(() => this.squadRows().filter((r) => r.starter).length);
+
   constructor() {
     this.load();
   }
@@ -119,6 +148,7 @@ export class MatchDetailComponent {
       error: () => this.loading.set(false),
     });
     this.matchEventsService.list(this.matchId).subscribe((res) => this.events.set(res.events));
+    this.statsService.getMatchStats(this.matchId).subscribe((res) => this.playerStats.set(res.players));
   }
 
   private loadSquadRows(match: MatchWithSquad) {
@@ -141,6 +171,12 @@ export class MatchDetailComponent {
 
   toggleStarter(row: SquadRow) {
     if (!row.called) return;
+    if (!row.starter && this.startersCount() >= this.requiredStarters) {
+      this.snackBar.open(`Ya hay ${this.requiredStarters} titulares seleccionados (fútbol 7)`, 'Cerrar', {
+        duration: 3000,
+      });
+      return;
+    }
     row.starter = !row.starter;
     this.squadRows.set([...this.squadRows()]);
   }

@@ -51,6 +51,16 @@
   white-space: pre-wrap;
 }
 
+.starters-count {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+  margin: 0 0 var(--space-sm);
+}
+
+.starters-count-invalid {
+  color: var(--mat-sys-error);
+}
+
 .squad-table {
   width: 100%;
   border-collapse: collapse;

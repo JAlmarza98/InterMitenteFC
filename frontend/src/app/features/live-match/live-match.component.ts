@@ -48,6 +48,7 @@ interface RosterRow {
   name: string;
   isStarter: boolean;
   onPitch: boolean;
+  isRedCarded: boolean;
   stats: LiveStatCounts;
 }
 
@@ -125,11 +126,11 @@ export class LiveMatchComponent {
 
   readonly elapsedDisplay = computed(() => {
     const period = this.activePeriod();
-    if (!period) return null;
-    const periodLengthMinutes = this.match()?.periodLengthMinutes ?? 30;
+    const periods = this.clockState()?.periods;
+    if (!period || !periods) return null;
     const now = new Date(this.nowTick() + this.offsetMs);
     const seconds = elapsedSecondsInPeriod(period, now);
-    return formatMinuteSeconds(periodOffsetSeconds(periodLengthMinutes, period.type) + seconds);
+    return formatMinuteSeconds(periodOffsetSeconds(periods, period.type, now) + seconds);
   });
 
   readonly nextPeriodType = computed<PeriodType | null>(() => {
@@ -146,16 +147,25 @@ export class LiveMatchComponent {
   readonly onPitch = computed<RosterRow[]>(() => this.roster().filter((r) => r.onPitch));
   readonly bench = computed<RosterRow[]>(() => this.roster().filter((r) => !r.onPitch));
 
+  /** Players sent off can't be brought back on for the rest of the match —
+   * the backend rejects it too, but disabling them here avoids a round
+   * trip that's guaranteed to fail. */
+  private readonly redCardedPlayerIds = computed(
+    () => new Set(this.events().filter((e) => e.type === 'red_card' && e.player).map((e) => e.player!.id))
+  );
+
   private readonly roster = computed<RosterRow[]>(() => {
     const match = this.match();
     if (!match) return [];
     const onPitchIds = new Set(this.segments().filter((s) => s.endSecond === null).map((s) => s.playerId));
     const statsMap = this.statsByPlayer();
+    const redCarded = this.redCardedPlayerIds();
     return match.squad.map((entry) => ({
       playerId: entry.playerId,
       name: `${entry.player.firstName} ${entry.player.lastName}`,
       isStarter: entry.isStarter,
       onPitch: onPitchIds.has(entry.playerId),
+      isRedCarded: redCarded.has(entry.playerId),
       stats: statsMap.get(entry.playerId) ?? EMPTY_STATS,
     }));
   });
@@ -281,6 +291,7 @@ export class LiveMatchComponent {
   }
 
   selectIncoming(playerId: string) {
+    if (this.redCardedPlayerIds().has(playerId)) return;
     this.selectedIncomingId.set(this.selectedIncomingId() === playerId ? null : playerId);
   }
 
@@ -311,7 +322,13 @@ export class LiveMatchComponent {
     this.statsByPlayer.set(updated);
 
     this.matchEventsService.log(this.matchId, row.playerId, STAT_EVENT_TYPE_BY_FIELD[field]).subscribe({
-      next: (res) => this.events.set([...this.events(), res.event]),
+      next: (res) => {
+        this.events.set([...this.events(), res.event]);
+        // A red card closes the player's playing-time segment server-side
+        // and sends them off for the rest of the match — reload segments
+        // so they immediately drop off "En el campo".
+        if (field === 'redCards') this.loadSegments();
+      },
       error: () => {
         this.snackBar.open('No se pudo guardar la estadística', 'Cerrar', { duration: 3000 });
         this.loadStats();

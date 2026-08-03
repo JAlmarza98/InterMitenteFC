@@ -122,6 +122,16 @@
   outline: 1px dashed var(--mat-sys-outline-variant);
 }
 
+.player-row:disabled {
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.player-row:disabled:hover {
+  background: transparent;
+}
+
 .on-pitch-row {
   flex-direction: column;
   align-items: stretch;
