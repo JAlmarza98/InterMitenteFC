@@ -73,3 +73,22 @@
   color: var(--mat-sys-on-surface-variant);
   vertical-align: middle;
 }
+
+.event-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  font-size: 0.9rem;
+}
+
+.event-row:last-child {
+  border-bottom: none;
+}
+
+.event-minute {
+  min-width: 2.5em;
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface-variant);
+}

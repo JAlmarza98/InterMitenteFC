@@ -89,6 +89,24 @@ async function computeCurrentElapsedSeconds(
   return { period: active, second: periodOffsetSeconds(periodLengthMinutes, active.type) + elapsed };
 }
 
+/**
+ * Stamp (period + elapsed second) to attach to a match event logged live.
+ * Uses the most advanced period rather than requiring one to be actively
+ * running, so an action logged right at/after half-time (or once the last
+ * period has ended) still gets a sensible timestamp instead of failing.
+ */
+export async function getEventStamp(matchId: string): Promise<{ periodType: PeriodType; second: number }> {
+  const [period, periodLengthMinutes] = await Promise.all([
+    getMostAdvancedPeriod(matchId),
+    getMatchPeriodLength(matchId),
+  ]);
+  if (!period) {
+    throw new HttpError(400, "El partido todavía no ha empezado");
+  }
+  const elapsed = elapsedSecondsInPeriod(period, period.pauses, new Date());
+  return { periodType: period.type, second: periodOffsetSeconds(periodLengthMinutes, period.type) + elapsed };
+}
+
 export async function getClockState(matchId: string) {
   const now = new Date();
   const [periods, periodLengthMinutes] = await Promise.all([
@@ -234,6 +252,17 @@ export async function substitute(matchId: string, playerOutId: string, playerInI
         startSecond: second,
         startedAt: now,
         source: "live",
+        createdByUserId: userId,
+      },
+    }),
+    prisma.matchEvent.create({
+      data: {
+        matchId,
+        playerId: playerInId,
+        relatedPlayerId: playerOutId,
+        type: "substitution",
+        periodType: period.type,
+        second,
         createdByUserId: userId,
       },
     }),

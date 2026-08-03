@@ -5,7 +5,7 @@ Aplicación web para gestionar el equipo: registro de usuarios con aprobación m
 ## Stack
 
 - **Backend**: Node.js + Express + TypeScript, Prisma ORM, PostgreSQL, sesiones (`express-session` + `connect-pg-simple`).
-- **Frontend**: Angular (standalone components) + Angular Material (Material 3 / M3 theming), diseño mobile-first.
+- **Frontend**: Angular (standalone components) + Angular Material (Material 3 / M3 theming, tema oscuro fijo), diseño mobile-first.
 - **Despliegue**: Docker Compose (`postgres`, `api`, `web`), pensado para un servidor Proxmox propio.
 
 ## Roles
@@ -21,6 +21,7 @@ Cualquiera puede registrarse, pero el usuario queda en estado `pending` hasta qu
 - **Plantilla**: alta/baja de jugadores, dorsal, posición (desplegable con las posiciones de fútbol 7), activo/inactivo.
 - **Partidos**: crear/editar con selector de fecha y hora nativos de Material, rival, local/visitante, competición (Liga/Copa), temporada, y duración de cada parte configurable (por defecto 30 minutos, ajustable por partido). Convocatoria con titulares/suplentes.
 - **Partido en vivo**: cronómetro que arranca/pausa/termina cada parte, hace cambios (banquillo ↔ campo) y dispara goles/asistencias/tarjetas al momento con un toque, todo desde el móvil en la banda. El reloj se reconstruye desde el servidor en cada carga de página — sobrevive a recargas y cortes de conexión sin perder el tiempo transcurrido (ver "Diseño del cronómetro" más abajo).
+- **Historial del partido**: cada gol, asistencia, tarjeta y cambio hecho en vivo queda registrado con el jugador y el minuto exacto en el que ocurrió, formando un resumen cronológico consultable tanto durante el partido (pantalla de partido en vivo) como después (ficha del partido). Los goles del rival también se anotan con un toque desde el partido en vivo (sin jugador asociado) y actualizan el marcador (`opponentScore`) al momento.
 - **Estadísticas por partido**: minutos exactos jugados (con segundos) por jugador, goles, asistencias, tarjetas. La pantalla de "Estadísticas" del partido es para **corregir** datos mal apuntados a posteriori — anotar en directo se hace desde la pantalla de partido en vivo.
 - **Estadísticas de temporada**: totales y medias por jugador (partidos jugados, minutos, goles, tarjetas...) agregando solo los partidos finalizados.
 - **Temporadas** (admin): alta de temporadas con fecha de inicio/fin y cuál está activa.
@@ -31,6 +32,8 @@ Cualquiera puede registrarse, pero el usuario queda en estado `pending` hasta qu
 El reloj del partido nunca se guarda como un contador — siempre se recalcula a partir de timestamps (`MatchPeriod.startedAt`/`endedAt` + pausas), tanto en el backend como al mostrarlo en el navegador. Esto es lo que hace que sobreviva a un refresco de página o a que se cierre el móvil a mitad de partido: no hay ningún estado en memoria que se pueda perder.
 
 El tiempo jugado por cada jugador (`PlayingTimeSegment`) se guarda en segundos exactos (no minutos redondeados), y un jugador que sigue en el campo sin haber sido sustituido cuenta su tiempo en vivo en las estadísticas en vez de mostrar 0 hasta que sale. Tanto los cambios en vivo como la edición manual posterior escriben en la misma tabla, así que corregir un error de seguimiento en directo usa exactamente el mismo dato que ya se está mostrando.
+
+Cada acción anotada en vivo (gol, asistencia, tarjeta, cambio) además crea un `MatchEvent` con el mismo cálculo de segundo transcurrido, independiente de los contadores de `MatchPlayerStat`: los contadores son el total corregible desde la pantalla de estadísticas, y `MatchEvent` es el registro cronológico de lo que pasó y cuándo, pensado solo para consulta (no se reescribe al corregir un total a posteriori).
 
 ## Desarrollo local
 

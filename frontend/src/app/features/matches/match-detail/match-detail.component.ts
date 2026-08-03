@@ -17,6 +17,13 @@ import { AuthService } from '../../../core/services/auth.service';
 import { MatchesService, MatchStatus, MatchWithSquad } from '../../../core/services/matches.service';
 import { SeasonsService } from '../../../core/services/seasons.service';
 import { Player, PlayersService } from '../../../core/services/players.service';
+import {
+  MATCH_EVENT_ICONS,
+  MATCH_EVENT_LABELS,
+  MatchEvent,
+  MatchEventsService,
+} from '../../../core/services/match-events.service';
+import { formatMinuteSeconds } from '../../../core/services/match-clock.service';
 import { MatchFormDialogComponent } from '../match-form-dialog/match-form-dialog.component';
 
 interface SquadRow {
@@ -59,12 +66,33 @@ export class MatchDetailComponent {
   private readonly matchesService = inject(MatchesService);
   private readonly playersService = inject(PlayersService);
   private readonly seasonsService = inject(SeasonsService);
+  private readonly matchEventsService = inject(MatchEventsService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
 
   readonly canManage = this.auth.canManage;
   readonly statuses: MatchStatus[] = ['scheduled', 'live', 'finished'];
+  readonly eventIcons = MATCH_EVENT_ICONS;
+  readonly eventLabels = MATCH_EVENT_LABELS;
+  readonly events = signal<MatchEvent[]>([]);
+
+  formatEventTime(event: MatchEvent): string {
+    return formatMinuteSeconds(event.second);
+  }
+
+  eventPlayerName(event: MatchEvent): string {
+    return event.player ? `${event.player.firstName} ${event.player.lastName}` : '';
+  }
+
+  eventDescription(event: MatchEvent): string {
+    if (event.type === 'substitution') {
+      const inName = this.eventPlayerName(event);
+      const outName = event.relatedPlayer ? `${event.relatedPlayer.firstName} ${event.relatedPlayer.lastName}` : '';
+      return `Entra ${inName}, sale ${outName}`;
+    }
+    return `${this.eventLabels[event.type]}: ${this.eventPlayerName(event)}`;
+  }
 
   statusLabel(status: MatchStatus): string {
     return STATUS_LABELS[status];
@@ -90,6 +118,7 @@ export class MatchDetailComponent {
       },
       error: () => this.loading.set(false),
     });
+    this.matchEventsService.list(this.matchId).subscribe((res) => this.events.set(res.events));
   }
 
   private loadSquadRows(match: MatchWithSquad) {

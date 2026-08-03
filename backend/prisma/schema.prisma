@@ -42,6 +42,16 @@ enum SegmentSource {
   manual
 }
 
+enum MatchEventType {
+  goal
+  assist
+  yellow_card
+  red_card
+  own_goal
+  substitution
+  opponent_goal
+}
+
 model User {
   id               String     @id @default(uuid())
   email            String     @unique
@@ -58,6 +68,7 @@ model User {
 
   createdMatches  Match[]              @relation("MatchCreatedBy")
   createdSegments PlayingTimeSegment[] @relation("SegmentCreatedBy")
+  createdEvents   MatchEvent[]         @relation("EventCreatedBy")
 }
 
 model Player {
@@ -71,9 +82,11 @@ model Player {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  squadEntries MatchSquad[]
-  stats        MatchPlayerStat[]
-  segments     PlayingTimeSegment[]
+  squadEntries  MatchSquad[]
+  stats         MatchPlayerStat[]
+  segments      PlayingTimeSegment[]
+  events        MatchEvent[]         @relation("EventPlayer")
+  relatedEvents MatchEvent[]         @relation("EventRelatedPlayer")
 }
 
 model Season {
@@ -112,6 +125,7 @@ model Match {
   stats    MatchPlayerStat[]
   periods  MatchPeriod[]
   segments PlayingTimeSegment[]
+  events   MatchEvent[]
 }
 
 model MatchSquad {
@@ -182,4 +196,26 @@ model PlayingTimeSegment {
   updatedAt       DateTime      @updatedAt
 
   @@index([matchId, playerId])
+}
+
+model MatchEvent {
+  id              String         @id @default(uuid())
+  matchId         String
+  match           Match          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  playerId        String?
+  player          Player?        @relation("EventPlayer", fields: [playerId], references: [id], onDelete: Cascade)
+  /// The other player involved, currently only used for substitutions
+  /// (the player who came off).
+  relatedPlayerId String?
+  relatedPlayer   Player?        @relation("EventRelatedPlayer", fields: [relatedPlayerId], references: [id], onDelete: Cascade)
+  type            MatchEventType
+  periodType      PeriodType
+  /// Elapsed match seconds (same clock as PlayingTimeSegment) at which the
+  /// action happened, computed server-side when the event is logged.
+  second          Int
+  createdByUserId String?
+  createdBy       User?          @relation("EventCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime       @default(now())
+
+  @@index([matchId, second])
 }

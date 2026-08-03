@@ -151,5 +151,22 @@
         }
       </mat-card-content>
     </mat-card>
+
+    @if (events().length > 0) {
+      <mat-card appearance="outlined" class="events-card">
+        <mat-card-header>
+          <mat-card-title>Historial del partido</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @for (event of events(); track event.id) {
+            <div class="event-row">
+              <span class="event-minute">{{ formatEventTime(event) }}'</span>
+              <span class="event-icon">{{ eventIcons[event.type] }}</span>
+              <span class="event-desc">{{ eventDescription(event) }}</span>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
   }
 </div>

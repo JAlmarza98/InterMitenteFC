@@ -9,6 +9,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatchesService, MatchWithSquad } from '../../core/services/matches.service';
 import { StatsService } from '../../core/services/stats.service';
 import {
+  MATCH_EVENT_ICONS,
+  MATCH_EVENT_LABELS,
+  LoggableEventType,
+  MatchEvent,
+  MatchEventsService,
+} from '../../core/services/match-events.service';
+import {
   ClockState,
   MatchClockService,
   PERIOD_LABELS,
@@ -21,6 +28,13 @@ import {
 } from '../../core/services/match-clock.service';
 
 type StatField = 'goals' | 'assists' | 'yellowCards' | 'redCards';
+
+const STAT_EVENT_TYPE_BY_FIELD: Record<StatField, Exclude<LoggableEventType, 'opponent_goal'>> = {
+  goals: 'goal',
+  assists: 'assist',
+  yellowCards: 'yellow_card',
+  redCards: 'red_card',
+};
 
 interface LiveStatCounts {
   goals: number;
@@ -60,11 +74,14 @@ export class LiveMatchComponent {
   private readonly matchesService = inject(MatchesService);
   private readonly clockService = inject(MatchClockService);
   private readonly statsService = inject(StatsService);
+  private readonly matchEventsService = inject(MatchEventsService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly matchId = this.route.snapshot.paramMap.get('id')!;
   readonly periodLabels = PERIOD_LABELS;
+  readonly eventIcons = MATCH_EVENT_ICONS;
+  readonly eventLabels = MATCH_EVENT_LABELS;
 
   readonly loading = signal(true);
   readonly actionLoading = signal(false);
@@ -73,6 +90,29 @@ export class LiveMatchComponent {
   readonly segments = signal<Segment[]>([]);
   readonly statsByPlayer = signal<Map<string, LiveStatCounts>>(new Map());
   readonly selectedIncomingId = signal<string | null>(null);
+  readonly events = signal<MatchEvent[]>([]);
+
+  readonly recentEvents = computed(() => [...this.events()].reverse());
+
+  eventPlayerName(event: MatchEvent): string {
+    return event.player ? `${event.player.firstName} ${event.player.lastName}` : '';
+  }
+
+  formatEventTime(event: MatchEvent): string {
+    return formatMinuteSeconds(event.second);
+  }
+
+  eventDescription(event: MatchEvent): string {
+    if (event.type === 'substitution') {
+      const inName = this.eventPlayerName(event);
+      const outName = event.relatedPlayer ? `${event.relatedPlayer.firstName} ${event.relatedPlayer.lastName}` : '';
+      return `Entra ${inName}, sale ${outName}`;
+    }
+    if (event.type === 'opponent_goal') {
+      return this.eventLabels[event.type];
+    }
+    return `${this.eventLabels[event.type]}: ${this.eventPlayerName(event)}`;
+  }
 
   private offsetMs = 0;
   private readonly nowTick = signal(Date.now());
@@ -145,6 +185,7 @@ export class LiveMatchComponent {
         this.loadClock();
         this.loadSegments();
         this.loadStats();
+        this.loadEvents();
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -160,6 +201,10 @@ export class LiveMatchComponent {
 
   private loadSegments() {
     this.clockService.listSegments(this.matchId).subscribe((res) => this.segments.set(res.segments));
+  }
+
+  private loadEvents() {
+    this.matchEventsService.list(this.matchId).subscribe((res) => this.events.set(res.events));
   }
 
   private loadStats() {
@@ -229,6 +274,7 @@ export class LiveMatchComponent {
       next: () => {
         this.selectedIncomingId.set(null);
         this.refreshClockAndSegments();
+        this.loadEvents();
       },
       error: (err) => {
         this.snackBar.open(err.error?.error ?? 'No se pudo realizar el cambio', 'Cerrar', { duration: 3000 });
@@ -244,10 +290,32 @@ export class LiveMatchComponent {
     updated.set(row.playerId, { ...row.stats, [field]: newValue });
     this.statsByPlayer.set(updated);
 
-    this.statsService.upsertPlayerStat(this.matchId, row.playerId, { [field]: newValue }).subscribe({
+    this.matchEventsService.log(this.matchId, row.playerId, STAT_EVENT_TYPE_BY_FIELD[field]).subscribe({
+      next: (res) => this.events.set([...this.events(), res.event]),
       error: () => {
         this.snackBar.open('No se pudo guardar la estadística', 'Cerrar', { duration: 3000 });
         this.loadStats();
+      },
+    });
+  }
+
+  logOpponentGoal() {
+    const match = this.match();
+    if (!match) return;
+
+    const previousScore = match.opponentScore;
+    this.match.set({ ...match, opponentScore: (previousScore ?? 0) + 1 });
+
+    this.matchEventsService.logOpponentGoal(this.matchId).subscribe({
+      next: (res) => {
+        this.events.set([...this.events(), res.event]);
+        const current = this.match();
+        if (current) this.match.set({ ...current, opponentScore: res.match.opponentScore });
+      },
+      error: () => {
+        const current = this.match();
+        if (current) this.match.set({ ...current, opponentScore: previousScore });
+        this.snackBar.open('No se pudo guardar el gol rival', 'Cerrar', { duration: 3000 });
       },
     });
   }

@@ -1,7 +1,11 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../db/prisma";
-import { computeLiveElapsedSeconds, segmentDurationSeconds } from "../matchClock/matchClock.service";
+import {
+  computeLiveElapsedSeconds,
+  getEventStamp,
+  segmentDurationSeconds,
+} from "../matchClock/matchClock.service";
 
 const matchSchema = z.object({
   seasonId: z.string().uuid().nullable().optional(),
@@ -40,6 +44,27 @@ const playerStatSchema = z.object({
   redCards: z.number().int().min(0).max(1).optional(),
   ownGoals: z.number().int().nonnegative().optional(),
 });
+
+const STAT_EVENT_TYPES = ["goal", "assist", "yellow_card", "red_card", "own_goal"] as const;
+const LOGGABLE_EVENT_TYPES = [...STAT_EVENT_TYPES, "opponent_goal"] as const;
+
+const matchEventSchema = z
+  .object({
+    playerId: z.string().uuid().optional(),
+    type: z.enum(LOGGABLE_EVENT_TYPES),
+  })
+  .refine((data) => data.type === "opponent_goal" || !!data.playerId, {
+    message: "playerId es obligatorio para este tipo de evento",
+    path: ["playerId"],
+  });
+
+const STAT_FIELD_BY_EVENT_TYPE: Record<(typeof STAT_EVENT_TYPES)[number], string> = {
+  goal: "goals",
+  assist: "assists",
+  yellow_card: "yellowCards",
+  red_card: "redCards",
+  own_goal: "ownGoals",
+};
 
 export async function listMatches(req: Request, res: Response) {
   const { seasonId, status } = listQuerySchema.parse(req.query);
@@ -146,4 +171,57 @@ export async function getMatchStats(req: Request, res: Response) {
   });
 
   res.json({ players });
+}
+
+export async function logMatchEvent(req: Request, res: Response) {
+  const { playerId, type } = matchEventSchema.parse(req.body);
+  const matchId = req.params.id;
+
+  const { periodType, second } = await getEventStamp(matchId);
+
+  if (type === "opponent_goal") {
+    const [match, event] = await prisma.$transaction(async (tx) => {
+      const current = await tx.match.findUniqueOrThrow({
+        where: { id: matchId },
+        select: { opponentScore: true },
+      });
+      const updatedMatch = await tx.match.update({
+        where: { id: matchId },
+        data: { opponentScore: (current.opponentScore ?? 0) + 1 },
+      });
+      const createdEvent = await tx.matchEvent.create({
+        data: { matchId, type, periodType, second, createdByUserId: req.user!.id },
+        include: { player: true, relatedPlayer: true },
+      });
+      return [updatedMatch, createdEvent] as const;
+    });
+
+    res.status(201).json({ match, event });
+    return;
+  }
+
+  const field = STAT_FIELD_BY_EVENT_TYPE[type as (typeof STAT_EVENT_TYPES)[number]];
+
+  const [stat, event] = await prisma.$transaction([
+    prisma.matchPlayerStat.upsert({
+      where: { matchId_playerId: { matchId, playerId: playerId! } },
+      create: { matchId, playerId: playerId!, [field]: 1 },
+      update: { [field]: { increment: 1 } },
+    }),
+    prisma.matchEvent.create({
+      data: { matchId, playerId, type, periodType, second, createdByUserId: req.user!.id },
+      include: { player: true },
+    }),
+  ]);
+
+  res.status(201).json({ stat, event });
+}
+
+export async function listMatchEvents(req: Request, res: Response) {
+  const events = await prisma.matchEvent.findMany({
+    where: { matchId: req.params.id },
+    include: { player: true, relatedPlayer: true },
+    orderBy: [{ second: "asc" }, { createdAt: "asc" }],
+  });
+  res.json({ events });
 }

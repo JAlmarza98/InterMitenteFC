@@ -25,6 +25,15 @@
           <div class="time-display">{{ elapsedDisplay() ?? '—' }}</div>
         </div>
 
+        <div class="score-row">
+          <span class="score-label">Gol rival</span>
+          <span class="score-value">{{ m.opponentScore ?? 0 }}</span>
+          <button mat-stroked-button (click)="logOpponentGoal()">
+            <mat-icon>add</mat-icon>
+            Gol rival
+          </button>
+        </div>
+
         <div class="controls-row">
           @if (canStartNext()) {
             <button mat-flat-button color="primary" [disabled]="actionLoading()" (click)="startNextPeriod()">
@@ -149,5 +158,22 @@
         </mat-card-content>
       </mat-card>
     </div>
+
+    @if (events().length > 0) {
+      <mat-card appearance="outlined" class="events-card">
+        <mat-card-header>
+          <mat-card-title>Historial del partido</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @for (event of recentEvents(); track event.id) {
+            <div class="event-row">
+              <span class="event-minute">{{ formatEventTime(event) }}'</span>
+              <span class="event-icon">{{ eventIcons[event.type] }}</span>
+              <span class="event-desc">{{ eventDescription(event) }}</span>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
   }
 </div>

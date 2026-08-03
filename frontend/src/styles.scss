@@ -3,7 +3,7 @@
 @use '@angular/material' as mat;
 
 html {
-  color-scheme: light dark;
+  color-scheme: dark;
 
   // Consistent spacing scale used across all feature pages instead of
   // ad-hoc pixel values, so density reads the same everywhere.
@@ -21,7 +21,7 @@ html {
 
   @include mat.theme((
     color: (
-      theme-type: color-scheme,
+      theme-type: dark,
       primary: mat.$green-palette,
       tertiary: mat.$orange-palette,
     ),
