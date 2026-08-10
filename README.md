@@ -5,7 +5,7 @@ Aplicación web para gestionar el equipo: registro de usuarios con aprobación m
 ## Stack
 
 - **Backend**: Node.js + Express + TypeScript, Prisma ORM, PostgreSQL, sesiones (`express-session` + `connect-pg-simple`).
-- **Frontend**: Angular (standalone components) + Angular Material (Material 3 / M3 theming, tema oscuro fijo), diseño mobile-first.
+- **Frontend**: Angular (standalone components, rutas con lazy-loading) + Angular Material (Material 3 / M3 theming, tema oscuro navy/dorado generado a partir del escudo del club), diseño mobile-first. Instalable como PWA (service worker + manifest) para añadirla a la pantalla de inicio del móvil.
 - **Despliegue**: Docker Compose (`postgres`, `api`, `web`), pensado para un servidor Proxmox propio.
 
 ## Roles
@@ -18,9 +18,9 @@ Cualquiera puede registrarse, pero el usuario queda en estado `pending` hasta qu
 
 ## Funcionalidades
 
-- **Plantilla**: alta/baja de jugadores, dorsal, posición (desplegable con las posiciones de fútbol 7), activo/inactivo.
+- **Plantilla**: alta/baja de jugadores, dorsal, posición principal y posición secundaria opcional (desplegable con las posiciones de fútbol 7, incluida "Polivalente"; la secundaria no puede repetir la principal), activo/inactivo.
 - **Partidos**: crear/editar con selector de fecha y hora nativos de Material, rival, local/visitante, competición (Liga/Copa), temporada, y duración de cada parte configurable (por defecto 30 minutos, ajustable por partido). Convocatoria con titulares/suplentes.
-- **Partido en vivo**: cronómetro que arranca/pausa/termina cada parte, hace cambios (banquillo ↔ campo) y dispara goles/asistencias/tarjetas al momento con un toque, todo desde el móvil en la banda. El reloj se reconstruye desde el servidor en cada carga de página — sobrevive a recargas y cortes de conexión sin perder el tiempo transcurrido (ver "Diseño del cronómetro" más abajo).
+- **Partido en vivo**: cronómetro que arranca/pausa/termina cada parte, hace cambios (banquillo ↔ campo) y dispara goles/asistencias/tarjetas al momento con un toque, todo desde el móvil en la banda. El reloj se reconstruye desde el servidor en cada carga de página — sobrevive a recargas y cortes de conexión sin perder el tiempo transcurrido (ver "Diseño del cronómetro" más abajo). Cada jugador convocado muestra su tiempo de juego acumulado en directo, tanto en el campo (corriendo en tiempo real) como en el banquillo (congelado desde el último cambio).
 - **Historial del partido**: cada gol, asistencia, tarjeta y cambio hecho en vivo queda registrado con el jugador y el minuto exacto en el que ocurrió, formando un resumen cronológico consultable tanto durante el partido (pantalla de partido en vivo) como después (ficha del partido). Los goles del rival también se anotan con un toque desde el partido en vivo (sin jugador asociado) y actualizan el marcador (`opponentScore`) al momento.
 - **Estadísticas por partido**: minutos exactos jugados (con segundos) por jugador, goles, asistencias, tarjetas. La pantalla de "Estadísticas" del partido es para **corregir** datos mal apuntados a posteriori — anotar en directo se hace desde la pantalla de partido en vivo.
 - **Estadísticas de temporada**: totales y medias por jugador (partidos jugados, minutos, goles, tarjetas...) agregando solo los partidos finalizados.
