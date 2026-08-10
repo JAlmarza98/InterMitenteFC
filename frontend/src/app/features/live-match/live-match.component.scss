@@ -155,6 +155,12 @@
   padding: 0;
 }
 
+.player-time {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .stat-actions {
   display: flex;
   gap: var(--space-xs);

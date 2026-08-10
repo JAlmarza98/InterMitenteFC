@@ -50,6 +50,7 @@ interface RosterRow {
   onPitch: boolean;
   isRedCarded: boolean;
   stats: LiveStatCounts;
+  playedDisplay: string;
 }
 
 const EMPTY_STATS: LiveStatCounts = { goals: 0, assists: 0, yellowCards: 0, redCards: 0 };
@@ -133,6 +134,38 @@ export class LiveMatchComponent {
     return formatMinuteSeconds(periodOffsetSeconds(periods, period.type, now) + seconds);
   });
 
+  /** Cumulative elapsed match seconds "as of now", across all periods played so
+   * far — mirrors the backend's `computeLiveElapsedSeconds`. Used to give
+   * still-open playing-time segments a live, ticking duration. */
+  readonly liveCurrentSecond = computed<number | null>(() => {
+    const state = this.clockState();
+    if (!state) return null;
+    const now = new Date(this.nowTick() + this.offsetMs);
+    const period = this.activePeriod();
+    if (period) {
+      return periodOffsetSeconds(state.periods, period.type, now) + elapsedSecondsInPeriod(period, now);
+    }
+    // Between periods (e.g. half-time) or match not yet started: sum whatever's played so far.
+    const sum = state.periods.reduce((total, p) => total + (p.startedAt ? elapsedSecondsInPeriod(p, now) : 0), 0);
+    return sum > 0 ? sum : null;
+  });
+
+  /** Total seconds played per player: closed segments count their fixed
+   * duration, the one open segment (if on the pitch) ticks live off
+   * `liveCurrentSecond`. Mirrors the backend's `segmentDurationSeconds`. */
+  private readonly playedSecondsByPlayer = computed<Map<string, number>>(() => {
+    const liveSecond = this.liveCurrentSecond();
+    const map = new Map<string, number>();
+    for (const segment of this.segments()) {
+      const duration =
+        segment.endSecond !== null
+          ? segment.endSecond - segment.startSecond
+          : Math.max(0, (liveSecond ?? segment.startSecond) - segment.startSecond);
+      map.set(segment.playerId, (map.get(segment.playerId) ?? 0) + duration);
+    }
+    return map;
+  });
+
   readonly nextPeriodType = computed<PeriodType | null>(() => {
     const periods = this.clockState()?.periods ?? [];
     let lastStartedIndex = -1;
@@ -160,6 +193,7 @@ export class LiveMatchComponent {
     const onPitchIds = new Set(this.segments().filter((s) => s.endSecond === null).map((s) => s.playerId));
     const statsMap = this.statsByPlayer();
     const redCarded = this.redCardedPlayerIds();
+    const playedSeconds = this.playedSecondsByPlayer();
     return match.squad.map((entry) => ({
       playerId: entry.playerId,
       name: `${entry.player.firstName} ${entry.player.lastName}`,
@@ -167,6 +201,7 @@ export class LiveMatchComponent {
       onPitch: onPitchIds.has(entry.playerId),
       isRedCarded: redCarded.has(entry.playerId),
       stats: statsMap.get(entry.playerId) ?? EMPTY_STATS,
+      playedDisplay: formatMinuteSeconds(playedSeconds.get(entry.playerId) ?? 0),
     }));
   });
 

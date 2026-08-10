@@ -81,6 +81,7 @@
             <div class="player-row on-pitch-row" [class.selectable]="selectedIncomingId()">
               <button class="player-row-main" (click)="substituteWith(row.playerId)">
                 <span>{{ row.name }}</span>
+                <span class="player-time">{{ row.playedDisplay }}</span>
                 @if (selectedIncomingId()) {
                   <mat-icon>swap_horiz</mat-icon>
                 }
@@ -149,6 +150,7 @@
               (click)="selectIncoming(row.playerId)"
             >
               <span>{{ row.name }}</span>
+              <span class="player-time">{{ row.playedDisplay }}</span>
               @if (row.isRedCarded) {
                 <span aria-hidden="true">🟥</span>
               } @else if (selectedIncomingId() === row.playerId) {
