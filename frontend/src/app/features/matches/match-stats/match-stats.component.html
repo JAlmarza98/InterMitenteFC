@@ -28,17 +28,17 @@
           <div class="table-scroll">
             <table mat-table [dataSource]="players()" class="stats-table">
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef>Jugador</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">Jugador</th>
                 <td mat-cell *matCellDef="let row">{{ row.player.firstName }} {{ row.player.lastName }}</td>
               </ng-container>
 
               <ng-container matColumnDef="timePlayed">
-                <th mat-header-cell *matHeaderCellDef>Tiempo jugado</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">Tiempo jugado</th>
                 <td mat-cell *matCellDef="let row">{{ formatTime(row.secondsPlayed) }}</td>
               </ng-container>
 
               <ng-container matColumnDef="goals">
-                <th mat-header-cell *matHeaderCellDef>Goles</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">Goles</th>
                 <td mat-cell *matCellDef="let row">
                   @if (canManage()) {
                     <input
@@ -55,7 +55,7 @@
               </ng-container>
 
               <ng-container matColumnDef="assists">
-                <th mat-header-cell *matHeaderCellDef>Asist.</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">Asist.</th>
                 <td mat-cell *matCellDef="let row">
                   @if (canManage()) {
                     <input
@@ -72,7 +72,7 @@
               </ng-container>
 
               <ng-container matColumnDef="yellowCards">
-                <th mat-header-cell *matHeaderCellDef>TA</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">TA</th>
                 <td mat-cell *matCellDef="let row">
                   @if (canManage()) {
                     <input
@@ -90,7 +90,7 @@
               </ng-container>
 
               <ng-container matColumnDef="redCards">
-                <th mat-header-cell *matHeaderCellDef>TR</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">TR</th>
                 <td mat-cell *matCellDef="let row">
                   @if (canManage()) {
                     <input
@@ -108,7 +108,7 @@
               </ng-container>
 
               <ng-container matColumnDef="ownGoals">
-                <th mat-header-cell *matHeaderCellDef>G. propia</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">G. propia</th>
                 <td mat-cell *matCellDef="let row">
                   @if (canManage()) {
                     <input
@@ -143,32 +143,32 @@
           <div class="table-scroll">
             <table mat-table [dataSource]="segments()" class="segments-table">
               <ng-container matColumnDef="player">
-                <th mat-header-cell *matHeaderCellDef>Jugador</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">Jugador</th>
                 <td mat-cell *matCellDef="let seg">{{ seg.player.firstName }} {{ seg.player.lastName }}</td>
               </ng-container>
 
               <ng-container matColumnDef="period">
-                <th mat-header-cell *matHeaderCellDef>Período</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">Período</th>
                 <td mat-cell *matCellDef="let seg">{{ periodLabel(seg.periodType) }}</td>
               </ng-container>
 
               <ng-container matColumnDef="start">
-                <th mat-header-cell *matHeaderCellDef>Entra</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">Entra</th>
                 <td mat-cell *matCellDef="let seg">{{ formatTime(seg.startSecond) }}</td>
               </ng-container>
 
               <ng-container matColumnDef="end">
-                <th mat-header-cell *matHeaderCellDef>Sale</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">Sale</th>
                 <td mat-cell *matCellDef="let seg">{{ seg.endSecond !== null ? formatTime(seg.endSecond) : '—' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="source">
-                <th mat-header-cell *matHeaderCellDef>Origen</th>
+                <th mat-header-cell *matHeaderCellDef scope="col">Origen</th>
                 <td mat-cell *matCellDef="let seg">{{ seg.source === 'live' ? 'En vivo' : 'Manual' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef></th>
+                <th mat-header-cell *matHeaderCellDef scope="col"><span class="sr-only">Acciones</span></th>
                 <td mat-cell *matCellDef="let seg">
                   @if (canManage()) {
                     <button mat-icon-button (click)="openEditSegment(seg)" aria-label="Editar">

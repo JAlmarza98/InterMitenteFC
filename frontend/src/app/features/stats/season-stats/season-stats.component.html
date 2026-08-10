@@ -33,47 +33,47 @@
             <div class="table-scroll">
               <table mat-table [dataSource]="s.players" class="season-table">
                 <ng-container matColumnDef="name">
-                  <th mat-header-cell *matHeaderCellDef>Jugador</th>
+                  <th mat-header-cell *matHeaderCellDef scope="col">Jugador</th>
                   <td mat-cell *matCellDef="let row">{{ row.player.firstName }} {{ row.player.lastName }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="appearances">
-                  <th mat-header-cell *matHeaderCellDef>PJ</th>
+                  <th mat-header-cell *matHeaderCellDef scope="col">PJ</th>
                   <td mat-cell *matCellDef="let row">{{ row.appearances }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="timePlayed">
-                  <th mat-header-cell *matHeaderCellDef>Tiempo total</th>
+                  <th mat-header-cell *matHeaderCellDef scope="col">Tiempo total</th>
                   <td mat-cell *matCellDef="let row">{{ formatTime(row.secondsPlayed) }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="avgTime">
-                  <th mat-header-cell *matHeaderCellDef>Media/partido</th>
+                  <th mat-header-cell *matHeaderCellDef scope="col">Media/partido</th>
                   <td mat-cell *matCellDef="let row">{{ formatTime(row.avgSecondsPerAppearance) }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="goals">
-                  <th mat-header-cell *matHeaderCellDef>Goles</th>
+                  <th mat-header-cell *matHeaderCellDef scope="col">Goles</th>
                   <td mat-cell *matCellDef="let row">{{ row.goals }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="assists">
-                  <th mat-header-cell *matHeaderCellDef>Asist.</th>
+                  <th mat-header-cell *matHeaderCellDef scope="col">Asist.</th>
                   <td mat-cell *matCellDef="let row">{{ row.assists }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="yellowCards">
-                  <th mat-header-cell *matHeaderCellDef>TA</th>
+                  <th mat-header-cell *matHeaderCellDef scope="col">TA</th>
                   <td mat-cell *matCellDef="let row">{{ row.yellowCards }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="redCards">
-                  <th mat-header-cell *matHeaderCellDef>TR</th>
+                  <th mat-header-cell *matHeaderCellDef scope="col">TR</th>
                   <td mat-cell *matCellDef="let row">{{ row.redCards }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="ownGoals">
-                  <th mat-header-cell *matHeaderCellDef>G. propia</th>
+                  <th mat-header-cell *matHeaderCellDef scope="col">G. propia</th>
                   <td mat-cell *matCellDef="let row">{{ row.ownGoals }}</td>
                 </ng-container>
 

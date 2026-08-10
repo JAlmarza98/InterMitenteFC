@@ -19,12 +19,12 @@
     <div class="table-scroll desktop-only">
       <table mat-table [dataSource]="matches()" class="matches-table">
         <ng-container matColumnDef="date">
-          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <th mat-header-cell *matHeaderCellDef scope="col">Fecha</th>
           <td mat-cell *matCellDef="let match">{{ match.matchDate | date: 'dd/MM/yyyy HH:mm' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="opponent">
-          <th mat-header-cell *matHeaderCellDef>Rival</th>
+          <th mat-header-cell *matHeaderCellDef scope="col">Rival</th>
           <td mat-cell *matCellDef="let match">
             {{ match.opponent }}
             <span class="home-away">({{ match.homeAway === 'home' ? 'local' : 'visitante' }})</span>
@@ -32,19 +32,19 @@
         </ng-container>
 
         <ng-container matColumnDef="competition">
-          <th mat-header-cell *matHeaderCellDef>Competición</th>
+          <th mat-header-cell *matHeaderCellDef scope="col">Competición</th>
           <td mat-cell *matCellDef="let match">{{ match.competition ?? '—' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
           <td mat-cell *matCellDef="let match">
             <mat-chip [class]="'status-chip status-' + match.status">{{ statusLabel(match.status) }}</mat-chip>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="score">
-          <th mat-header-cell *matHeaderCellDef>Resultado</th>
+          <th mat-header-cell *matHeaderCellDef scope="col">Resultado</th>
           <td mat-cell *matCellDef="let match">
             @if (match.teamScore !== null && match.opponentScore !== null) {
               {{ match.teamScore }} - {{ match.opponentScore }}
@@ -55,7 +55,7 @@
         </ng-container>
 
         <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef></th>
+          <th mat-header-cell *matHeaderCellDef scope="col"><span class="sr-only">Acciones</span></th>
           <td mat-cell *matCellDef="let match">
             @if (canManage()) {
               <button mat-icon-button (click)="deleteMatch($event, match)" aria-label="Eliminar">

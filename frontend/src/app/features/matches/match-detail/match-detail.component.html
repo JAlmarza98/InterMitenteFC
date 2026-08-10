@@ -104,12 +104,13 @@
         @if (squadRows().length === 0) {
           <p class="empty-state">No hay jugadores activos en la plantilla.</p>
         } @else {
+          <div class="table-scroll">
           <table class="squad-table">
             <thead>
               <tr>
-                <th>Jugador</th>
-                <th>Convocado</th>
-                <th>Titular</th>
+                <th scope="col">Jugador</th>
+                <th scope="col">Convocado</th>
+                <th scope="col">Titular</th>
               </tr>
             </thead>
             <tbody>
@@ -138,6 +139,7 @@
               }
             </tbody>
           </table>
+          </div>
 
           @if (canEditSquad()) {
             <p class="starters-count" [class.starters-count-invalid]="startersCount() !== requiredStarters">
@@ -185,16 +187,17 @@
           <mat-card-title>Estadísticas de jugadores</mat-card-title>
         </mat-card-header>
         <mat-card-content>
+          <div class="table-scroll">
           <table class="squad-table">
             <thead>
               <tr>
-                <th>Jugador</th>
-                <th>Minutos</th>
-                <th>Goles</th>
-                <th>Asist.</th>
-                <th>TA</th>
-                <th>TR</th>
-                <th>En propia</th>
+                <th scope="col">Jugador</th>
+                <th scope="col">Minutos</th>
+                <th scope="col">Goles</th>
+                <th scope="col">Asist.</th>
+                <th scope="col">TA</th>
+                <th scope="col">TR</th>
+                <th scope="col">En propia</th>
               </tr>
             </thead>
             <tbody>
@@ -211,6 +214,7 @@
               }
             </tbody>
           </table>
+          </div>
         </mat-card-content>
       </mat-card>
     }

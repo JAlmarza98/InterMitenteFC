@@ -58,6 +58,21 @@ h1, h2, h3 {
   letter-spacing: -0.01em;
 }
 
+// Visually hidden but still announced by screen readers — for table header
+// cells that are intentionally blank (e.g. an actions column) so they still
+// have an accessible name for screen-reader table navigation.
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 // Shared page shell: every feature component wraps its content in
 // `.page` and gets consistent max-width/padding/vertical rhythm for free.
 .page {
