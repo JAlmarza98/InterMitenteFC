@@ -7,6 +7,7 @@ export interface Player {
   lastName: string;
   jerseyNumber: number | null;
   position: string | null;
+  secondaryPosition: string | null;
   birthDate: string | null;
   active: boolean;
 }
@@ -16,6 +17,7 @@ export interface PlayerInput {
   lastName: string;
   jerseyNumber: number | null;
   position: string | null;
+  secondaryPosition: string | null;
 }
 
 /** Standard fútbol 7 position labels, used to populate the position select. */
@@ -28,6 +30,7 @@ export const FOOTBALL7_POSITIONS: string[] = [
   'Extremo derecho',
   'Extremo izquierdo',
   'Delantero',
+  'Polivalente',
 ];
 
 @Injectable({ providedIn: 'root' })

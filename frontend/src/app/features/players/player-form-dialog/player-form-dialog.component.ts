@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -28,12 +28,25 @@ export class PlayerFormDialogComponent {
   readonly isEdit = !!this.data.player;
   readonly positions = FOOTBALL7_POSITIONS;
 
+  readonly primaryPosition = signal(this.data.player?.position ?? '');
+  readonly secondaryPositionOptions = computed(() =>
+    this.positions.filter((p) => p !== this.primaryPosition())
+  );
+
   readonly form = this.fb.nonNullable.group({
     firstName: [this.data.player?.firstName ?? '', [Validators.required]],
     lastName: [this.data.player?.lastName ?? '', [Validators.required]],
     jerseyNumber: [this.data.player?.jerseyNumber ?? null as number | null],
     position: [this.data.player?.position ?? ''],
+    secondaryPosition: [this.data.player?.secondaryPosition ?? ''],
   });
+
+  onPrimaryPositionChange(value: string) {
+    this.primaryPosition.set(value);
+    if (this.form.controls.secondaryPosition.value === value) {
+      this.form.controls.secondaryPosition.setValue('');
+    }
+  }
 
   submit() {
     if (this.form.invalid) {
@@ -46,6 +59,7 @@ export class PlayerFormDialogComponent {
       lastName: raw.lastName,
       jerseyNumber: raw.jerseyNumber,
       position: raw.position || null,
+      secondaryPosition: raw.secondaryPosition || null,
     };
     this.dialogRef.close(result);
   }

@@ -72,15 +72,16 @@ model User {
 }
 
 model Player {
-  id           String    @id @default(uuid())
-  firstName    String
-  lastName     String
-  jerseyNumber Int?
-  position     String?
-  birthDate    DateTime?
-  active       Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                String     @id @default(uuid())
+  firstName         String
+  lastName          String
+  jerseyNumber      Int?
+  position          String?
+  secondaryPosition String?
+  birthDate         DateTime?
+  active            Boolean    @default(true)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
   squadEntries  MatchSquad[]
   stats         MatchPlayerStat[]

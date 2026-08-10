@@ -24,10 +24,20 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Posición</mat-label>
-      <mat-select formControlName="position">
+      <mat-label>Posición principal</mat-label>
+      <mat-select formControlName="position" (selectionChange)="onPrimaryPositionChange($event.value)">
         <mat-option [value]="''">Sin posición</mat-option>
         @for (position of positions; track position) {
+          <mat-option [value]="position">{{ position }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Posición secundaria</mat-label>
+      <mat-select formControlName="secondaryPosition">
+        <mat-option [value]="''">Sin segunda posición</mat-option>
+        @for (position of secondaryPositionOptions(); track position) {
           <mat-option [value]="position">{{ position }}</mat-option>
         }
       </mat-select>

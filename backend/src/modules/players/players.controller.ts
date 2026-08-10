@@ -7,6 +7,7 @@ const createPlayerSchema = z.object({
   lastName: z.string().min(1),
   jerseyNumber: z.number().int().positive().nullable().optional(),
   position: z.string().min(1).nullable().optional(),
+  secondaryPosition: z.string().min(1).nullable().optional(),
   birthDate: z.coerce.date().nullable().optional(),
 });
 
