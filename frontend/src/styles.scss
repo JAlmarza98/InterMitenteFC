@@ -2,6 +2,11 @@
 // https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
+// Custom M3 tonal palettes generated from the club crest's navy (#082970)
+// and gold (#efc24d) with @material/material-color-utilities, so the app's
+// primary/tertiary colors match the crest instead of a generic Material hue.
+@use 'theme-palettes' as brand;
+
 html {
   color-scheme: dark;
 
@@ -22,8 +27,8 @@ html {
   @include mat.theme((
     color: (
       theme-type: dark,
-      primary: mat.$green-palette,
-      tertiary: mat.$orange-palette,
+      primary: brand.$navy-palette,
+      tertiary: brand.$gold-palette,
     ),
     typography: Roboto,
     density: 0,
@@ -168,8 +173,8 @@ h1, h2, h3 {
 }
 
 // Color-code match status chips instead of leaving every chip identical —
-// scheduled stays neutral, live pops in primary green, finished settles
-// into the tertiary orange accent.
+// scheduled stays neutral, live pops in primary navy, finished settles
+// into the tertiary gold accent.
 .status-chip.status-scheduled {
   --mdc-chip-elevated-container-color: var(--mat-sys-surface-container-high);
   --mdc-chip-label-text-color: var(--mat-sys-on-surface-variant);
