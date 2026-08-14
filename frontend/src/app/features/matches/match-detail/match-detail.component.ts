@@ -134,6 +134,12 @@ export class MatchDetailComponent {
   readonly requiredStarters = 7;
   readonly startersCount = computed(() => this.squadRows().filter((r) => r.starter).length);
 
+  readonly allCalled = computed(() => {
+    const rows = this.squadRows();
+    return rows.length > 0 && rows.every((r) => r.called);
+  });
+  readonly someCalled = computed(() => this.squadRows().some((r) => r.called));
+
   constructor() {
     this.load();
   }
@@ -168,6 +174,21 @@ export class MatchDetailComponent {
     row.called = !row.called;
     if (!row.called) row.starter = false;
     this.squadRows.set([...this.squadRows()]);
+  }
+
+  /** Calling everyone up is the common case for a small squad — flip
+   * every row at once instead of clicking each checkbox individually.
+   * Mirrors toggleCalled's own rule: uncalling a player also clears
+   * their starter flag. */
+  toggleAllCalled() {
+    const shouldCall = !this.allCalled();
+    this.squadRows.set(
+      this.squadRows().map((row) => ({
+        ...row,
+        called: shouldCall,
+        starter: shouldCall ? row.starter : false,
+      }))
+    );
   }
 
   toggleStarter(row: SquadRow) {

@@ -72,27 +72,29 @@
         }
       </mat-card-content>
 
-      <mat-card-actions align="end">
-        <a mat-button [routerLink]="['/matches', m.id, 'stats']">
-          <mat-icon>bar_chart</mat-icon>
-          Estadísticas
-        </a>
-        @if (canManage()) {
-          @if (m.status !== 'finished') {
-            <a mat-flat-button color="primary" [routerLink]="['/matches', m.id, 'live']">
-              <mat-icon>sports_soccer</mat-icon>
-              Ir al partido en vivo
-            </a>
-          }
-          <button mat-button (click)="editMatch()">
-            <mat-icon>edit</mat-icon>
-            Editar
-          </button>
-          <button mat-button color="warn" (click)="deleteMatch()">
-            <mat-icon>delete</mat-icon>
-            Eliminar
-          </button>
+      <mat-card-actions class="match-actions">
+        @if (canManage() && m.status !== 'finished') {
+          <a mat-flat-button color="primary" class="live-cta" [routerLink]="['/matches', m.id, 'live']">
+            <mat-icon>sports_soccer</mat-icon>
+            Ir al partido en vivo
+          </a>
         }
+        <div class="secondary-actions">
+          <a mat-button [routerLink]="['/matches', m.id, 'stats']">
+            <mat-icon>bar_chart</mat-icon>
+            Estadísticas
+          </a>
+          @if (canManage()) {
+            <button mat-button (click)="editMatch()">
+              <mat-icon>edit</mat-icon>
+              Editar
+            </button>
+            <button mat-button color="warn" (click)="deleteMatch()">
+              <mat-icon>delete</mat-icon>
+              Eliminar
+            </button>
+          }
+        </div>
       </mat-card-actions>
     </mat-card>
 
@@ -109,7 +111,19 @@
             <thead>
               <tr>
                 <th scope="col">Jugador</th>
-                <th scope="col">Convocado</th>
+                <th scope="col">
+                  @if (canEditSquad()) {
+                    <mat-checkbox
+                      [checked]="allCalled()"
+                      [indeterminate]="someCalled() && !allCalled()"
+                      (change)="toggleAllCalled()"
+                    >
+                      Convocado
+                    </mat-checkbox>
+                  } @else {
+                    Convocado
+                  }
+                </th>
                 <th scope="col">Titular</th>
               </tr>
             </thead>
@@ -173,7 +187,7 @@
           @for (event of events(); track event.id) {
             <div class="event-row">
               <span class="event-minute">{{ formatEventTime(event) }}'</span>
-              <span class="event-icon">{{ eventIcons[event.type] }}</span>
+              <mat-icon [class]="'event-icon event-icon-' + event.type">{{ eventIcons[event.type] }}</mat-icon>
               <span class="event-desc">{{ eventDescription(event) }}</span>
             </div>
           }

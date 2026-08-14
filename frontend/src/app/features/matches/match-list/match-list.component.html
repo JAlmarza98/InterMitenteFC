@@ -45,7 +45,7 @@
 
         <ng-container matColumnDef="score">
           <th mat-header-cell *matHeaderCellDef scope="col">Resultado</th>
-          <td mat-cell *matCellDef="let match">
+          <td mat-cell *matCellDef="let match" class="score-cell">
             @if (match.teamScore !== null && match.opponentScore !== null) {
               {{ match.teamScore }} - {{ match.opponentScore }}
             } @else {
@@ -70,6 +70,8 @@
           mat-row
           *matRowDef="let row; columns: displayedColumns"
           (click)="openMatch(row)"
+          (keydown.enter)="openMatch(row)"
+          tabindex="0"
           class="clickable-row"
         ></tr>
       </table>

@@ -10,22 +10,42 @@
     </div>
   } @else if (match()) {
     @let m = match()!;
-    <mat-card appearance="outlined" class="clock-card">
+    @let isHome = m.homeAway === 'home';
+    <mat-card
+      appearance="outlined"
+      class="clock-card"
+      [class.clock-card-live]="clockState()?.activePeriodType && !clockState()?.isPaused"
+    >
       <mat-card-content>
         <div class="clock-header">
-          <div>
+          <div class="scoreboard-block">
             <div class="scoreboard">
-              <span class="scoreboard-value scoreboard-us">{{ m.teamScore ?? 0 }}</span>
-              <span class="scoreboard-sep">-</span>
-              <span class="scoreboard-value scoreboard-them">{{ m.opponentScore ?? 0 }}</span>
+              <div class="scoreboard-side">
+                <span class="team-label" [class.team-label-us]="isHome">{{ isHome ? 'Inter Mitente FC' : m.opponent }}</span>
+                <span
+                  class="scoreboard-value"
+                  [class.scoreboard-us]="isHome"
+                  [class.scoreboard-them]="!isHome"
+                >{{ isHome ? (m.teamScore ?? 0) : (m.opponentScore ?? 0) }}</span>
+              </div>
+              <span class="scoreboard-sep">–</span>
+              <div class="scoreboard-side">
+                <span class="team-label" [class.team-label-us]="!isHome">{{ isHome ? m.opponent : 'Inter Mitente FC' }}</span>
+                <span
+                  class="scoreboard-value"
+                  [class.scoreboard-us]="!isHome"
+                  [class.scoreboard-them]="isHome"
+                >{{ isHome ? (m.opponentScore ?? 0) : (m.teamScore ?? 0) }}</span>
+              </div>
             </div>
-            <p class="opponent">vs {{ m.opponent }}</p>
-            @if (clockState()?.activePeriodType; as periodType) {
-              <mat-chip>{{ periodLabels[periodType] }}</mat-chip>
-              @if (clockState()?.isPaused) {
-                <mat-chip class="paused-chip">Pausado</mat-chip>
+            <div class="status-row-live">
+              @if (clockState()?.activePeriodType; as periodType) {
+                <mat-chip [class.live-chip]="!clockState()?.isPaused">{{ periodLabels[periodType] }}</mat-chip>
+                @if (clockState()?.isPaused) {
+                  <mat-chip class="paused-chip">Pausado</mat-chip>
+                }
               }
-            }
+            </div>
           </div>
           <div class="time-display">{{ elapsedDisplay() ?? '—' }}</div>
         </div>
@@ -92,41 +112,45 @@
               <div class="stat-actions">
                 <button
                   type="button"
-                  class="stat-btn"
+                  class="stat-btn stat-btn-goal"
                   (click)="incrementStat($event, row, 'goals')"
                   aria-label="Añadir gol"
                 >
-                  ⚽ @if (row.stats.goals) {
+                  <mat-icon>sports_soccer</mat-icon>
+                  @if (row.stats.goals) {
                     <span class="stat-count">{{ row.stats.goals }}</span>
                   }
                 </button>
                 <button
                   type="button"
-                  class="stat-btn"
+                  class="stat-btn stat-btn-assist"
                   (click)="incrementStat($event, row, 'assists')"
                   aria-label="Añadir asistencia"
                 >
-                  🅰️ @if (row.stats.assists) {
+                  <mat-icon>handshake</mat-icon>
+                  @if (row.stats.assists) {
                     <span class="stat-count">{{ row.stats.assists }}</span>
                   }
                 </button>
                 <button
                   type="button"
-                  class="stat-btn"
+                  class="stat-btn stat-btn-yellow"
                   (click)="incrementStat($event, row, 'yellowCards')"
                   aria-label="Añadir tarjeta amarilla"
                 >
-                  🟨 @if (row.stats.yellowCards) {
+                  <mat-icon>crop_portrait</mat-icon>
+                  @if (row.stats.yellowCards) {
                     <span class="stat-count">{{ row.stats.yellowCards }}</span>
                   }
                 </button>
                 <button
                   type="button"
-                  class="stat-btn"
+                  class="stat-btn stat-btn-red"
                   (click)="incrementStat($event, row, 'redCards')"
                   aria-label="Añadir tarjeta roja"
                 >
-                  🟥 @if (row.stats.redCards) {
+                  <mat-icon>crop_portrait</mat-icon>
+                  @if (row.stats.redCards) {
                     <span class="stat-count">{{ row.stats.redCards }}</span>
                   }
                 </button>
@@ -177,7 +201,7 @@
           @for (event of recentEvents(); track event.id) {
             <div class="event-row">
               <span class="event-minute">{{ formatEventTime(event) }}'</span>
-              <span class="event-icon">{{ eventIcons[event.type] }}</span>
+              <mat-icon [class]="'event-icon event-icon-' + event.type">{{ eventIcons[event.type] }}</mat-icon>
               <span class="event-desc">{{ eventDescription(event) }}</span>
             </div>
           }

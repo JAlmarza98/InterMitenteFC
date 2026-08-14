@@ -51,6 +51,35 @@
   white-space: pre-wrap;
 }
 
+// The "go live" CTA used to sit in the same cramped row as three other
+// buttons (Estadísticas, Editar, Eliminar) fighting for space — it's the
+// headline action on this card, so it gets its own room, with the
+// lower-emphasis actions grouped separately instead of competing with it.
+.match-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+@media (max-width: 599px) {
+  .live-cta {
+    width: 100%;
+  }
+
+  .secondary-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 .starters-count {
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.875rem;
@@ -61,6 +90,10 @@
   color: var(--mat-sys-error);
 }
 
+// Matches the mat-table header treatment used everywhere else (see
+// `th[mat-header-cell]` in styles.scss) — this table is hand-rolled, not
+// a mat-table, so it doesn't inherit that rule automatically and needs
+// its own copy to keep the same "tinted row, tracked caps" identity.
 .squad-table {
   width: 100%;
   border-collapse: collapse;
@@ -68,9 +101,24 @@
   th {
     text-align: left;
     padding: var(--space-sm);
+    background: var(--mat-sys-surface-container);
     color: var(--mat-sys-on-surface-variant);
-    font-weight: 500;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    .mat-mdc-checkbox {
+      vertical-align: middle;
+
+      ::ng-deep label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--mat-sys-on-surface-variant);
+      }
+    }
   }
 
   td {

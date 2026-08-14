@@ -3,15 +3,39 @@
 }
 
 .welcome {
+  position: relative;
+  padding: var(--space-lg) 0 var(--space-md);
+  overflow: hidden;
+
   h1 {
+    position: relative;
     margin: 0 0 4px;
-    font-size: 1.6rem;
+    font-size: 2.25rem;
   }
 
   p {
+    position: relative;
     margin: 0;
     color: var(--mat-sys-on-surface-variant);
+    font-size: 1.05rem;
   }
+}
+
+// The crest as a hero watermark rather than a small logo: huge, faint,
+// bleeding off the top-right corner like a stadium badge printed on the
+// wall behind the tunnel. Absolutely-positioned elements paint above
+// non-positioned in-flow content regardless of DOM order, so h1/p above
+// are given `position: relative` — putting them in the same positioned
+// paint group, ordered after this img — purely to stay legible on top.
+.welcome-watermark {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 260px;
+  height: 260px;
+  opacity: 0.08;
+  filter: grayscale(1) brightness(1.6);
+  pointer-events: none;
 }
 
 .shortcuts {
@@ -32,7 +56,10 @@
   color: var(--mat-sys-on-surface);
   text-decoration: none;
   font-weight: 500;
-  transition: background-color 0.15s ease;
+  // The resting shadow, plus a corner glow parked at zero spread/alpha so
+  // it can transition in on hover instead of popping.
+  box-shadow: var(--surface-card-shadow), inset 90px 70px 90px -60px transparent;
+  transition: background-color 0.15s ease, box-shadow 0.25s ease, transform 0.15s ease;
 
   mat-icon {
     font-size: 32px;
@@ -41,7 +68,14 @@
     color: var(--mat-sys-primary);
   }
 
-  &:hover {
+  // A headlight switching on: the club's own gold blooms in from the
+  // top-left corner instead of a generic lift-and-brighten.
+  &:hover,
+  &:focus-visible {
     background: var(--mat-sys-surface-container-highest);
+    box-shadow:
+      var(--surface-card-shadow-hover),
+      inset 90px 70px 90px -60px color-mix(in srgb, var(--mat-sys-tertiary) 35%, transparent);
+    transform: translateY(-2px);
   }
 }

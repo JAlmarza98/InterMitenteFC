@@ -7,6 +7,16 @@
 // Regenerate with a script calling
 // `CorePalette.of(argbFromHex('#082970'))` / `('#efc24d')` if the crest
 // colors ever change.
+//
+// $navy-palette's neutral/neutral-variant tones (the surfaces the dark
+// theme is built from) are hand-retinted from the stock M3 output: M3's
+// default algorithm keeps neutrals almost achromatic (chroma ~0.006-0.016
+// in OKLCH), so the app rendered as a generic charcoal Material shell that
+// happened to have a navy accent, rather than reading as "navy" itself.
+// Every tone below is the same tool's output with hue locked to the navy
+// seed's hue (262.7) and chroma raised to 0.022 (neutral) / 0.038
+// (neutral-variant) — lightness (contrast) is untouched, only the tint
+// changed, so on-surface text contrast ratios are unaffected.
 
 $navy-palette: (
   0: #000000,
@@ -45,48 +55,48 @@ $navy-palette: (
   ),
   neutral: (
     0: #000000,
-    4: #0d0e11,
-    6: #131316,
-    10: #1b1b1f,
-    12: #1f1f23,
-    17: #292a2d,
-    20: #303034,
-    22: #343438,
-    24: #39393c,
-    25: #3b3b3f,
-    30: #46464a,
-    35: #525256,
-    40: #5e5e62,
-    50: #77767a,
-    60: #919094,
-    70: #acaaaf,
-    80: #c7c6ca,
-    87: #dbd9dd,
-    90: #e4e2e6,
-    92: #eae7ec,
-    94: #efedf1,
-    95: #f2f0f4,
-    96: #f5f3f7,
-    98: #fbf8fd,
-    99: #fefbff,
+    4: #090e18,
+    6: #0e131d,
+    10: #161c26,
+    12: #1a202a,
+    17: #242a35,
+    20: #2b313c,
+    22: #2e3540,
+    24: #333a45,
+    25: #353c47,
+    30: #404753,
+    35: #4c535f,
+    40: #585f6b,
+    50: #707784,
+    60: #8a919f,
+    70: #a4acba,
+    80: #bfc7d6,
+    87: #d2dae9,
+    90: #dbe3f2,
+    92: #e1e9f8,
+    94: #e6eefd,
+    95: #eaf1ff,
+    96: #eef4ff,
+    98: #f6f9ff,
+    99: #fbfcff,
     100: #ffffff,
   ),
   neutral-variant: (
     0: #000000,
-    10: #191b23,
-    20: #2e3038,
-    25: #393b43,
-    30: #45464f,
-    35: #51525b,
-    40: #5d5e67,
-    50: #757680,
-    60: #8f909a,
-    70: #aaaab4,
-    80: #c6c6d0,
-    90: #e2e1ec,
-    95: #f0f0fa,
-    98: #faf8ff,
-    99: #fefbff,
+    10: #121b2d,
+    20: #263044,
+    25: #313c50,
+    30: #3c475c,
+    35: #485368,
+    40: #535f75,
+    50: #6b778e,
+    60: #8591a9,
+    70: #9facc4,
+    80: #bac8e1,
+    90: #d5e3fd,
+    95: #eaf1ff,
+    98: #f6f9ff,
+    99: #fbfcff,
     100: #ffffff,
   ),
   error: (

@@ -31,50 +31,107 @@
             <p class="empty-state">Todavía no hay estadísticas para esta temporada.</p>
           } @else {
             <div class="table-scroll">
-              <table mat-table [dataSource]="s.players" class="season-table">
+              <table
+                mat-table
+                [dataSource]="sortedPlayers()"
+                class="season-table"
+                matSort
+                [matSortActive]="sort().active"
+                [matSortDirection]="sort().direction"
+                (matSortChange)="onSortChange($event)"
+              >
                 <ng-container matColumnDef="name">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Jugador</th>
-                  <td mat-cell *matCellDef="let row">{{ row.player.firstName }} {{ row.player.lastName }}</td>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Jugador</th>
+                  <td mat-cell *matCellDef="let row">
+                    <span class="name-cell">
+                      @if (topScorerIds().has(row.playerId)) {
+                        <mat-icon class="leader-icon leader-icon-goals" matTooltip="Máximo goleador">military_tech</mat-icon>
+                      }
+                      {{ row.player.firstName }} {{ row.player.lastName }}
+                    </span>
+                  </td>
                 </ng-container>
 
                 <ng-container matColumnDef="appearances">
-                  <th mat-header-cell *matHeaderCellDef scope="col">PJ</th>
-                  <td mat-cell *matCellDef="let row">{{ row.appearances }}</td>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" matTooltip="Partidos jugados" scope="col">PJ</th>
+                  <td mat-cell *matCellDef="let row" class="num-cell">
+                    <span class="num-with-icon">
+                      @if (topAppearancesIds().has(row.playerId)) {
+                        <mat-icon class="leader-icon leader-icon-appearances" matTooltip="Más partidos jugados">verified</mat-icon>
+                      }
+                      {{ row.appearances }}
+                    </span>
+                  </td>
                 </ng-container>
 
                 <ng-container matColumnDef="timePlayed">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Tiempo total</th>
-                  <td mat-cell *matCellDef="let row">{{ formatTime(row.secondsPlayed) }}</td>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">Tiempo total</th>
+                  <td mat-cell *matCellDef="let row" class="num-cell">
+                    <span class="num-with-icon">
+                      @if (topTimePlayedIds().has(row.playerId)) {
+                        <mat-icon class="leader-icon leader-icon-time" matTooltip="Más minutos jugados">timer</mat-icon>
+                      }
+                      {{ formatTime(row.secondsPlayed) }}
+                    </span>
+                  </td>
                 </ng-container>
 
                 <ng-container matColumnDef="avgTime">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Media/partido</th>
-                  <td mat-cell *matCellDef="let row">{{ formatTime(row.avgSecondsPerAppearance) }}</td>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">Media/partido</th>
+                  <td mat-cell *matCellDef="let row" class="num-cell">{{ formatTime(row.avgSecondsPerAppearance) }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="goals">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Goles</th>
-                  <td mat-cell *matCellDef="let row">{{ row.goals }}</td>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">Goles</th>
+                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.goals === 0">{{ row.goals }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="assists">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Asist.</th>
-                  <td mat-cell *matCellDef="let row">{{ row.assists }}</td>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">Asist.</th>
+                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.assists === 0">
+                    <span class="num-with-icon">
+                      @if (topAssistsIds().has(row.playerId)) {
+                        <mat-icon class="leader-icon leader-icon-assists" matTooltip="Máximo asistente">handshake</mat-icon>
+                      }
+                      {{ row.assists }}
+                    </span>
+                  </td>
                 </ng-container>
 
                 <ng-container matColumnDef="yellowCards">
-                  <th mat-header-cell *matHeaderCellDef scope="col">TA</th>
-                  <td mat-cell *matCellDef="let row">{{ row.yellowCards }}</td>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" matTooltip="Tarjetas amarillas" scope="col">TA</th>
+                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.yellowCards === 0">
+                    <span class="num-with-icon">
+                      @if (topYellowCardsIds().has(row.playerId)) {
+                        <mat-icon class="leader-icon leader-icon-yellow" matTooltip="Más tarjetas amarillas">crop_portrait</mat-icon>
+                      }
+                      {{ row.yellowCards }}
+                    </span>
+                  </td>
                 </ng-container>
 
                 <ng-container matColumnDef="redCards">
-                  <th mat-header-cell *matHeaderCellDef scope="col">TR</th>
-                  <td mat-cell *matCellDef="let row">{{ row.redCards }}</td>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" matTooltip="Tarjetas rojas" scope="col">TR</th>
+                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.redCards === 0">
+                    <span class="num-with-icon">
+                      @if (topRedCardsIds().has(row.playerId)) {
+                        <mat-icon class="leader-icon leader-icon-red" matTooltip="Más tarjetas rojas">crop_portrait</mat-icon>
+                      }
+                      {{ row.redCards }}
+                    </span>
+                  </td>
                 </ng-container>
 
                 <ng-container matColumnDef="ownGoals">
-                  <th mat-header-cell *matHeaderCellDef scope="col">G. propia</th>
-                  <td mat-cell *matCellDef="let row">{{ row.ownGoals }}</td>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">G. propia</th>
+                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.ownGoals === 0">
+                    <span class="num-with-icon">
+                      @if (topOwnGoalsIds().has(row.playerId)) {
+                        <mat-icon class="leader-icon leader-icon-owngoal" matTooltip="Más goles en propia">sports_soccer</mat-icon>
+                      }
+                      {{ row.ownGoals }}
+                    </span>
+                  </td>
                 </ng-container>
 
                 <tr mat-header-row *matHeaderRowDef="columns"></tr>

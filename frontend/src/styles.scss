@@ -41,6 +41,25 @@
   src: url('/fonts/material-icons.woff2') format('woff2');
 }
 
+// Display face for headings and the wordmark only — body copy, forms, and
+// buttons stay on Roboto. Same self-hosting rationale as Roboto above
+// (CSP has no third-party font-src). Latin subset covers Spanish
+// diacritics (see Roboto comment).
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/bricolage-grotesque-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/bricolage-grotesque-800.woff2') format('woff2');
+}
+
 .material-icons {
   font-family: 'Material Icons';
   font-weight: normal;
@@ -74,6 +93,18 @@ html {
   --page-max-width: 880px;
   --page-padding: var(--space-lg);
 
+  // Shared elevation for raised surfaces (shortcut cards, mobile match
+  // cards, mat-card) instead of each component inventing its own shadow.
+  // A drop-shadow barely reads on a near-black surface, so the lift comes
+  // from a faint top highlight (light catching the raised edge) paired
+  // with a soft grounding shadow, not from shadow depth alone.
+  --surface-card-shadow:
+    0 1px 0 0 color-mix(in srgb, white 6%, transparent) inset,
+    0 3px 10px color-mix(in srgb, black 45%, transparent);
+  --surface-card-shadow-hover:
+    0 1px 0 0 color-mix(in srgb, white 8%, transparent) inset,
+    0 6px 20px color-mix(in srgb, black 50%, transparent);
+
   @include mat.theme((
     color: (
       theme-type: dark,
@@ -98,14 +129,67 @@ html, body {
 body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  background: var(--mat-sys-surface);
+  // A stadium under floodlights at night, not a flat panel: a wide, faint
+  // gold glow falls from above and fades into the navy well before it
+  // could compete with content. Fixed so it reads as the room's light,
+  // not something that scrolls with the page.
+  background:
+    radial-gradient(
+      ellipse 1400px 700px at 50% -120px,
+      color-mix(in srgb, var(--mat-sys-tertiary) 10%, transparent) 0%,
+      transparent 70%
+    ),
+    var(--mat-sys-surface);
+  background-attachment: fixed;
   color: var(--mat-sys-on-surface);
 }
 
 h1, h2, h3 {
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-  font-weight: 500;
+  font-family: 'Bricolage Grotesque', Roboto, "Helvetica Neue", sans-serif;
+  font-weight: 600;
   letter-spacing: -0.01em;
+}
+
+h1 {
+  font-weight: 800;
+}
+
+// Browser surfaces the theme would otherwise leave on generic defaults.
+// Gold is already the app's "this is selected/active" signal (see the nav
+// indicator in app.component.scss) — focus and selection are the same
+// kind of state, so they reuse it instead of the browser's default blue.
+:focus-visible {
+  outline: 2px solid var(--mat-sys-tertiary);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--mat-sys-tertiary) 35%, transparent);
+  color: var(--mat-sys-on-surface);
+}
+
+// Give mat-table header rows their own identity instead of the stock
+// Material look (same weight/case as body cells, distinguished only by
+// a hairline). Selectors target the public directive attributes
+// (`[mat-header-cell]`/`[mat-header-row]`), not internal Material CSS
+// classes, so this survives Material version upgrades.
+tr[mat-header-row] {
+  background: var(--mat-sys-surface-container);
+}
+
+th[mat-header-cell] {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// Raised surfaces: mat-card already ships an outlined variant from the
+// M3 theme; layering the shared lift on top reads as an intentionally
+// designed elevation system rather than a flat template default.
+mat-card {
+  box-shadow: var(--surface-card-shadow);
 }
 
 // Visually hidden but still announced by screen readers — for table header
@@ -206,6 +290,10 @@ h1, h2, h3 {
   .auth-brand-badge {
     height: 88px;
     width: auto;
+    // A soft gold glow hugging the crest's own silhouette (drop-shadow
+    // follows alpha, unlike box-shadow) — the badge under the same
+    // floodlight the page background implies, not a flat logo.
+    filter: drop-shadow(0 0 22px color-mix(in srgb, var(--mat-sys-tertiary) 45%, transparent));
   }
 
   h1 {
@@ -245,14 +333,66 @@ h1, h2, h3 {
   --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
 }
 
+// A live match is the one moment the club's own name-pun (intermitente —
+// "turn signal") earns a literal payoff: this chip actually blinks, the
+// way the crest's headlight does. It is the only thing on the page that
+// moves on its own, and only while a match is genuinely live.
+@keyframes indicator-blink {
+  0%, 100% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mat-sys-tertiary) 50%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mat-sys-tertiary) 4%, transparent);
+  }
+}
+
 .status-chip.status-live {
   --mat-chip-elevated-container-color: var(--mat-sys-primary-container);
   --mat-chip-label-text-color: var(--mat-sys-on-primary-container);
+  animation: indicator-blink 1.6s ease-in-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 }
 
 .status-chip.status-finished {
   --mat-chip-elevated-container-color: var(--mat-sys-tertiary-container);
   --mat-chip-label-text-color: var(--mat-sys-on-tertiary-container);
+}
+
+// Match-event glyphs (goal/assist/card/substitution), shared between the
+// live-match tracker and the match-detail history — one definition, two
+// call sites, per MATCH_EVENT_ICONS in match-events.service.ts. Color
+// carries "good for us" vs "bad for us" vs administrative; the glyph
+// itself (ball, handshake, card, swap) carries what happened.
+.event-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+.event-icon-goal,
+.event-icon-assist {
+  color: var(--mat-sys-primary);
+}
+
+.event-icon-own_goal,
+.event-icon-opponent_goal {
+  color: var(--mat-sys-error);
+}
+
+.event-icon-substitution {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.event-icon-yellow_card {
+  color: var(--mat-sys-tertiary);
+}
+
+.event-icon-red_card {
+  color: var(--mat-sys-error);
 }
 
 // Consistent field spacing inside every create/edit dialog.

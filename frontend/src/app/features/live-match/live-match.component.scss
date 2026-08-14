@@ -11,6 +11,33 @@
   width: fit-content;
 }
 
+// The clock card is the one screen where the club's "live" language
+// (see the pulsing status chip in styles.scss) belongs on the container
+// itself, not just a chip inside it — the whole scoreboard is the live
+// thing. Border glow only, so it stays legible from a few steps away on
+// the sideline; disabled for reduced-motion the same as the chip.
+.clock-card {
+  transition: box-shadow 0.3s ease;
+}
+
+.clock-card-live {
+  border-color: color-mix(in srgb, var(--mat-sys-tertiary) 55%, transparent);
+  animation: clock-card-live-pulse 2.4s ease-in-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes clock-card-live-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--mat-sys-tertiary) 25%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 22px 2px color-mix(in srgb, var(--mat-sys-tertiary) 3%, transparent);
+  }
+}
+
 .clock-header {
   display: flex;
   align-items: center;
@@ -19,15 +46,48 @@
   gap: var(--space-md);
 }
 
+.scoreboard-block {
+  min-width: 0;
+}
+
+// A real scoreboard reads "who" before "how many": each side gets its
+// own stacked team label so the numbers alone never have to carry that.
 .scoreboard {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-xs);
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.scoreboard-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.team-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mat-sys-on-surface-variant);
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-label-us {
+  color: var(--mat-sys-primary);
+  max-width: none;
 }
 
 .scoreboard-value {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.75rem;
+  font-weight: 800;
+  font-family: 'Bricolage Grotesque', Roboto, sans-serif;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -38,18 +98,32 @@
 
 .scoreboard-them {
   color: var(--mat-sys-on-surface-variant);
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .scoreboard-sep {
   color: var(--mat-sys-on-surface-variant);
-  font-size: 1.3rem;
+  font-size: 1.5rem;
+  align-self: flex-end;
+  padding-bottom: 0.5rem;
 }
 
-.opponent {
-  margin: 0 0 var(--space-sm);
-  font-size: 1.1rem;
-  font-weight: 500;
+.status-row-live {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+// The active period chip breathes the same gold pulse as the club's
+// live-status chip elsewhere (see .status-chip.status-live in
+// styles.scss) — same signal, same visual word, on the screen where it
+// matters most.
+.live-chip {
+  animation: indicator-blink 1.6s ease-in-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 }
 
 .paused-chip {
@@ -63,6 +137,8 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  font-feature-settings: 'tnum';
+  text-shadow: 0 0 24px color-mix(in srgb, var(--mat-sys-tertiary) 30%, transparent);
 }
 
 .score-row {
@@ -129,13 +205,17 @@
   background: var(--mat-sys-surface-container-highest);
 }
 
+// Gold marks "the thing you're about to act on" everywhere in the app
+// (nav, focus rings, the live chip) — the bench player awaiting a swap,
+// and the on-pitch players you can now swap them with, are that same
+// kind of state, so they reuse the same color instead of a generic blue.
 .player-row.selected {
-  background: var(--mat-sys-primary-container);
-  color: var(--mat-sys-on-primary-container);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
 }
 
 .player-row.selectable {
-  outline: 1px dashed var(--mat-sys-outline-variant);
+  outline: 1px dashed color-mix(in srgb, var(--mat-sys-tertiary) 55%, transparent);
 }
 
 .player-row:disabled {
@@ -183,22 +263,56 @@
   flex-wrap: wrap;
 }
 
+// Sideline-sized touch targets (44px, not the 32px this used to be) —
+// these get tapped quickly, standing up, mid-match, and a mis-tap here
+// costs a real stat correction later.
 .stat-btn {
   display: flex;
   align-items: center;
-  min-height: 32px;
+  gap: 2px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 4px 10px;
   border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 8px;
+  border-radius: 10px;
   background: transparent;
-  font-size: 1rem;
   line-height: 1;
   cursor: pointer;
-  color: inherit;
+  color: var(--mat-sys-on-surface-variant);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
 }
 
 .stat-btn:active {
   background: var(--mat-sys-surface-container-highest);
+}
+
+.stat-btn-goal,
+.stat-btn-assist {
+  color: var(--mat-sys-primary);
+}
+
+.stat-btn-yellow {
+  color: var(--mat-sys-tertiary);
+}
+
+.stat-btn-red {
+  color: var(--mat-sys-error);
+}
+
+.stat-btn-yellow:active {
+  border-color: var(--mat-sys-tertiary);
+  background: color-mix(in srgb, var(--mat-sys-tertiary) 18%, transparent);
+}
+
+.stat-btn-red:active {
+  border-color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
 }
 
 .stat-count {

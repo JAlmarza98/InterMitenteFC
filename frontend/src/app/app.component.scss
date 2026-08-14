@@ -7,6 +7,34 @@
 .app-toolbar {
   flex: 0 0 auto;
   gap: var(--space-sm);
+  position: relative;
+  // The crest's own livery — vertical navy/blue stripes behind the
+  // headlight — repeated as a near-invisible texture instead of a flat
+  // fill, so the toolbar reads as "the crest's material," not a stock
+  // Material app-bar. Kept low-contrast enough to stay out of the way
+  // of the nav labels sitting on top of it.
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, white 5%, transparent) 0 10px,
+    transparent 10px 26px
+  );
+
+  // A thin band of the same floodlight gold the page background glows
+  // with, grounding the bar instead of letting it end on a hard edge.
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--mat-sys-tertiary) 45%, transparent) 50%,
+      transparent
+    );
+  }
 }
 
 .app-title {
@@ -15,13 +43,16 @@
   gap: var(--space-xs);
   color: inherit;
   text-decoration: none;
+  font-family: 'Bricolage Grotesque', Roboto, "Helvetica Neue", sans-serif;
   font-size: 1.25rem;
-  font-weight: 500;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .app-title-crest {
   height: 2rem;
   width: auto;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--mat-sys-tertiary) 55%, transparent));
 }
 
 .spacer {
@@ -33,8 +64,11 @@
   gap: var(--space-xs);
 }
 
+// Gold is the crest's indicator color (the headlight/turn-signal the club's
+// name puns on), so it marks "this is the active one" throughout the nav
+// instead of restating the toolbar's own navy.
 .active-link {
-  background: color-mix(in srgb, var(--mat-sys-on-primary) 16%, transparent);
+  background: color-mix(in srgb, var(--mat-sys-tertiary) 24%, transparent);
   border-radius: 999px;
 }
 
@@ -97,7 +131,7 @@
       }
 
       &.active {
-        color: var(--mat-sys-primary);
+        color: var(--mat-sys-tertiary);
       }
     }
   }

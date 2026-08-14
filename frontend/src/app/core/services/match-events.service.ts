@@ -35,14 +35,18 @@ export const MATCH_EVENT_LABELS: Record<MatchEventType, string> = {
   opponent_goal: 'Gol rival',
 };
 
+// Material icon ligature names (not emoji — see craft-floor's ban on
+// emoji standing in for an icon system). `event-icon-<type>` in the
+// shared stylesheet supplies the semantic color (card yellow/red, etc.);
+// this map only chooses the glyph.
 export const MATCH_EVENT_ICONS: Record<MatchEventType, string> = {
-  goal: '⚽',
-  assist: '🅰️',
-  yellow_card: '🟨',
-  red_card: '🟥',
-  own_goal: '⚽',
-  substitution: '🔄',
-  opponent_goal: '🥅',
+  goal: 'sports_soccer',
+  assist: 'handshake',
+  yellow_card: 'crop_portrait',
+  red_card: 'crop_portrait',
+  own_goal: 'sports_soccer',
+  substitution: 'swap_horiz',
+  opponent_goal: 'sports_soccer',
 };
 
 @Injectable({ providedIn: 'root' })

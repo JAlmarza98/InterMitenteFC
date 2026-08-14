@@ -10,9 +10,19 @@
   background: var(--mat-sys-surface-container-highest);
 }
 
+.clickable-row:focus-visible {
+  outline: 2px solid var(--mat-sys-tertiary);
+  outline-offset: -2px;
+}
+
 .home-away {
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.85em;
+}
+
+.score-cell {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
 
 .match-cards {
@@ -44,6 +54,13 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  box-shadow: var(--surface-card-shadow);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    background: var(--mat-sys-surface-container-highest);
+    box-shadow: var(--surface-card-shadow-hover);
+  }
 }
 
 .match-card-main {
