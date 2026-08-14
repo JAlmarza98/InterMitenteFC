@@ -45,6 +45,7 @@ export class MatchListComponent {
   private readonly router = inject(Router);
 
   readonly canManage = this.auth.canManage;
+  readonly isAdmin = this.auth.isAdmin;
   readonly displayedColumns = ['date', 'opponent', 'competition', 'status', 'score', 'actions'];
 
   readonly matches = signal<Match[]>([]);

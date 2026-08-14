@@ -6,19 +6,22 @@ import * as controller from "./matchClock.controller";
 
 export const matchClockRouter = Router({ mergeParams: true });
 
-matchClockRouter.use(requireAuth);
+// Live-match tracking (the clock, playing-time segments, substitutions)
+// is a coach/admin tool end to end, unlike the rest of the API where
+// reads are open to everyone — a member has no screen that shows this
+// data, so the reads are scoped the same as the writes instead of being
+// reachable only by calling the API directly.
+matchClockRouter.use(requireAuth, requireRole("coach", "admin"));
 
 matchClockRouter.get("/clock", asyncHandler(controller.getClock));
 matchClockRouter.get("/segments", asyncHandler(controller.listSegments));
 
-const manage = requireRole("coach", "admin");
-
-matchClockRouter.post("/clock/start-period", manage, asyncHandler(controller.startPeriod));
-matchClockRouter.post("/clock/pause", manage, asyncHandler(controller.pause));
-matchClockRouter.post("/clock/resume", manage, asyncHandler(controller.resume));
-matchClockRouter.post("/clock/end-period", manage, asyncHandler(controller.endPeriod));
-matchClockRouter.post("/clock/finish", manage, asyncHandler(controller.finish));
-matchClockRouter.post("/substitutions", manage, asyncHandler(controller.substitute));
-matchClockRouter.post("/segments", manage, asyncHandler(controller.createSegment));
-matchClockRouter.patch("/segments/:segmentId", manage, asyncHandler(controller.updateSegment));
-matchClockRouter.delete("/segments/:segmentId", manage, asyncHandler(controller.deleteSegment));
+matchClockRouter.post("/clock/start-period", asyncHandler(controller.startPeriod));
+matchClockRouter.post("/clock/pause", asyncHandler(controller.pause));
+matchClockRouter.post("/clock/resume", asyncHandler(controller.resume));
+matchClockRouter.post("/clock/end-period", asyncHandler(controller.endPeriod));
+matchClockRouter.post("/clock/finish", asyncHandler(controller.finish));
+matchClockRouter.post("/substitutions", asyncHandler(controller.substitute));
+matchClockRouter.post("/segments", asyncHandler(controller.createSegment));
+matchClockRouter.patch("/segments/:segmentId", asyncHandler(controller.updateSegment));
+matchClockRouter.delete("/segments/:segmentId", asyncHandler(controller.deleteSegment));

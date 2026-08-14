@@ -42,8 +42,21 @@
 }
 
 .score-display {
+  margin: 0;
   font-size: 1.5rem;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+// Read-only viewers (coach, member) always get a line here — admin gets
+// the editable score-row instead — so the space between the status chip
+// and the actions below never just disappears depending on whether a
+// score happens to be recorded yet.
+.score-pending {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+  font-style: italic;
 }
 
 .notes {

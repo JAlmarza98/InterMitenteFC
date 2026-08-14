@@ -75,6 +75,7 @@ export class MatchDetailComponent {
   private readonly auth = inject(AuthService);
 
   readonly canManage = this.auth.canManage;
+  readonly isAdmin = this.auth.isAdmin;
   /** The squad (called up / starter) only makes sense to edit before kickoff
    * — once the match is live or finished, who actually played is tracked
    * via substitutions and playing-time segments instead. */

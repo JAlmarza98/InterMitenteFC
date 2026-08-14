@@ -30,6 +30,9 @@ export class AuthService {
     const role = this._user()?.role;
     return role === 'admin' || role === 'coach';
   });
+  /** Deleting a match and correcting its recorded stats are admin-only —
+   * narrower than canManage, which still covers day-to-day coach actions. */
+  readonly isAdmin = computed(() => this._user()?.role === 'admin');
 
   private fetchMe$: Observable<{ user: CurrentUser | null }> | null = null;
 

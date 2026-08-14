@@ -46,7 +46,10 @@ export class MatchStatsComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
 
-  readonly canManage = this.auth.canManage;
+  // This screen corrects already-recorded numbers (as opposed to live-match's
+  // append-only event log), so it's scoped to admin — narrower than the
+  // coach/admin canManage used everywhere else in the match feature.
+  readonly canManage = this.auth.isAdmin;
   readonly matchId = this.route.snapshot.paramMap.get('id')!;
 
   readonly statColumns = ['name', 'timePlayed', 'goals', 'assists', 'yellowCards', 'redCards', 'ownGoals'];

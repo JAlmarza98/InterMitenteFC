@@ -107,9 +107,20 @@ export async function createMatch(req: Request, res: Response) {
   res.status(201).json({ match });
 }
 
+// Match metadata (opponent, date, competition, notes...) stays a coach
+// action, but the status and the score are the official record of what
+// happened — only admin can move those, regardless of which fields a
+// given PATCH request happens to touch.
+const ADMIN_ONLY_MATCH_FIELDS = ["status", "teamScore", "opponentScore"] as const;
+
 export async function updateMatch(req: Request, res: Response) {
   const data = updateMatchSchema.parse(req.body);
   const matchId = req.params.id;
+
+  const touchesAdminOnlyField = ADMIN_ONLY_MATCH_FIELDS.some((field) => data[field] !== undefined);
+  if (touchesAdminOnlyField && req.user!.role !== "admin") {
+    throw new HttpError(403, "Solo un administrador puede cambiar el estado o el marcador del partido");
+  }
 
   if (data.periodLengthMinutes !== undefined) {
     const hasStartedPeriod = await prisma.matchPeriod.findFirst({

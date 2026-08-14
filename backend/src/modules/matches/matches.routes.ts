@@ -25,11 +25,15 @@ matchesRouter.get("/:id/stats", asyncHandler(getMatchStats));
 matchesRouter.get("/:id/events", asyncHandler(listMatchEvents));
 matchesRouter.post("/", requireRole("coach", "admin"), asyncHandler(createMatch));
 matchesRouter.patch("/:id", requireRole("coach", "admin"), asyncHandler(updateMatch));
-matchesRouter.delete("/:id", requireRole("coach", "admin"), asyncHandler(deleteMatch));
+// Deleting a match and correcting its recorded stats are admin-only —
+// coach keeps day-to-day match management (create/edit/squad/live
+// tracking) but not the power to erase a match or overwrite its numbers
+// after the fact.
+matchesRouter.delete("/:id", requireRole("admin"), asyncHandler(deleteMatch));
 matchesRouter.put("/:id/squad", requireRole("coach", "admin"), asyncHandler(putSquad));
 matchesRouter.put(
   "/:id/player-stats/:playerId",
-  requireRole("coach", "admin"),
+  requireRole("admin"),
   asyncHandler(upsertPlayerStat)
 );
 matchesRouter.post("/:id/events", requireRole("coach", "admin"), asyncHandler(logMatchEvent));
