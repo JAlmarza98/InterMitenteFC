@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../db/prisma";
+import { HttpError } from "../../middleware/errorHandler";
 import { registerUser, verifyCredentials, toPublicUser } from "./auth.service";
 
 const registerSchema = z.object({
@@ -26,6 +27,14 @@ export async function register(req: Request, res: Response) {
 export async function login(req: Request, res: Response) {
   const { email, password } = loginSchema.parse(req.body);
   const user = await verifyCredentials(email, password);
+
+  if (user.status === "pending") {
+    throw new HttpError(403, "Tu cuenta está pendiente de aprobación por un administrador");
+  }
+  if (user.status === "rejected") {
+    throw new HttpError(403, "Tu solicitud de acceso ha sido rechazada");
+  }
+
   req.session.userId = user.id;
   res.json({ user: toPublicUser(user) });
 }
