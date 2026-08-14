@@ -5,14 +5,14 @@ import { HttpError } from "../../middleware/errorHandler";
 import { registerUser, verifyCredentials, toPublicUser } from "./auth.service";
 
 const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  name: z.string().min(1),
+  email: z.string().email().max(255),
+  password: z.string().min(8).max(128),
+  name: z.string().min(1).max(200),
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().email().max(255),
+  password: z.string().min(1).max(128),
 });
 
 export async function register(req: Request, res: Response) {
