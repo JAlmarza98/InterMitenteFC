@@ -7,6 +7,56 @@
 // primary/tertiary colors match the crest instead of a generic Material hue.
 @use 'theme-palettes' as brand;
 
+// Self-hosted instead of loaded from fonts.googleapis.com/fonts.gstatic.com:
+// keeps the CSP free of third-party style-src/font-src entries and removes
+// a runtime dependency on Google's CDN being reachable. Same files Google
+// Fonts itself serves for the Latin subset (covers Spanish diacritics —
+// á, é, í, ó, ú, ñ, ü all fall within U+0000–00FF).
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/roboto-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/roboto-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/roboto-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/fonts/material-icons.woff2') format('woff2');
+}
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
 html {
   color-scheme: dark;
 
