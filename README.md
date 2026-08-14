@@ -5,13 +5,13 @@ Aplicación web para gestionar el equipo: registro de usuarios con aprobación m
 ## Stack
 
 - **Backend**: Node.js + Express + TypeScript, Prisma ORM, PostgreSQL, sesiones (`express-session` + `connect-pg-simple`).
-- **Frontend**: Angular (standalone components, rutas con lazy-loading) + Angular Material (Material 3 / M3 theming, tema oscuro navy/dorado generado a partir del escudo del club), diseño mobile-first. Instalable como PWA (service worker + manifest) para añadirla a la pantalla de inicio del móvil.
+- **Frontend**: Angular (standalone components, rutas con lazy-loading) + Angular Material (Material 3 / M3 theming, tema oscuro navy/dorado afinado a partir del escudo del club, tipografía Bricolage Grotesque en titulares, y el dorado como color de "esto está activo/en vivo" en toda la app: navegación, foco, marcador en directo), diseño mobile-first. Instalable como PWA (service worker + manifest) para añadirla a la pantalla de inicio del móvil.
 - **Despliegue**: Docker Compose (`postgres`, `api`, `web`), pensado para un servidor Proxmox propio.
 
 ## Roles
 
-- **admin**: aprueba/rechaza usuarios, gestiona roles, temporadas, y todo lo que puede hacer `coach`.
-- **coach**: gestiona jugadores, partidos, cronómetro en vivo y estadísticas.
+- **admin**: aprueba/rechaza usuarios, gestiona roles y temporadas, corrige estadísticas de partido a posteriori, borra partidos, cambia el estado de un partido y su marcador manualmente, y todo lo que puede hacer `coach`.
+- **coach**: gestiona jugadores, crea y edita partidos (rival, fecha, competición, convocatoria) y dirige el partido en vivo (cronómetro, cambios, goles/asistencias/tarjetas). No puede borrar partidos, corregir estadísticas a posteriori, ni cambiar el estado o el marcador del partido fuera del propio cronómetro en vivo.
 - **member**: usuario aprobado con acceso de solo lectura a plantilla, partidos y estadísticas.
 
 Cualquiera puede registrarse, pero el usuario queda en estado `pending` hasta que un admin lo aprueba desde **Usuarios** en el panel de administración. La interfaz solo muestra las acciones que el rol del usuario puede realizar — si no puedes hacer algo, no aparece el botón (además de que el backend rechaza la petición igualmente si se intentara saltar la UI).
@@ -22,7 +22,7 @@ Cualquiera puede registrarse, pero el usuario queda en estado `pending` hasta qu
 - **Partidos**: crear/editar con selector de fecha y hora nativos de Material, rival, local/visitante, competición (Liga/Copa), temporada, y duración de cada parte configurable (por defecto 30 minutos, ajustable por partido). Convocatoria con titulares/suplentes.
 - **Partido en vivo**: cronómetro que arranca/pausa/termina cada parte, hace cambios (banquillo ↔ campo) y dispara goles/asistencias/tarjetas al momento con un toque, todo desde el móvil en la banda. El reloj se reconstruye desde el servidor en cada carga de página — sobrevive a recargas y cortes de conexión sin perder el tiempo transcurrido (ver "Diseño del cronómetro" más abajo). Cada jugador convocado muestra su tiempo de juego acumulado en directo, tanto en el campo (corriendo en tiempo real) como en el banquillo (congelado desde el último cambio).
 - **Historial del partido**: cada gol, asistencia, tarjeta y cambio hecho en vivo queda registrado con el jugador y el minuto exacto en el que ocurrió, formando un resumen cronológico consultable tanto durante el partido (pantalla de partido en vivo) como después (ficha del partido). Los goles del rival también se anotan con un toque desde el partido en vivo (sin jugador asociado) y actualizan el marcador (`opponentScore`) al momento.
-- **Estadísticas por partido**: minutos exactos jugados (con segundos) por jugador, goles, asistencias, tarjetas. La pantalla de "Estadísticas" del partido es para **corregir** datos mal apuntados a posteriori — anotar en directo se hace desde la pantalla de partido en vivo.
+- **Estadísticas por partido**: minutos exactos jugados (con segundos) por jugador, goles, asistencias, tarjetas. La pantalla de "Estadísticas" del partido es para que un **admin** corrija datos mal apuntados a posteriori — anotar en directo se hace desde la pantalla de partido en vivo, disponible para `coach` y `admin`.
 - **Estadísticas de temporada**: totales y medias por jugador (partidos jugados, minutos, goles, tarjetas...) agregando solo los partidos finalizados.
 - **Temporadas** (admin): alta de temporadas con fecha de inicio/fin y cuál está activa.
 - **Aprobación de usuarios** (admin): pendientes/aprobados/rechazados, cambio de rol.
