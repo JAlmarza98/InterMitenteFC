@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -30,6 +30,7 @@ function toDateOnlyString(date: Date): string {
     MatButtonModule,
     MatCheckboxModule,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './season-form-dialog.component.html',
 })
 export class SeasonFormDialogComponent {

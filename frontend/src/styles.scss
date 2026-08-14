@@ -191,18 +191,18 @@ h1, h2, h3 {
 // scheduled stays neutral, live pops in primary navy, finished settles
 // into the tertiary gold accent.
 .status-chip.status-scheduled {
-  --mdc-chip-elevated-container-color: var(--mat-sys-surface-container-high);
-  --mdc-chip-label-text-color: var(--mat-sys-on-surface-variant);
+  --mat-chip-elevated-container-color: var(--mat-sys-surface-container-high);
+  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
 }
 
 .status-chip.status-live {
-  --mdc-chip-elevated-container-color: var(--mat-sys-primary-container);
-  --mdc-chip-label-text-color: var(--mat-sys-on-primary-container);
+  --mat-chip-elevated-container-color: var(--mat-sys-primary-container);
+  --mat-chip-label-text-color: var(--mat-sys-on-primary-container);
 }
 
 .status-chip.status-finished {
-  --mdc-chip-elevated-container-color: var(--mat-sys-tertiary-container);
-  --mdc-chip-label-text-color: var(--mat-sys-on-tertiary-container);
+  --mat-chip-elevated-container-color: var(--mat-sys-tertiary-container);
+  --mat-chip-label-text-color: var(--mat-sys-on-tertiary-container);
 }
 
 // Consistent field spacing inside every create/edit dialog.

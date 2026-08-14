@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -35,6 +35,7 @@ function combineDateAndTime(date: Date, time: Date): Date {
     MatButtonModule,
   ],
   templateUrl: './match-form-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './match-form-dialog.component.scss',
 })
 export class MatchFormDialogComponent {

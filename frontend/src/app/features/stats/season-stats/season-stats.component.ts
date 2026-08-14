@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -19,6 +19,7 @@ import { formatMinuteSeconds } from '../../../core/services/match-clock.service'
     MatProgressSpinnerModule,
   ],
   templateUrl: './season-stats.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './season-stats.component.scss',
 })
 export class SeasonStatsComponent {

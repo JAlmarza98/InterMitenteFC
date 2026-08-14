@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -24,6 +24,7 @@ import { SeasonFormDialogComponent } from '../season-form-dialog/season-form-dia
     MatProgressSpinnerModule,
   ],
   templateUrl: './season-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './season-list.component.scss',
 })
 export class SeasonListComponent {

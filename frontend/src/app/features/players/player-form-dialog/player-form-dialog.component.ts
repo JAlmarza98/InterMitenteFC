@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,6 +18,7 @@ import { FOOTBALL7_POSITIONS, Player, PlayerInput } from '../../../core/services
     MatSelectModule,
     MatButtonModule,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './player-form-dialog.component.html',
 })
 export class PlayerFormDialogComponent {

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -35,6 +35,7 @@ import { SegmentFormDialogComponent } from '../segment-form-dialog/segment-form-
     MatProgressSpinnerModule,
   ],
   templateUrl: './match-stats.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './match-stats.component.scss',
 })
 export class MatchStatsComponent {

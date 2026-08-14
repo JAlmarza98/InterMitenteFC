@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -33,6 +33,7 @@ const STATUS_LABELS: Record<Match['status'], string> = {
     MatProgressSpinnerModule,
   ],
   templateUrl: './match-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './match-list.component.scss',
 })
 export class MatchListComponent {

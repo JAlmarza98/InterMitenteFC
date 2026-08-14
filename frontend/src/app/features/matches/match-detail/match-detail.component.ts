@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -59,6 +59,7 @@ const STATUS_LABELS: Record<MatchStatus, string> = {
     MatProgressSpinnerModule,
   ],
   templateUrl: './match-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './match-detail.component.scss',
 })
 export class MatchDetailComponent {

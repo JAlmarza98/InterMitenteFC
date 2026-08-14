@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,6 +10,7 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [MatCardModule, MatButtonModule, MatIconModule],
   templateUrl: './pending-approval.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './pending-approval.component.scss',
 })
 export class PendingApprovalComponent {

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,6 +27,7 @@ import { PlayerFormDialogComponent } from '../player-form-dialog/player-form-dia
     MatTooltipModule,
   ],
   templateUrl: './player-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './player-list.component.scss',
 })
 export class PlayerListComponent {

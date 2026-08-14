@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -68,6 +68,7 @@ const EMPTY_STATS: LiveStatCounts = { goals: 0, assists: 0, yellowCards: 0, redC
     MatProgressSpinnerModule,
   ],
   templateUrl: './live-match.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './live-match.component.scss',
 })
 export class LiveMatchComponent {

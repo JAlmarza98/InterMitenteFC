@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
@@ -24,6 +24,7 @@ import { CurrentUser, UserRole, UserStatus } from '../../../core/services/auth.s
     MatProgressSpinnerModule,
   ],
   templateUrl: './user-approval.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './user-approval.component.scss',
 })
 export class UserApprovalComponent {

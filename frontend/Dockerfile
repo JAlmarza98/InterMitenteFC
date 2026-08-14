@@ -1,4 +1,5 @@
-FROM node:20-alpine AS build
+# Angular CLI 22 requires Node >=22.22.3.
+FROM node:22-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci

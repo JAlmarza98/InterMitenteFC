@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { AbstractControl, ReactiveFormsModule, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -34,6 +34,7 @@ function endNotBeforeStart(group: AbstractControl): ValidationErrors | null {
   standalone: true,
   imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule],
   templateUrl: './segment-form-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './segment-form-dialog.component.scss',
 })
 export class SegmentFormDialogComponent {
