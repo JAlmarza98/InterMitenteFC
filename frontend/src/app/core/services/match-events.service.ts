@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Player } from './players.service';
 import { PeriodType } from './match-clock.service';
+import { Match } from './matches.service';
 
 export type MatchEventType =
   | 'goal'
@@ -53,10 +54,10 @@ export class MatchEventsService {
   }
 
   log(matchId: string, playerId: string, type: Exclude<LoggableEventType, 'opponent_goal'>) {
-    return this.http.post<{ stat: unknown; event: MatchEvent }>(`/api/matches/${matchId}/events`, {
-      playerId,
-      type,
-    });
+    return this.http.post<{ stat: unknown; event: MatchEvent; match: Match | null }>(
+      `/api/matches/${matchId}/events`,
+      { playerId, type }
+    );
   }
 
   logOpponentGoal(matchId: string) {

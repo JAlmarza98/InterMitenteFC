@@ -359,6 +359,10 @@ export class LiveMatchComponent {
     this.matchEventsService.log(this.matchId, row.playerId, STAT_EVENT_TYPE_BY_FIELD[field]).subscribe({
       next: (res) => {
         this.events.set([...this.events(), res.event]);
+        if (res.match) {
+          const current = this.match();
+          if (current) this.match.set({ ...current, teamScore: res.match.teamScore });
+        }
         // A red card closes the player's playing-time segment server-side
         // and sends them off for the rest of the match — reload segments
         // so they immediately drop off "En el campo".

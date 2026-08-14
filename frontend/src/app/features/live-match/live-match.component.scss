@@ -19,6 +19,33 @@
   gap: var(--space-md);
 }
 
+.scoreboard {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+.scoreboard-value {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.scoreboard-us {
+  color: var(--mat-sys-primary);
+}
+
+.scoreboard-them {
+  color: var(--mat-sys-on-surface-variant);
+  font-weight: 500;
+}
+
+.scoreboard-sep {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 1.3rem;
+}
+
 .opponent {
   margin: 0 0 var(--space-sm);
   font-size: 1.1rem;
@@ -43,17 +70,6 @@
   align-items: center;
   gap: var(--space-sm);
   margin-top: var(--space-sm);
-}
-
-.score-label {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.9rem;
-}
-
-.score-value {
-  font-size: 1.3rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 
 .controls-row {

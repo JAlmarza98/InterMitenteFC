@@ -14,6 +14,11 @@
       <mat-card-content>
         <div class="clock-header">
           <div>
+            <div class="scoreboard">
+              <span class="scoreboard-value scoreboard-us">{{ m.teamScore ?? 0 }}</span>
+              <span class="scoreboard-sep">-</span>
+              <span class="scoreboard-value scoreboard-them">{{ m.opponentScore ?? 0 }}</span>
+            </div>
             <p class="opponent">vs {{ m.opponent }}</p>
             @if (clockState()?.activePeriodType; as periodType) {
               <mat-chip>{{ periodLabels[periodType] }}</mat-chip>
@@ -26,8 +31,6 @@
         </div>
 
         <div class="score-row">
-          <span class="score-label">Gol rival</span>
-          <span class="score-value">{{ m.opponentScore ?? 0 }}</span>
           <button mat-stroked-button (click)="logOpponentGoal()">
             <mat-icon>add</mat-icon>
             Gol rival
