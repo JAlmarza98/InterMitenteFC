@@ -140,6 +140,17 @@
   }
 }
 
+// The stats table's columns are all single values (minutes, rating,
+// counters) that read better centered under their header than ragging
+// left with the player name — only the name column itself stays
+// left-aligned, since it's the one column that's actually prose.
+.player-stats-table {
+  th:not(:first-child),
+  td:not(:first-child) {
+    text-align: center;
+  }
+}
+
 .read-only-check {
   color: var(--mat-sys-on-surface-variant);
   vertical-align: middle;

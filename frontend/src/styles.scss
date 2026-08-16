@@ -395,6 +395,50 @@ mat-card {
   color: var(--mat-sys-error);
 }
 
+// Performance rating badge — shared by season stats, match stats and the
+// match-detail summary table (one definition, three call sites, per
+// `ratingTier()`/`formatRating()` in stats.service.ts). A bare "6.9" reads
+// as just another number in a row of numbers; a colored pill is what
+// lets you skim a whole table and immediately spot who had a good game.
+// Tiers are tinted with color-mix against the same semantic tokens used
+// everywhere else (error/primary/tertiary) rather than a traffic-light
+// red/yellow/green scale, so it stays inside the app's navy/gold palette.
+.rating-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rating-none {
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.55;
+}
+
+.rating-poor {
+  color: var(--mat-sys-error);
+  background: color-mix(in srgb, var(--mat-sys-error) 18%, transparent);
+}
+
+.rating-average {
+  color: var(--mat-sys-on-surface-variant);
+  background: color-mix(in srgb, var(--mat-sys-on-surface-variant) 16%, transparent);
+}
+
+.rating-good {
+  color: var(--mat-sys-primary);
+  background: color-mix(in srgb, var(--mat-sys-primary) 20%, transparent);
+}
+
+.rating-excellent {
+  color: var(--mat-sys-tertiary);
+  background: color-mix(in srgb, var(--mat-sys-tertiary) 26%, transparent);
+}
+
 // Consistent field spacing inside every create/edit dialog.
 .form-content {
   display: flex;

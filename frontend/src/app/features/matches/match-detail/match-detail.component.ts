@@ -24,7 +24,7 @@ import {
   MatchEventsService,
 } from '../../../core/services/match-events.service';
 import { formatMinuteSeconds } from '../../../core/services/match-clock.service';
-import { MatchPlayerStatRow, StatsService } from '../../../core/services/stats.service';
+import { formatRating, ratingTier, MatchPlayerStatRow, StatsService } from '../../../core/services/stats.service';
 import { MatchFormDialogComponent } from '../match-form-dialog/match-form-dialog.component';
 
 interface SquadRow {
@@ -107,6 +107,9 @@ export class MatchDetailComponent {
   formatPlayedTime(seconds: number): string {
     return formatMinuteSeconds(seconds);
   }
+
+  readonly formatRating = formatRating;
+  readonly ratingTier = ratingTier;
 
   eventPlayerName(event: MatchEvent): string {
     return event.player ? `${event.player.firstName} ${event.player.lastName}` : '';

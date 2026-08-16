@@ -10,7 +10,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
-import { MatchPlayerStatRow, StatsService } from '../../../core/services/stats.service';
+import { formatRating, ratingTier, MatchPlayerStatRow, StatsService } from '../../../core/services/stats.service';
 import {
   MatchClockService,
   PERIOD_LABELS,
@@ -52,7 +52,7 @@ export class MatchStatsComponent {
   readonly canManage = this.auth.isAdmin;
   readonly matchId = this.route.snapshot.paramMap.get('id')!;
 
-  readonly statColumns = ['name', 'timePlayed', 'goals', 'assists', 'yellowCards', 'redCards', 'ownGoals'];
+  readonly statColumns = ['name', 'timePlayed', 'rating', 'goals', 'assists', 'yellowCards', 'redCards', 'ownGoals'];
   readonly segmentColumns = ['player', 'period', 'start', 'end', 'source', 'actions'];
 
   periodLabel(type: Segment['periodType']): string {
@@ -62,6 +62,9 @@ export class MatchStatsComponent {
   formatTime(totalSeconds: number): string {
     return formatMinuteSeconds(totalSeconds);
   }
+
+  readonly formatRating = formatRating;
+  readonly ratingTier = ratingTier;
 
   readonly players = signal<MatchPlayerStatRow[]>([]);
   readonly segments = signal<Segment[]>([]);

@@ -44,11 +44,18 @@
                   <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Jugador</th>
                   <td mat-cell *matCellDef="let row">
                     <span class="name-cell">
-                      @if (topScorerIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-goals" matTooltip="Máximo goleador">military_tech</mat-icon>
+                      @if (topRatingIds().has(row.playerId)) {
+                        <mat-icon class="leader-icon leader-icon-rating" matTooltip="Mejor promedio">military_tech</mat-icon>
                       }
                       {{ row.player.firstName }} {{ row.player.lastName }}
                     </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="avgRating">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" matTooltip="Nota media de la temporada (0-10)" scope="col">Promedio</th>
+                  <td mat-cell *matCellDef="let row" class="num-cell">
+                    <span class="rating-badge" [class]="'rating-badge rating-' + ratingTier(row.avgRating)">{{ formatRating(row.avgRating) }}</span>
                   </td>
                 </ng-container>
 
@@ -83,7 +90,14 @@
 
                 <ng-container matColumnDef="goals">
                   <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">Goles</th>
-                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.goals === 0">{{ row.goals }}</td>
+                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.goals === 0">
+                    <span class="num-with-icon">
+                      @if (topScorerIds().has(row.playerId)) {
+                        <mat-icon class="leader-icon leader-icon-goals" matTooltip="Máximo goleador">sports_soccer</mat-icon>
+                      }
+                      {{ row.goals }}
+                    </span>
+                  </td>
                 </ng-container>
 
                 <ng-container matColumnDef="assists">

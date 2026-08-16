@@ -40,6 +40,16 @@
   width: 100%;
 }
 
+// Every stats column is a single value (minutes, rating, a counter) —
+// centering it under its header reads better than left-ragging next to
+// the player name, which is the one column that's actually prose.
+.stats-table {
+  th:not(.mat-column-name),
+  td:not(.mat-column-name) {
+    text-align: center;
+  }
+}
+
 .stat-input {
   width: 44px;
   min-height: 36px;

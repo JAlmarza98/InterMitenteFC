@@ -208,11 +208,12 @@
         </mat-card-header>
         <mat-card-content>
           <div class="table-scroll">
-          <table class="squad-table">
+          <table class="squad-table player-stats-table">
             <thead>
               <tr>
                 <th scope="col">Jugador</th>
                 <th scope="col">Minutos</th>
+                <th scope="col">Nota</th>
                 <th scope="col">Goles</th>
                 <th scope="col">Asist.</th>
                 <th scope="col">TA</th>
@@ -225,6 +226,7 @@
                 <tr>
                   <td>{{ row.player.firstName }} {{ row.player.lastName }}</td>
                   <td>{{ formatPlayedTime(row.secondsPlayed) }}</td>
+                  <td><span [class]="'rating-badge rating-' + ratingTier(row.rating)">{{ formatRating(row.rating) }}</span></td>
                   <td>{{ row.goals }}</td>
                   <td>{{ row.assists }}</td>
                   <td>{{ row.yellowCards }}</td>

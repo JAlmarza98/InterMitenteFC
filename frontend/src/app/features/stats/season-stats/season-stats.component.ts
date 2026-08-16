@@ -7,7 +7,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { SeasonStatRow, SeasonStats, StatsService } from '../../../core/services/stats.service';
+import {
+  formatRating,
+  ratingTier,
+  SeasonStatRow,
+  SeasonStats,
+  StatsService,
+} from '../../../core/services/stats.service';
 import { Season, SeasonsService } from '../../../core/services/seasons.service';
 import { formatMinuteSeconds } from '../../../core/services/match-clock.service';
 
@@ -34,6 +40,7 @@ export class SeasonStatsComponent {
 
   readonly columns = [
     'name',
+    'avgRating',
     'appearances',
     'timePlayed',
     'avgTime',
@@ -47,6 +54,9 @@ export class SeasonStatsComponent {
   formatTime(totalSeconds: number): string {
     return formatMinuteSeconds(totalSeconds);
   }
+
+  readonly formatRating = formatRating;
+  readonly ratingTier = ratingTier;
 
   readonly seasons = signal<Season[]>([]);
   readonly selectedSeasonId = signal<string | null>(null);
@@ -90,6 +100,19 @@ export class SeasonStatsComponent {
     });
   }
 
+  // Rating's "no data" sentinel is `null` (a player with no appearances
+  // has no rating), not `0` like every other counter here — `makeLeaderIds`
+  // treats an all-zero column as "nobody leads it", which doesn't apply to
+  // a rating that's centered around a 5.0 baseline, so this can't reuse
+  // that helper as-is.
+  readonly topRatingIds = computed(() => {
+    const players = this.stats()?.players ?? [];
+    const rated = players.filter((r) => r.avgRating !== null);
+    if (rated.length === 0) return new Set<string>();
+    const max = Math.max(...rated.map((r) => r.avgRating!));
+    return new Set(rated.filter((r) => r.avgRating === max).map((r) => r.playerId));
+  });
+
   readonly topScorerIds = this.makeLeaderIds((r) => r.goals);
   readonly topAppearancesIds = this.makeLeaderIds((r) => r.appearances);
   readonly topTimePlayedIds = this.makeLeaderIds((r) => r.secondsPlayed);
@@ -112,6 +135,8 @@ export class SeasonStatsComponent {
         return row.secondsPlayed;
       case 'avgTime':
         return row.avgSecondsPerAppearance;
+      case 'avgRating':
+        return row.avgRating ?? -1;
       case 'goals':
         return row.goals;
       case 'assists':

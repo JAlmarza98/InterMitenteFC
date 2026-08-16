@@ -56,6 +56,10 @@
   color: var(--mat-sys-tertiary);
 }
 
+.leader-icon-rating {
+  color: var(--mat-sys-tertiary);
+}
+
 .leader-icon-appearances,
 .leader-icon-time {
   color: var(--mat-sys-primary);
@@ -74,22 +78,22 @@
   color: var(--mat-sys-error);
 }
 
-// Numbers read as a column of quantities, not a column of text — right
-// aligned and tabular so the digits line up instead of ragging left, and
-// the header repeats the alignment so the column reads as one unit.
+// Numbers read as a column of quantities, not a column of text — centered
+// under their header (only the name column is prose) and tabular so
+// digits don't jitter sideways as they change.
 .num-cell {
-  text-align: right;
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 
 .num-header {
-  text-align: right;
+  text-align: center;
 
   // mat-sort-header renders its own inner flex wrapper around the label
   // and sort arrow; the header's own text-align has no effect on it, so
   // the wrapper's justification has to be set directly.
   ::ng-deep .mat-sort-header-container {
-    justify-content: flex-end;
+    justify-content: center;
   }
 }
 

@@ -9,6 +9,7 @@ import {
   getEventStamp,
   segmentDurationSeconds,
 } from "../matchClock/matchClock.service";
+import { computeMatchRating } from "../stats/playerRating";
 
 const matchSchema = z.object({
   seasonId: z.string().uuid().nullable().optional(),
@@ -214,16 +215,23 @@ export async function getMatchStats(req: Request, res: Response) {
 
   const players = squad.map((entry) => {
     const stat = statsByPlayer.get(entry.playerId);
+    const secondsPlayed = secondsByPlayer.get(entry.playerId) ?? 0;
+    const goals = stat?.goals ?? 0;
+    const assists = stat?.assists ?? 0;
+    const yellowCards = stat?.yellowCards ?? 0;
+    const redCards = stat?.redCards ?? 0;
+    const ownGoals = stat?.ownGoals ?? 0;
     return {
       playerId: entry.playerId,
       player: entry.player,
       isStarter: entry.isStarter,
-      secondsPlayed: secondsByPlayer.get(entry.playerId) ?? 0,
-      goals: stat?.goals ?? 0,
-      assists: stat?.assists ?? 0,
-      yellowCards: stat?.yellowCards ?? 0,
-      redCards: stat?.redCards ?? 0,
-      ownGoals: stat?.ownGoals ?? 0,
+      secondsPlayed,
+      goals,
+      assists,
+      yellowCards,
+      redCards,
+      ownGoals,
+      rating: computeMatchRating({ goals, assists, yellowCards, redCards, ownGoals, secondsPlayed }),
     };
   });
 
