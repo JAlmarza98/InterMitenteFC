@@ -253,9 +253,14 @@ export async function substitute(matchId: string, playerOutId: string, playerInI
   await runIsolated(async (tx) => {
     const now = new Date();
     const periodsByType = await getPeriodsByType(matchId, tx);
-    const active = getActiveFrom(periodsByType);
-    if (!active) {
-      throw new HttpError(400, "No hay ningún período en curso");
+    // Not restricted to an actively-running period: substitutions must also
+    // be allowed between periods (half-time, before extra time, etc.), where
+    // there's no active period but the match has already kicked off. The
+    // most advanced started period supplies a frozen "as of now" stamp in
+    // that case, same as `getEventStamp`.
+    const period = getMostAdvancedFrom(periodsByType);
+    if (!period) {
+      throw new HttpError(400, "El partido todavía no ha empezado");
     }
     const redCardedIn = await tx.matchEvent.findFirst({
       where: { matchId, playerId: playerInId, type: "red_card" },
@@ -265,8 +270,8 @@ export async function substitute(matchId: string, playerOutId: string, playerInI
       throw new HttpError(400, "El jugador ha sido expulsado y no puede volver a entrar");
     }
 
-    const elapsed = elapsedSecondsInPeriod(active, active.pauses, now);
-    const second = offsetSecondsFor(active.type, periodsByType, now) + elapsed;
+    const elapsed = elapsedSecondsInPeriod(period, period.pauses, now);
+    const second = offsetSecondsFor(period.type, periodsByType, now) + elapsed;
 
     const openOutSegment = await tx.playingTimeSegment.findFirst({
       where: { matchId, playerId: playerOutId, endSecond: null },
@@ -290,7 +295,7 @@ export async function substitute(matchId: string, playerOutId: string, playerInI
       data: {
         matchId,
         playerId: playerInId,
-        periodType: active.type,
+        periodType: period.type,
         startSecond: second,
         startedAt: now,
         source: "live",
@@ -303,7 +308,7 @@ export async function substitute(matchId: string, playerOutId: string, playerInI
         playerId: playerInId,
         relatedPlayerId: playerOutId,
         type: "substitution",
-        periodType: active.type,
+        periodType: period.type,
         second,
         createdByUserId: userId,
       },
