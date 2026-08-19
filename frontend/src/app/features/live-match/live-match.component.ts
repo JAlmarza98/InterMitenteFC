@@ -88,6 +88,12 @@ export class LiveMatchComponent {
 
   readonly loading = signal(true);
   readonly actionLoading = signal(false);
+  /** Set whenever a background resync (25s poll, tab-visibility resync, or
+   * any of the loadX() calls) fails — the live clock/roster can otherwise
+   * look current while silently being stale mid-match, with no indication
+   * to the coach that anything is wrong. */
+  readonly syncError = signal(false);
+  readonly loadError = signal(false);
   readonly match = signal<MatchWithSquad | null>(null);
   readonly clockState = signal<ClockState | null>(null);
   readonly segments = signal<Segment[]>([]);
@@ -185,13 +191,22 @@ export class LiveMatchComponent {
    * the backend rejects it too, but disabling them here avoids a round
    * trip that's guaranteed to fail. */
   private readonly redCardedPlayerIds = computed(
-    () => new Set(this.events().filter((e) => e.type === 'red_card' && e.player).map((e) => e.player!.id))
+    () =>
+      new Set(
+        this.events()
+          .filter((e) => e.type === 'red_card' && e.player)
+          .map((e) => e.player!.id)
+      )
   );
 
   private readonly roster = computed<RosterRow[]>(() => {
     const match = this.match();
     if (!match) return [];
-    const onPitchIds = new Set(this.segments().filter((s) => s.endSecond === null).map((s) => s.playerId));
+    const onPitchIds = new Set(
+      this.segments()
+        .filter((s) => s.endSecond === null)
+        .map((s) => s.playerId)
+    );
     const statsMap = this.statsByPlayer();
     const redCarded = this.redCardedPlayerIds();
     const playedSeconds = this.playedSecondsByPlayer();
@@ -223,8 +238,9 @@ export class LiveMatchComponent {
     });
   }
 
-  private loadAll() {
+  loadAll() {
     this.loading.set(true);
+    this.loadError.set(false);
     this.matchesService.get(this.matchId).subscribe({
       next: (res) => {
         this.match.set(res.match);
@@ -234,38 +250,71 @@ export class LiveMatchComponent {
         this.loadEvents();
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (err) => {
+        this.loading.set(false);
+        this.loadError.set(true);
+        this.showActionError(err, 'No se pudo cargar el partido');
+      },
     });
   }
 
   private loadClock() {
-    this.clockService.getClock(this.matchId).subscribe((state) => {
-      this.offsetMs = new Date(state.serverNow).getTime() - Date.now();
-      this.clockState.set(state);
+    this.clockService.getClock(this.matchId).subscribe({
+      next: (state) => {
+        this.offsetMs = new Date(state.serverNow).getTime() - Date.now();
+        this.clockState.set(state);
+        this.syncError.set(false);
+      },
+      error: () => this.syncError.set(true),
     });
   }
 
   private loadSegments() {
-    this.clockService.listSegments(this.matchId).subscribe((res) => this.segments.set(res.segments));
+    this.clockService.listSegments(this.matchId).subscribe({
+      next: (res) => {
+        this.segments.set(res.segments);
+        this.syncError.set(false);
+      },
+      error: () => this.syncError.set(true),
+    });
   }
 
   private loadEvents() {
-    this.matchEventsService.list(this.matchId).subscribe((res) => this.events.set(res.events));
+    this.matchEventsService.list(this.matchId).subscribe({
+      next: (res) => {
+        this.events.set(res.events);
+        this.syncError.set(false);
+      },
+      error: () => this.syncError.set(true),
+    });
   }
 
   private loadStats() {
-    this.statsService.getMatchStats(this.matchId).subscribe((res) => {
-      const map = new Map<string, LiveStatCounts>();
-      for (const row of res.players) {
-        map.set(row.playerId, {
-          goals: row.goals,
-          assists: row.assists,
-          yellowCards: row.yellowCards,
-          redCards: row.redCards,
-        });
-      }
-      this.statsByPlayer.set(map);
+    this.statsService.getMatchStats(this.matchId).subscribe({
+      next: (res) => {
+        const map = new Map<string, LiveStatCounts>();
+        for (const row of res.players) {
+          map.set(row.playerId, {
+            goals: row.goals,
+            assists: row.assists,
+            yellowCards: row.yellowCards,
+            redCards: row.redCards,
+          });
+        }
+        this.statsByPlayer.set(map);
+        this.syncError.set(false);
+      },
+      error: () => this.syncError.set(true),
     });
+  }
+
+  /** Manual retry for the persistent sync-error banner — resyncs
+   * everything the 25s poll would, on demand. */
+  resync() {
+    this.loadClock();
+    this.loadSegments();
+    this.loadStats();
+    this.loadEvents();
   }
 
   private refreshClockAndSegments() {

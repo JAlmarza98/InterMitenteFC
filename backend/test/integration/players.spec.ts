@@ -17,7 +17,9 @@ describe("players", () => {
   it("lets a coach create, read and update a player", async () => {
     const agent = await coachAgent();
 
-    const createRes = await agent.post("/api/players").send({ firstName: "Leo", lastName: "Messi", jerseyNumber: 10 });
+    const createRes = await agent
+      .post("/api/players")
+      .send({ firstName: "Leo", lastName: "Messi", jerseyNumber: 10 });
     expect(createRes.status).toBe(201);
     const playerId = createRes.body.player.id;
     expect(createRes.body.player.active).toBe(true);
@@ -65,5 +67,23 @@ describe("players", () => {
     const agent = await coachAgent();
     const res = await agent.post("/api/players").send({ firstName: "" });
     expect(res.status).toBe(400);
+  });
+
+  it("paginates when limit is given, and stays unpaginated otherwise", async () => {
+    const agent = await coachAgent();
+    for (let i = 0; i < 3; i++) {
+      await agent.post("/api/players").send({ firstName: `P${i}`, lastName: "Test" });
+    }
+
+    const unpaginated = await agent.get("/api/players");
+    expect(unpaginated.body.players).toHaveLength(3);
+    expect(unpaginated.body.total).toBeUndefined();
+
+    const page1 = await agent.get("/api/players?limit=2");
+    expect(page1.body.players).toHaveLength(2);
+    expect(page1.body.total).toBe(3);
+
+    const page2 = await agent.get("/api/players?limit=2&page=2");
+    expect(page2.body.players).toHaveLength(1);
   });
 });

@@ -18,7 +18,9 @@
         </mat-card-title>
         <mat-card-subtitle>
           {{ m.matchDate | date: "EEEE d 'de' MMMM 'de' yyyy, HH:mm" }}
-          @if (m.competition) { · {{ m.competition }} }
+          @if (m.competition) {
+            · {{ m.competition }}
+          }
         </mat-card-subtitle>
       </mat-card-header>
 
@@ -46,7 +48,7 @@
                 matInput
                 type="number"
                 min="0"
-                [value]="m.teamScore ?? ''"
+                [value]="m.status !== 'scheduled' ? (m.teamScore ?? 0) : ''"
                 #teamScoreInput
                 (change)="updateScore(teamScoreInput.value, opponentScoreInput.value)"
               />
@@ -57,14 +59,14 @@
                 matInput
                 type="number"
                 min="0"
-                [value]="m.opponentScore ?? ''"
+                [value]="m.status !== 'scheduled' ? (m.opponentScore ?? 0) : ''"
                 #opponentScoreInput
                 (change)="updateScore(teamScoreInput.value, opponentScoreInput.value)"
               />
             </mat-form-field>
           </div>
-        } @else if (m.teamScore !== null && m.opponentScore !== null) {
-          <p class="score-display">{{ m.teamScore }} - {{ m.opponentScore }}</p>
+        } @else if (m.status !== 'scheduled') {
+          <p class="score-display">{{ m.teamScore ?? 0 }} - {{ m.opponentScore ?? 0 }}</p>
         } @else {
           <p class="score-pending">Resultado pendiente</p>
         }
@@ -113,52 +115,52 @@
           <p class="empty-state">No hay jugadores activos en la plantilla.</p>
         } @else {
           <div class="table-scroll">
-          <table class="squad-table">
-            <thead>
-              <tr>
-                <th scope="col">Jugador</th>
-                <th scope="col">
-                  @if (canEditSquad()) {
-                    <mat-checkbox
-                      [checked]="allCalled()"
-                      [indeterminate]="someCalled() && !allCalled()"
-                      (change)="toggleAllCalled()"
-                    >
-                      Convocado
-                    </mat-checkbox>
-                  } @else {
-                    Convocado
-                  }
-                </th>
-                <th scope="col">Titular</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of squadRows(); track row.player.id) {
+            <table class="squad-table">
+              <thead>
                 <tr>
-                  <td>{{ row.player.firstName }} {{ row.player.lastName }}</td>
-                  <td>
-                    @if (canEditSquad()) {
-                      <mat-checkbox [checked]="row.called" (change)="toggleCalled(row)" />
-                    } @else {
-                      <mat-icon class="read-only-check">{{ row.called ? 'check' : 'remove' }}</mat-icon>
-                    }
-                  </td>
-                  <td>
+                  <th scope="col">Jugador</th>
+                  <th scope="col">
                     @if (canEditSquad()) {
                       <mat-checkbox
-                        [checked]="row.starter"
-                        [disabled]="!row.called || (!row.starter && startersCount() >= requiredStarters)"
-                        (change)="toggleStarter(row)"
-                      />
+                        [checked]="allCalled()"
+                        [indeterminate]="someCalled() && !allCalled()"
+                        (change)="toggleAllCalled()"
+                      >
+                        Convocado
+                      </mat-checkbox>
                     } @else {
-                      <mat-icon class="read-only-check">{{ row.starter ? 'check' : 'remove' }}</mat-icon>
+                      Convocado
                     }
-                  </td>
+                  </th>
+                  <th scope="col">Titular</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (row of squadRows(); track row.player.id) {
+                  <tr>
+                    <td>{{ row.player.firstName }} {{ row.player.lastName }}</td>
+                    <td>
+                      @if (canEditSquad()) {
+                        <mat-checkbox [checked]="row.called" (change)="toggleCalled(row)" />
+                      } @else {
+                        <mat-icon class="read-only-check">{{ row.called ? 'check' : 'remove' }}</mat-icon>
+                      }
+                    </td>
+                    <td>
+                      @if (canEditSquad()) {
+                        <mat-checkbox
+                          [checked]="row.starter"
+                          [disabled]="!row.called || (!row.starter && startersCount() >= requiredStarters)"
+                          (change)="toggleStarter(row)"
+                        />
+                      } @else {
+                        <mat-icon class="read-only-check">{{ row.starter ? 'check' : 'remove' }}</mat-icon>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
 
           @if (canEditSquad()) {
@@ -208,37 +210,46 @@
         </mat-card-header>
         <mat-card-content>
           <div class="table-scroll">
-          <table class="squad-table player-stats-table">
-            <thead>
-              <tr>
-                <th scope="col">Jugador</th>
-                <th scope="col">Minutos</th>
-                <th scope="col">Nota</th>
-                <th scope="col">Goles</th>
-                <th scope="col">Asist.</th>
-                <th scope="col">TA</th>
-                <th scope="col">TR</th>
-                <th scope="col">En propia</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of playedPlayerStats(); track row.playerId) {
+            <table class="squad-table player-stats-table">
+              <thead>
                 <tr>
-                  <td>{{ row.player.firstName }} {{ row.player.lastName }}</td>
-                  <td>{{ formatPlayedTime(row.secondsPlayed) }}</td>
-                  <td><span [class]="'rating-badge rating-' + ratingTier(row.rating)">{{ formatRating(row.rating) }}</span></td>
-                  <td>{{ row.goals }}</td>
-                  <td>{{ row.assists }}</td>
-                  <td>{{ row.yellowCards }}</td>
-                  <td>{{ row.redCards }}</td>
-                  <td>{{ row.ownGoals }}</td>
+                  <th scope="col">Jugador</th>
+                  <th scope="col">Minutos</th>
+                  <th scope="col">Nota</th>
+                  <th scope="col">Goles</th>
+                  <th scope="col">Asist.</th>
+                  <th scope="col">TA</th>
+                  <th scope="col">TR</th>
+                  <th scope="col">En propia</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (row of playedPlayerStats(); track row.playerId) {
+                  <tr>
+                    <td>{{ row.player.firstName }} {{ row.player.lastName }}</td>
+                    <td>{{ formatPlayedTime(row.secondsPlayed) }}</td>
+                    <td>
+                      <span [class]="'rating-badge rating-' + ratingTier(row.rating)">{{
+                        formatRating(row.rating)
+                      }}</span>
+                    </td>
+                    <td>{{ row.goals }}</td>
+                    <td>{{ row.assists }}</td>
+                    <td>{{ row.yellowCards }}</td>
+                    <td>{{ row.redCards }}</td>
+                    <td>{{ row.ownGoals }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
         </mat-card-content>
       </mat-card>
     }
+  } @else {
+    <div class="empty-state">
+      <p>No se pudo cargar el partido. Comprueba tu conexión.</p>
+      <button mat-stroked-button (click)="load()">Reintentar</button>
+    </div>
   }
 </div>

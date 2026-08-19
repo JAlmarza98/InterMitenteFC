@@ -10,14 +10,15 @@ import {
   segmentDurationSeconds,
 } from "../matchClock/matchClock.service";
 import { computeMatchRating } from "../stats/playerRating";
+import { paginationSchema, toSkipTake } from "../../utils/pagination";
 
 const matchSchema = z.object({
   seasonId: z.string().uuid().nullable().optional(),
-  opponent: z.string().min(1),
+  opponent: z.string().min(1).max(200),
   matchDate: z.coerce.date(),
   homeAway: z.enum(["home", "away"]),
-  competition: z.string().nullable().optional(),
-  notes: z.string().nullable().optional(),
+  competition: z.string().max(200).nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
   periodLengthMinutes: z.number().int().positive().optional(),
 });
 
@@ -27,7 +28,7 @@ const updateMatchSchema = matchSchema.partial().extend({
   status: z.enum(["scheduled", "live", "finished"]).optional(),
 });
 
-const listQuerySchema = z.object({
+const listQuerySchema = paginationSchema.extend({
   seasonId: z.string().uuid().optional(),
   status: z.enum(["scheduled", "live", "finished"]).optional(),
 });
@@ -76,18 +77,25 @@ const STAT_FIELD_BY_EVENT_TYPE: Record<(typeof STAT_EVENT_TYPES)[number], string
 
 // A "goal" adds to our score; an "own_goal" (autogol) is put into our own
 // net by one of our players, so it counts for the opponent instead.
-const SCORE_FIELD_BY_EVENT_TYPE: Partial<Record<(typeof STAT_EVENT_TYPES)[number], "teamScore" | "opponentScore">> = {
+const SCORE_FIELD_BY_EVENT_TYPE: Partial<
+  Record<(typeof STAT_EVENT_TYPES)[number], "teamScore" | "opponentScore">
+> = {
   goal: "teamScore",
   own_goal: "opponentScore",
 };
 
 export async function listMatches(req: Request, res: Response) {
-  const { seasonId, status } = listQuerySchema.parse(req.query);
-  const matches = await prisma.match.findMany({
-    where: { seasonId, status },
-    orderBy: { matchDate: "desc" },
-  });
-  res.json({ matches });
+  const { seasonId, status, ...pagination } = listQuerySchema.parse(req.query);
+  const where = { seasonId, status };
+  const [matches, total] = await Promise.all([
+    prisma.match.findMany({
+      where,
+      orderBy: { matchDate: "desc" },
+      ...toSkipTake(pagination),
+    }),
+    pagination.limit ? prisma.match.count({ where }) : Promise.resolve(undefined),
+  ]);
+  res.json({ matches, total });
 }
 
 export async function getMatch(req: Request, res: Response) {
@@ -137,7 +145,10 @@ export async function updateMatch(req: Request, res: Response) {
   }
 
   if (data.status === "finished") {
-    const current = await prisma.match.findUniqueOrThrow({ where: { id: matchId }, select: { status: true } });
+    const current = await prisma.match.findUniqueOrThrow({
+      where: { id: matchId },
+      select: { status: true },
+    });
     if (current.status !== "finished") {
       const match = await prisma.$transaction(async (tx) => {
         await closeOpenClockState(tx, matchId, new Date());

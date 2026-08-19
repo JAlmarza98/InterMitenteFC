@@ -12,7 +12,8 @@ const envSchema = z.object({
     .string()
     .min(16, "SESSION_SECRET must be at least 16 characters")
     .refine((v) => v !== EXAMPLE_SESSION_SECRET, {
-      message: "SESSION_SECRET is still the .env.example placeholder — generate a real one (e.g. `openssl rand -hex 32`)",
+      message:
+        "SESSION_SECRET is still the .env.example placeholder — generate a real one (e.g. `openssl rand -hex 32`)",
     }),
   ADMIN_EMAIL: z.string().email().optional(),
   ADMIN_BOOTSTRAP_PASSWORD: z.string().min(8).optional(),

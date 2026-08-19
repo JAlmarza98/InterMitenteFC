@@ -32,3 +32,18 @@ export const registerRateLimit = isTest
       legacyHeaders: false,
       message: { error: "Demasiados registros desde esta dirección. Inténtalo más tarde." },
     });
+
+// Applied to the whole API (see app.ts): not a brute-force guard like the
+// two above, just a backstop against a runaway client (buggy poll loop,
+// scraping, a compromised session) hammering the DB. Generous enough that
+// no legitimate session — including the live-match screen's frequent
+// resyncs — should ever come close to it.
+export const apiRateLimit = isTest
+  ? passthrough
+  : rateLimit({
+      windowMs: 5 * 60 * 1000,
+      limit: 600,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: "Demasiadas peticiones. Inténtalo de nuevo en unos minutos." },
+    });

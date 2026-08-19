@@ -1,8 +1,12 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import { env } from "./config/env";
 import { sessionMiddleware } from "./middleware/session";
-import { errorHandler } from "./middleware/errorHandler";
+import { errorHandler, asyncHandler } from "./middleware/errorHandler";
+import { apiRateLimit } from "./middleware/rateLimit";
+import { requestLogger } from "./middleware/requestLogger";
+import { healthCheck } from "./modules/health/health.controller";
 import { authRouter } from "./modules/auth/auth.routes";
 import { usersRouter } from "./modules/users/users.routes";
 import { playersRouter } from "./modules/players/players.routes";
@@ -12,6 +16,12 @@ import { matchClockRouter } from "./modules/matchClock/matchClock.routes";
 import { statsRouter } from "./modules/stats/stats.routes";
 
 export const app = express();
+
+// Pure JSON API (the frontend is served separately, by nginx in prod / ng
+// serve in dev) — CSP's script/style-src directives don't apply here, and
+// defaults would only add noise, so this is deliberately Helmet's baseline
+// (X-Content-Type-Options, X-Frame-Options, HSTS, etc.) with no custom CSP.
+app.use(helmet());
 
 if (env.NODE_ENV === "production") {
   // Trust the reverse proxy (our nginx web container, itself behind the
@@ -26,10 +36,10 @@ if (env.NODE_ENV === "development") {
 
 app.use(express.json());
 app.use(sessionMiddleware);
+app.use(apiRateLimit);
+app.use(requestLogger);
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+app.get("/api/health", asyncHandler(healthCheck));
 
 app.use("/api/auth", authRouter);
 app.use("/api/admin/users", usersRouter);

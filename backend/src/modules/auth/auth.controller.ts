@@ -41,7 +41,7 @@ export async function login(req: Request, res: Response) {
 
 export async function logout(req: Request, res: Response) {
   req.session.destroy(() => {
-    res.clearCookie("connect.sid");
+    res.clearCookie("im.sid");
     res.status(204).end();
   });
 }

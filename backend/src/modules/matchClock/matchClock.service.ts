@@ -45,7 +45,11 @@ export function isPeriodPaused(pauses: MatchClockPause[]): boolean {
  * player for nominal minutes they never actually played) for anyone still
  * on the pitch across the boundary.
  */
-function offsetSecondsFor(type: PeriodType, periodsByType: Map<PeriodType, PeriodWithPauses>, now: Date): number {
+function offsetSecondsFor(
+  type: PeriodType,
+  periodsByType: Map<PeriodType, PeriodWithPauses>,
+  now: Date
+): number {
   let offset = 0;
   for (const priorType of PERIOD_ORDER) {
     if (priorType === type) break;
@@ -81,7 +85,10 @@ function getMostAdvancedFrom(periodsByType: Map<PeriodType, PeriodWithPauses>): 
   return null;
 }
 
-async function getPeriodsByType(matchId: string, db: Db = prisma): Promise<Map<PeriodType, PeriodWithPauses>> {
+async function getPeriodsByType(
+  matchId: string,
+  db: Db = prisma
+): Promise<Map<PeriodType, PeriodWithPauses>> {
   const periods = await db.matchPeriod.findMany({ where: { matchId }, include: { pauses: true } });
   return new Map(periods.map((p) => [p.type, p]));
 }
@@ -393,7 +400,10 @@ export async function createManualSegment(matchId: string, data: ManualSegmentIn
   if (data.endSecond === null) {
     const onPitchCount = await prisma.playingTimeSegment.count({ where: { matchId, endSecond: null } });
     if (onPitchCount >= MAX_ON_PITCH) {
-      throw new HttpError(400, `No puede haber más de ${MAX_ON_PITCH} jugadores en el campo a la vez (fútbol 7)`);
+      throw new HttpError(
+        400,
+        `No puede haber más de ${MAX_ON_PITCH} jugadores en el campo a la vez (fútbol 7)`
+      );
     }
   }
   return prisma.playingTimeSegment.create({
@@ -420,7 +430,10 @@ export async function updateManualSegment(
       where: { matchId, endSecond: null, id: { not: segmentId } },
     });
     if (onPitchCount >= MAX_ON_PITCH) {
-      throw new HttpError(400, `No puede haber más de ${MAX_ON_PITCH} jugadores en el campo a la vez (fútbol 7)`);
+      throw new HttpError(
+        400,
+        `No puede haber más de ${MAX_ON_PITCH} jugadores en el campo a la vez (fútbol 7)`
+      );
     }
   }
   return prisma.playingTimeSegment.update({

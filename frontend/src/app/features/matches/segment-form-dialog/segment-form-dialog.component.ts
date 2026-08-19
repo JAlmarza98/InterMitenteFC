@@ -48,8 +48,7 @@ export class SegmentFormDialogComponent {
 
   private readonly startMin = this.data.segment ? Math.floor(this.data.segment.startSecond / 60) : 0;
   private readonly startSec = this.data.segment ? this.data.segment.startSecond % 60 : 0;
-  private readonly endMin =
-    this.data.segment?.endSecond != null ? Math.floor(this.data.segment.endSecond / 60) : null;
+  private readonly endMin = this.data.segment?.endSecond != null ? Math.floor(this.data.segment.endSecond / 60) : null;
   private readonly endSec = this.data.segment?.endSecond != null ? this.data.segment.endSecond % 60 : null;
 
   readonly form = this.fb.nonNullable.group(

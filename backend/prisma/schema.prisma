@@ -127,6 +127,9 @@ model Match {
   periods  MatchPeriod[]
   segments PlayingTimeSegment[]
   events   MatchEvent[]
+
+  @@index([seasonId])
+  @@index([status])
 }
 
 model MatchSquad {

@@ -3,7 +3,6 @@ import request from "supertest";
 import { app } from "../../src/app";
 import { prisma } from "../../src/db/prisma";
 import { resetDb } from "../helpers/db";
-import { loginAs } from "../helpers/auth";
 
 beforeEach(async () => {
   await resetDb();
@@ -41,6 +40,11 @@ describe("auth flow", () => {
 
     const logoutRes = await agent.post("/api/auth/logout");
     expect(logoutRes.status).toBe(204);
+    // The session cookie is named "im.sid" (see middleware/session.ts), not
+    // the express-session default "connect.sid" — logout must clear that
+    // exact name or the stale cookie lingers in the browser.
+    const clearedCookie = logoutRes.headers["set-cookie"]?.[0];
+    expect(clearedCookie).toContain("im.sid=;");
 
     const meAfterLogout = await agent.get("/api/auth/me");
     expect(meAfterLogout.status).toBe(401);
@@ -52,7 +56,9 @@ describe("auth flow", () => {
     const first = await request(app).post("/api/auth/register").send(payload);
     expect(first.status).toBe(201);
 
-    const second = await request(app).post("/api/auth/register").send({ ...payload, name: "Second" });
+    const second = await request(app)
+      .post("/api/auth/register")
+      .send({ ...payload, name: "Second" });
     expect(second.status).toBe(409);
   });
 

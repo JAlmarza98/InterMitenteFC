@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "../../db/prisma";
 
 const seasonSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).max(100),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   isActive: z.boolean().optional(),

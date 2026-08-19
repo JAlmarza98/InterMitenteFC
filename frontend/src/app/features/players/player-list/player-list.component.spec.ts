@@ -108,7 +108,13 @@ describe('PlayerListComponent', () => {
   it('openCreate() shows the server error message when creation fails', () => {
     const fixture = setup();
     dialogSpy.open.and.returnValue(
-      dialogReturning({ firstName: 'New', lastName: 'Player', jerseyNumber: null, position: null, secondaryPosition: null })
+      dialogReturning({
+        firstName: 'New',
+        lastName: 'Player',
+        jerseyNumber: null,
+        position: null,
+        secondaryPosition: null,
+      })
     );
     playersSpy.create.and.returnValue(throwError(() => ({ error: { error: 'Dorsal duplicado' } })));
 

@@ -132,6 +132,7 @@ export class MatchDetailComponent {
   readonly match = signal<MatchWithSquad | null>(null);
   readonly squadRows = signal<SquadRow[]>([]);
   readonly loading = signal(false);
+  readonly loadError = signal(false);
   readonly savingSquad = signal(false);
 
   /** Fútbol 7: the starting XI is always exactly 7. */
@@ -150,16 +151,27 @@ export class MatchDetailComponent {
 
   load() {
     this.loading.set(true);
+    this.loadError.set(false);
     this.matchesService.get(this.matchId).subscribe({
       next: (res) => {
         this.match.set(res.match);
         this.loadSquadRows(res.match);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (err) => {
+        this.loading.set(false);
+        this.loadError.set(true);
+        this.showError(err, 'No se pudo cargar el partido');
+      },
     });
-    this.matchEventsService.list(this.matchId).subscribe((res) => this.events.set(res.events));
-    this.statsService.getMatchStats(this.matchId).subscribe((res) => this.playerStats.set(res.players));
+    this.matchEventsService.list(this.matchId).subscribe({
+      next: (res) => this.events.set(res.events),
+      error: (err) => this.showError(err, 'No se pudieron cargar los eventos del partido'),
+    });
+    this.statsService.getMatchStats(this.matchId).subscribe({
+      next: (res) => this.playerStats.set(res.players),
+      error: (err) => this.showError(err, 'No se pudieron cargar las estadísticas del partido'),
+    });
   }
 
   private loadSquadRows(match: MatchWithSquad) {

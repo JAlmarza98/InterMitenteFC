@@ -31,9 +31,5 @@ matchesRouter.patch("/:id", requireRole("coach", "admin"), asyncHandler(updateMa
 // after the fact.
 matchesRouter.delete("/:id", requireRole("admin"), asyncHandler(deleteMatch));
 matchesRouter.put("/:id/squad", requireRole("coach", "admin"), asyncHandler(putSquad));
-matchesRouter.put(
-  "/:id/player-stats/:playerId",
-  requireRole("admin"),
-  asyncHandler(upsertPlayerStat)
-);
+matchesRouter.put("/:id/player-stats/:playerId", requireRole("admin"), asyncHandler(upsertPlayerStat));
 matchesRouter.post("/:id/events", requireRole("coach", "admin"), asyncHandler(logMatchEvent));

@@ -45,7 +45,9 @@
                   <td mat-cell *matCellDef="let row">
                     <span class="name-cell">
                       @if (topRatingIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-rating" matTooltip="Mejor promedio">military_tech</mat-icon>
+                        <mat-icon class="leader-icon leader-icon-rating" matTooltip="Mejor promedio"
+                          >military_tech</mat-icon
+                        >
                       }
                       {{ row.player.firstName }} {{ row.player.lastName }}
                     </span>
@@ -53,18 +55,40 @@
                 </ng-container>
 
                 <ng-container matColumnDef="avgRating">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" matTooltip="Nota media de la temporada (0-10)" scope="col">Promedio</th>
+                  <th
+                    mat-header-cell
+                    *matHeaderCellDef
+                    mat-sort-header
+                    class="num-header"
+                    matTooltip="Nota media de la temporada (0-10)"
+                    scope="col"
+                  >
+                    Promedio
+                  </th>
                   <td mat-cell *matCellDef="let row" class="num-cell">
-                    <span class="rating-badge" [class]="'rating-badge rating-' + ratingTier(row.avgRating)">{{ formatRating(row.avgRating) }}</span>
+                    <span class="rating-badge" [class]="'rating-badge rating-' + ratingTier(row.avgRating)">{{
+                      formatRating(row.avgRating)
+                    }}</span>
                   </td>
                 </ng-container>
 
                 <ng-container matColumnDef="appearances">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" matTooltip="Partidos jugados" scope="col">PJ</th>
+                  <th
+                    mat-header-cell
+                    *matHeaderCellDef
+                    mat-sort-header
+                    class="num-header"
+                    matTooltip="Partidos jugados"
+                    scope="col"
+                  >
+                    PJ
+                  </th>
                   <td mat-cell *matCellDef="let row" class="num-cell">
                     <span class="num-with-icon">
                       @if (topAppearancesIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-appearances" matTooltip="Más partidos jugados">verified</mat-icon>
+                        <mat-icon class="leader-icon leader-icon-appearances" matTooltip="Más partidos jugados"
+                          >verified</mat-icon
+                        >
                       }
                       {{ row.appearances }}
                     </span>
@@ -84,7 +108,9 @@
                 </ng-container>
 
                 <ng-container matColumnDef="avgTime">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">Media/partido</th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">
+                    Media/partido
+                  </th>
                   <td mat-cell *matCellDef="let row" class="num-cell">{{ formatTime(row.avgSecondsPerAppearance) }}</td>
                 </ng-container>
 
@@ -93,7 +119,9 @@
                   <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.goals === 0">
                     <span class="num-with-icon">
                       @if (topScorerIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-goals" matTooltip="Máximo goleador">sports_soccer</mat-icon>
+                        <mat-icon class="leader-icon leader-icon-goals" matTooltip="Máximo goleador"
+                          >sports_soccer</mat-icon
+                        >
                       }
                       {{ row.goals }}
                     </span>
@@ -105,7 +133,9 @@
                   <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.assists === 0">
                     <span class="num-with-icon">
                       @if (topAssistsIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-assists" matTooltip="Máximo asistente">handshake</mat-icon>
+                        <mat-icon class="leader-icon leader-icon-assists" matTooltip="Máximo asistente"
+                          >handshake</mat-icon
+                        >
                       }
                       {{ row.assists }}
                     </span>
@@ -113,11 +143,22 @@
                 </ng-container>
 
                 <ng-container matColumnDef="yellowCards">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" matTooltip="Tarjetas amarillas" scope="col">TA</th>
+                  <th
+                    mat-header-cell
+                    *matHeaderCellDef
+                    mat-sort-header
+                    class="num-header"
+                    matTooltip="Tarjetas amarillas"
+                    scope="col"
+                  >
+                    TA
+                  </th>
                   <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.yellowCards === 0">
                     <span class="num-with-icon">
                       @if (topYellowCardsIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-yellow" matTooltip="Más tarjetas amarillas">crop_portrait</mat-icon>
+                        <mat-icon class="leader-icon leader-icon-yellow" matTooltip="Más tarjetas amarillas"
+                          >crop_portrait</mat-icon
+                        >
                       }
                       {{ row.yellowCards }}
                     </span>
@@ -125,11 +166,22 @@
                 </ng-container>
 
                 <ng-container matColumnDef="redCards">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" matTooltip="Tarjetas rojas" scope="col">TR</th>
+                  <th
+                    mat-header-cell
+                    *matHeaderCellDef
+                    mat-sort-header
+                    class="num-header"
+                    matTooltip="Tarjetas rojas"
+                    scope="col"
+                  >
+                    TR
+                  </th>
                   <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.redCards === 0">
                     <span class="num-with-icon">
                       @if (topRedCardsIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-red" matTooltip="Más tarjetas rojas">crop_portrait</mat-icon>
+                        <mat-icon class="leader-icon leader-icon-red" matTooltip="Más tarjetas rojas"
+                          >crop_portrait</mat-icon
+                        >
                       }
                       {{ row.redCards }}
                     </span>
@@ -141,7 +193,9 @@
                   <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.ownGoals === 0">
                     <span class="num-with-icon">
                       @if (topOwnGoalsIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-owngoal" matTooltip="Más goles en propia">sports_soccer</mat-icon>
+                        <mat-icon class="leader-icon leader-icon-owngoal" matTooltip="Más goles en propia"
+                          >sports_soccer</mat-icon
+                        >
                       }
                       {{ row.ownGoals }}
                     </span>

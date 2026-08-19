@@ -50,6 +50,7 @@ export class MatchListComponent {
 
   readonly matches = signal<Match[]>([]);
   readonly loading = signal(false);
+  readonly loadError = signal(false);
 
   statusLabel(status: Match['status']): string {
     return STATUS_LABELS[status];
@@ -61,12 +62,17 @@ export class MatchListComponent {
 
   load() {
     this.loading.set(true);
+    this.loadError.set(false);
     this.matchesService.list().subscribe({
       next: (res) => {
         this.matches.set(res.matches);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (err) => {
+        this.loading.set(false);
+        this.loadError.set(true);
+        this.showError(err, 'No se pudieron cargar los partidos');
+      },
     });
   }
 

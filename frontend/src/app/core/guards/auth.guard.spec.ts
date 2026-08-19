@@ -1,11 +1,15 @@
 import { TestBed } from '@angular/core/testing';
-import { Router, UrlTree } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { authGuard } from './auth.guard';
 import { AuthService, CurrentUser } from '../services/auth.service';
 
+// authGuard ignores both params — an empty stub is all the real
+// ActivatedRouteSnapshot/RouterStateSnapshot types are needed for here.
 function runGuard() {
-  return TestBed.runInInjectionContext(() => authGuard({} as any, {} as any));
+  return TestBed.runInInjectionContext(() =>
+    authGuard({} as unknown as ActivatedRouteSnapshot, {} as unknown as RouterStateSnapshot)
+  );
 }
 
 function approvedUser(): CurrentUser {
@@ -32,9 +36,7 @@ describe('authGuard', () => {
     router = TestBed.inject(Router);
     loginUrlTree = router.createUrlTree(['/login']);
     pendingUrlTree = router.createUrlTree(['/pending-approval']);
-    spyOn(router, 'parseUrl').and.callFake((url: string) =>
-      url === '/login' ? loginUrlTree : pendingUrlTree
-    );
+    spyOn(router, 'parseUrl').and.callFake((url: string) => (url === '/login' ? loginUrlTree : pendingUrlTree));
   });
 
   it('allows navigation when a cached approved user is already present', () => {

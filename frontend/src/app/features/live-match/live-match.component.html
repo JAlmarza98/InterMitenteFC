@@ -4,6 +4,14 @@
     Volver al partido
   </a>
 
+  @if (syncError()) {
+    <div class="sync-error-banner">
+      <mat-icon>wifi_off</mat-icon>
+      <span>No se ha podido sincronizar. Los datos pueden no estar actualizados.</span>
+      <button mat-button (click)="resync()">Reintentar</button>
+    </div>
+  }
+
   @if (loading()) {
     <div class="spinner-row">
       <mat-spinner diameter="32" />
@@ -21,21 +29,21 @@
           <div class="scoreboard-block">
             <div class="scoreboard">
               <div class="scoreboard-side">
-                <span class="team-label" [class.team-label-us]="isHome">{{ isHome ? 'Inter Mitente FC' : m.opponent }}</span>
-                <span
-                  class="scoreboard-value"
-                  [class.scoreboard-us]="isHome"
-                  [class.scoreboard-them]="!isHome"
-                >{{ isHome ? (m.teamScore ?? 0) : (m.opponentScore ?? 0) }}</span>
+                <span class="team-label" [class.team-label-us]="isHome">{{
+                  isHome ? 'Inter Mitente FC' : m.opponent
+                }}</span>
+                <span class="scoreboard-value" [class.scoreboard-us]="isHome" [class.scoreboard-them]="!isHome">{{
+                  isHome ? (m.teamScore ?? 0) : (m.opponentScore ?? 0)
+                }}</span>
               </div>
               <span class="scoreboard-sep">–</span>
               <div class="scoreboard-side">
-                <span class="team-label" [class.team-label-us]="!isHome">{{ isHome ? m.opponent : 'Inter Mitente FC' }}</span>
-                <span
-                  class="scoreboard-value"
-                  [class.scoreboard-us]="!isHome"
-                  [class.scoreboard-them]="isHome"
-                >{{ isHome ? (m.opponentScore ?? 0) : (m.teamScore ?? 0) }}</span>
+                <span class="team-label" [class.team-label-us]="!isHome">{{
+                  isHome ? m.opponent : 'Inter Mitente FC'
+                }}</span>
+                <span class="scoreboard-value" [class.scoreboard-us]="!isHome" [class.scoreboard-them]="isHome">{{
+                  isHome ? (m.opponentScore ?? 0) : (m.teamScore ?? 0)
+                }}</span>
               </div>
             </div>
             <div class="status-row-live">
@@ -208,5 +216,10 @@
         </mat-card-content>
       </mat-card>
     }
+  } @else {
+    <div class="empty-state">
+      <p>No se pudo cargar el partido. Comprueba tu conexión.</p>
+      <button mat-stroked-button (click)="loadAll()">Reintentar</button>
+    </div>
   }
 </div>

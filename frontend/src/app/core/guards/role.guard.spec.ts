@@ -1,12 +1,16 @@
 import { TestBed } from '@angular/core/testing';
-import { Router, UrlTree } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { roleGuard } from './role.guard';
 import { AuthService, UserRole } from '../services/auth.service';
 
+// roleGuard's returned function ignores both params — an empty stub is all
+// the real ActivatedRouteSnapshot/RouterStateSnapshot types are needed for here.
 function runGuard(...roles: UserRole[]) {
   const guard = roleGuard(...roles);
-  return TestBed.runInInjectionContext(() => guard({} as any, {} as any));
+  return TestBed.runInInjectionContext(() =>
+    guard({} as unknown as ActivatedRouteSnapshot, {} as unknown as RouterStateSnapshot)
+  );
 }
 
 describe('roleGuard', () => {

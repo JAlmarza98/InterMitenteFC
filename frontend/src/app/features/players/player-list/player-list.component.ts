@@ -41,6 +41,7 @@ export class PlayerListComponent {
 
   readonly players = signal<Player[]>([]);
   readonly loading = signal(false);
+  readonly loadError = signal(false);
   readonly showInactive = signal(false);
 
   constructor() {
@@ -49,12 +50,17 @@ export class PlayerListComponent {
 
   load() {
     this.loading.set(true);
+    this.loadError.set(false);
     this.playersService.list(this.showInactive()).subscribe({
       next: (res) => {
         this.players.set(res.players);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (err) => {
+        this.loading.set(false);
+        this.loadError.set(true);
+        this.showError(err, 'No se pudo cargar la plantilla');
+      },
     });
   }
 

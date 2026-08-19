@@ -99,21 +99,21 @@ html {
   // from a faint top highlight (light catching the raised edge) paired
   // with a soft grounding shadow, not from shadow depth alone.
   --surface-card-shadow:
-    0 1px 0 0 color-mix(in srgb, white 6%, transparent) inset,
-    0 3px 10px color-mix(in srgb, black 45%, transparent);
+    0 1px 0 0 color-mix(in srgb, white 6%, transparent) inset, 0 3px 10px color-mix(in srgb, black 45%, transparent);
   --surface-card-shadow-hover:
-    0 1px 0 0 color-mix(in srgb, white 8%, transparent) inset,
-    0 6px 20px color-mix(in srgb, black 50%, transparent);
+    0 1px 0 0 color-mix(in srgb, white 8%, transparent) inset, 0 6px 20px color-mix(in srgb, black 50%, transparent);
 
-  @include mat.theme((
-    color: (
-      theme-type: dark,
-      primary: brand.$navy-palette,
-      tertiary: brand.$gold-palette,
-    ),
-    typography: Roboto,
-    density: 0,
-  ));
+  @include mat.theme(
+    (
+      color: (
+        theme-type: dark,
+        primary: brand.$navy-palette,
+        tertiary: brand.$gold-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
 }
 
 @media (max-width: 599px) {
@@ -122,13 +122,14 @@ html {
   }
 }
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
 body {
   margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
   // A stadium under floodlights at night, not a flat panel: a wide, faint
   // gold glow falls from above and fades into the navy well before it
   // could compete with content. Fixed so it reads as the room's light,
@@ -144,8 +145,10 @@ body {
   color: var(--mat-sys-on-surface);
 }
 
-h1, h2, h3 {
-  font-family: 'Bricolage Grotesque', Roboto, "Helvetica Neue", sans-serif;
+h1,
+h2,
+h3 {
+  font-family: 'Bricolage Grotesque', Roboto, 'Helvetica Neue', sans-serif;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -338,7 +341,8 @@ mat-card {
 // way the crest's headlight does. It is the only thing on the page that
 // moves on its own, and only while a match is genuinely live.
 @keyframes indicator-blink {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--mat-sys-tertiary) 50%, transparent);
   }
   50% {
@@ -468,5 +472,15 @@ mat-card {
   .mat-mdc-dialog-surface {
     border-radius: 0 !important;
     height: 100%;
+  }
+}
+
+// Snackbars default to the bottom of the viewport, same as the mobile
+// bottom-nav bar (app.component.scss) — without this they land right on
+// top of it instead of above it. Height must track that bar's own 64px +
+// safe-area exactly, or a mismatch reopens the gap either direction.
+@media (max-width: 767px) {
+  .mat-mdc-snack-bar-container {
+    margin-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
   }
 }

@@ -46,9 +46,7 @@ export class MatchFormDialogComponent {
   readonly isEdit = !!this.data.match;
   readonly competitions = COMPETITIONS;
 
-  private readonly initialMatchDate = this.data.match?.matchDate
-    ? new Date(this.data.match.matchDate)
-    : null;
+  private readonly initialMatchDate = this.data.match?.matchDate ? new Date(this.data.match.matchDate) : null;
 
   readonly form = this.fb.nonNullable.group({
     opponent: [this.data.match?.opponent ?? '', [Validators.required]],
@@ -57,10 +55,7 @@ export class MatchFormDialogComponent {
     homeAway: [this.data.match?.homeAway ?? ('home' as 'home' | 'away'), [Validators.required]],
     competition: [this.data.match?.competition ?? ''],
     seasonId: [this.data.match?.seasonId ?? (null as string | null)],
-    periodLengthMinutes: [
-      this.data.match?.periodLengthMinutes ?? 30,
-      [Validators.required, Validators.min(1)],
-    ],
+    periodLengthMinutes: [this.data.match?.periodLengthMinutes ?? 30, [Validators.required, Validators.min(1)]],
     notes: [this.data.match?.notes ?? ''],
   });
 

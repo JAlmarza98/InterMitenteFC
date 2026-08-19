@@ -113,7 +113,9 @@ describe("match clock", () => {
     });
     expect(res.status).toBe(200);
 
-    const outSegment = await prisma.playingTimeSegment.findFirst({ where: { matchId, playerId: playerOut.id } });
+    const outSegment = await prisma.playingTimeSegment.findFirst({
+      where: { matchId, playerId: playerOut.id },
+    });
     expect(outSegment?.endSecond).not.toBeNull();
     const inSegment = await prisma.playingTimeSegment.findFirst({ where: { matchId, playerId: bench.id } });
     expect(inSegment).not.toBeNull();

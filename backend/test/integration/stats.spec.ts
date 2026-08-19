@@ -62,7 +62,14 @@ describe("season stats", () => {
     expect(row.secondsPlayed).toBe(2400);
     expect(row.goals).toBe(1);
     expect(row.avgRating).toBe(
-      computeMatchRating({ goals: 1, assists: 0, yellowCards: 0, redCards: 0, ownGoals: 0, secondsPlayed: 2400 })
+      computeMatchRating({
+        goals: 1,
+        assists: 0,
+        yellowCards: 0,
+        redCards: 0,
+        ownGoals: 0,
+        secondsPlayed: 2400,
+      })
     );
   });
 
@@ -74,7 +81,13 @@ describe("season stats", () => {
       data: { name: "2026/2027", startDate: new Date("2026-09-01"), endDate: new Date("2027-06-30") },
     });
     await prisma.match.create({
-      data: { seasonId: season.id, opponent: "CD Rivas", matchDate: new Date(), homeAway: "home", status: "scheduled" },
+      data: {
+        seasonId: season.id,
+        opponent: "CD Rivas",
+        matchDate: new Date(),
+        homeAway: "home",
+        status: "scheduled",
+      },
     });
 
     const res = await agent.get(`/api/stats/season/${season.id}`);

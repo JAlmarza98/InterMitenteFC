@@ -65,7 +65,9 @@ describe('MatchClockService', () => {
   });
 
   it('createSegment()/updateSegment()/deleteSegment() hit the right endpoints', () => {
-    service.createSegment('m1', { playerId: 'p1', periodType: 'first_half', startSecond: 0, endSecond: null }).subscribe();
+    service
+      .createSegment('m1', { playerId: 'p1', periodType: 'first_half', startSecond: 0, endSecond: null })
+      .subscribe();
     const createReq = httpMock.expectOne((r) => r.url === '/api/matches/m1/segments' && r.method === 'POST');
     expect(createReq.request.body.playerId).toBe('p1');
     createReq.flush({});

@@ -58,8 +58,13 @@
   font-weight: 500;
   // The resting shadow, plus a corner glow parked at zero spread/alpha so
   // it can transition in on hover instead of popping.
-  box-shadow: var(--surface-card-shadow), inset 90px 70px 90px -60px transparent;
-  transition: background-color 0.15s ease, box-shadow 0.25s ease, transform 0.15s ease;
+  box-shadow:
+    var(--surface-card-shadow),
+    inset 90px 70px 90px -60px transparent;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.25s ease,
+    transform 0.15s ease;
 
   mat-icon {
     font-size: 32px;

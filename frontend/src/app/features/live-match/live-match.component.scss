@@ -11,6 +11,23 @@
   width: fit-content;
 }
 
+// Persistent, not a snackbar that disappears — a stale live clock/roster
+// during an actual match needs to stay visible until the coach notices it
+// or the next successful resync clears it.
+.sync-error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 8px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  span {
+    flex: 1;
+  }
+}
+
 // The clock card is the one screen where the club's "live" language
 // (see the pulsing status chip in styles.scss) belongs on the container
 // itself, not just a chip inside it — the whole scoreboard is the live
@@ -30,7 +47,8 @@
 }
 
 @keyframes clock-card-live-pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--mat-sys-tertiary) 25%, transparent);
   }
   50% {
@@ -166,13 +184,32 @@
 }
 
 @media (max-width: 767px) {
+  .scoreboard-block{
+    width: 100%;
+  }
+
   .clock-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+  }
+
+  .scoreboard {
+    justify-content: center;
+  }
+
+  .scoreboard-value {
+    font-size: 3.4rem;
+  }
+
+  .team-label {
+    font-size: 0.8rem;
+  }
+
+  .scoreboard-sep {
+    font-size: 1.75rem;
   }
 
   .time-display {
-    align-self: center;
     font-size: 3.5rem;
   }
 
@@ -279,7 +316,9 @@
   line-height: 1;
   cursor: pointer;
   color: var(--mat-sys-on-surface-variant);
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 
   mat-icon {
     font-size: 20px;

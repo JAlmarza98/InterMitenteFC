@@ -86,7 +86,11 @@ export class MatchStatsComponent {
     this.clockService.listSegments(this.matchId).subscribe((res) => this.segments.set(res.segments));
   }
 
-  updateStat(row: MatchPlayerStatRow, field: 'goals' | 'assists' | 'yellowCards' | 'redCards' | 'ownGoals', value: string) {
+  updateStat(
+    row: MatchPlayerStatRow,
+    field: 'goals' | 'assists' | 'yellowCards' | 'redCards' | 'ownGoals',
+    value: string
+  ) {
     const parsed = Math.max(0, Number(value) || 0);
     this.statsService.upsertPlayerStat(this.matchId, row.playerId, { [field]: parsed }).subscribe({
       next: () => this.load(),

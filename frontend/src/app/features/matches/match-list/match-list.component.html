@@ -13,6 +13,11 @@
     <div class="spinner-row">
       <mat-spinner diameter="32" />
     </div>
+  } @else if (loadError()) {
+    <div class="empty-state">
+      <p>No se pudieron cargar los partidos. Comprueba tu conexión.</p>
+      <button mat-stroked-button (click)="load()">Reintentar</button>
+    </div>
   } @else if (matches().length === 0) {
     <p class="empty-state">Todavía no hay partidos.</p>
   } @else {
@@ -46,8 +51,8 @@
         <ng-container matColumnDef="score">
           <th mat-header-cell *matHeaderCellDef scope="col">Resultado</th>
           <td mat-cell *matCellDef="let match" class="score-cell">
-            @if (match.teamScore !== null && match.opponentScore !== null) {
-              {{ match.teamScore }} - {{ match.opponentScore }}
+            @if (match.status !== 'scheduled') {
+              {{ match.teamScore ?? 0 }} - {{ match.opponentScore ?? 0 }}
             } @else {
               —
             }
@@ -71,6 +76,7 @@
           *matRowDef="let row; columns: displayedColumns"
           (click)="openMatch(row)"
           (keydown.enter)="openMatch(row)"
+          (keydown.space)="$event.preventDefault(); openMatch(row)"
           tabindex="0"
           class="clickable-row"
         ></tr>
@@ -85,8 +91,8 @@
             <span class="match-card-date">{{ match.matchDate | date: 'dd/MM/yyyy HH:mm' }}</span>
           </div>
           <div class="match-card-side">
-            @if (match.teamScore !== null && match.opponentScore !== null) {
-              <span class="match-card-score">{{ match.teamScore }}-{{ match.opponentScore }}</span>
+            @if (match.status !== 'scheduled') {
+              <span class="match-card-score">{{ match.teamScore ?? 0 }}-{{ match.opponentScore ?? 0 }}</span>
             }
             <mat-chip [class]="'status-chip status-' + match.status">{{ statusLabel(match.status) }}</mat-chip>
           </div>

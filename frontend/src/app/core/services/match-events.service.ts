@@ -5,13 +5,7 @@ import { PeriodType } from './match-clock.service';
 import { Match } from './matches.service';
 
 export type MatchEventType =
-  | 'goal'
-  | 'assist'
-  | 'yellow_card'
-  | 'red_card'
-  | 'own_goal'
-  | 'substitution'
-  | 'opponent_goal';
+  'goal' | 'assist' | 'yellow_card' | 'red_card' | 'own_goal' | 'substitution' | 'opponent_goal';
 export type LoggableEventType = Exclude<MatchEventType, 'substitution'>;
 
 export interface MatchEvent {
@@ -58,10 +52,10 @@ export class MatchEventsService {
   }
 
   log(matchId: string, playerId: string, type: Exclude<LoggableEventType, 'opponent_goal'>) {
-    return this.http.post<{ stat: unknown; event: MatchEvent; match: Match | null }>(
-      `/api/matches/${matchId}/events`,
-      { playerId, type }
-    );
+    return this.http.post<{ stat: unknown; event: MatchEvent; match: Match | null }>(`/api/matches/${matchId}/events`, {
+      playerId,
+      type,
+    });
   }
 
   logOpponentGoal(matchId: string) {

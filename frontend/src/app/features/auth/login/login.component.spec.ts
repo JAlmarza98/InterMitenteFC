@@ -14,11 +14,7 @@ describe('LoginComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [LoginComponent],
-      providers: [
-        { provide: AuthService, useValue: authSpy },
-        provideRouter([]),
-        provideNoopAnimations(),
-      ],
+      providers: [{ provide: AuthService, useValue: authSpy }, provideRouter([]), provideNoopAnimations()],
     });
 
     router = TestBed.inject(Router);

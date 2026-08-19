@@ -40,7 +40,9 @@ describe('AuthService', () => {
     let result: { user: CurrentUser | null } | undefined;
     service.fetchMe().subscribe((res) => (result = res));
 
-    httpMock.expectOne('/api/auth/me').flush({ error: 'Not authenticated' }, { status: 401, statusText: 'Unauthorized' });
+    httpMock
+      .expectOne('/api/auth/me')
+      .flush({ error: 'Not authenticated' }, { status: 401, statusText: 'Unauthorized' });
 
     expect(result?.user).toBeNull();
     expect(service.user()).toBeNull();

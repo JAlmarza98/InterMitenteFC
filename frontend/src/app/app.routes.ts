@@ -19,9 +19,7 @@ export const routes: Routes = [
   {
     path: 'pending-approval',
     loadComponent: () =>
-      import('./features/auth/pending-approval/pending-approval.component').then(
-        (m) => m.PendingApprovalComponent
-      ),
+      import('./features/auth/pending-approval/pending-approval.component').then((m) => m.PendingApprovalComponent),
   },
   {
     path: 'players',
@@ -31,8 +29,7 @@ export const routes: Routes = [
   },
   {
     path: 'matches',
-    loadComponent: () =>
-      import('./features/matches/match-list/match-list.component').then((m) => m.MatchListComponent),
+    loadComponent: () => import('./features/matches/match-list/match-list.component').then((m) => m.MatchListComponent),
     canActivate: [authGuard],
   },
   {

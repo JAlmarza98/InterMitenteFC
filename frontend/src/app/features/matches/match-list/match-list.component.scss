@@ -55,7 +55,9 @@
   text-align: left;
   cursor: pointer;
   box-shadow: var(--surface-card-shadow);
-  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
 
   &:hover {
     background: var(--mat-sys-surface-container-highest);

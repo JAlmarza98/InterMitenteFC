@@ -1,4 +1,4 @@
-import { ApplicationConfig, LOCALE_ID, provideZoneChangeDetection, isDevMode } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, LOCALE_ID, provideZoneChangeDetection, isDevMode } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
 import { provideRouter } from '@angular/router';
@@ -9,6 +9,7 @@ import { provideNativeDateAdapter } from '@angular/material/core';
 import { routes } from './app.routes';
 import { credentialsInterceptor } from './core/interceptors/credentials.interceptor';
 import { unauthorizedInterceptor } from './core/interceptors/unauthorized.interceptor';
+import { GlobalErrorHandler } from './core/global-error-handler';
 import { provideServiceWorker } from '@angular/service-worker';
 
 registerLocaleData(localeEs);
@@ -21,6 +22,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideNativeDateAdapter(),
     { provide: LOCALE_ID, useValue: 'es' },
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',

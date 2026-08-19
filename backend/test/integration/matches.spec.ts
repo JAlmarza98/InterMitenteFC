@@ -155,14 +155,22 @@ describe("matches", () => {
       const matchId = await createMatchViaApi(admin);
       const [player] = await createSevenPlayers();
 
-      const forbidden = await (await coachAgent()).put(`/api/matches/${matchId}/player-stats/${player.id}`).send({ goals: 1 });
+      const forbidden = await (
+        await coachAgent()
+      )
+        .put(`/api/matches/${matchId}/player-stats/${player.id}`)
+        .send({ goals: 1 });
       expect(forbidden.status).toBe(403);
 
-      const createRes = await admin.put(`/api/matches/${matchId}/player-stats/${player.id}`).send({ goals: 1 });
+      const createRes = await admin
+        .put(`/api/matches/${matchId}/player-stats/${player.id}`)
+        .send({ goals: 1 });
       expect(createRes.status).toBe(200);
       expect(createRes.body.stat.goals).toBe(1);
 
-      const updateRes = await admin.put(`/api/matches/${matchId}/player-stats/${player.id}`).send({ goals: 2, assists: 1 });
+      const updateRes = await admin
+        .put(`/api/matches/${matchId}/player-stats/${player.id}`)
+        .send({ goals: 2, assists: 1 });
       expect(updateRes.status).toBe(200);
       expect(updateRes.body.stat.goals).toBe(2);
       expect(updateRes.body.stat.assists).toBe(1);
@@ -178,7 +186,9 @@ describe("matches", () => {
       await coach.post(`/api/matches/${matchId}/clock/start-period`).send({ type: "first_half" });
 
       const scorer = players[0];
-      const goalRes = await coach.post(`/api/matches/${matchId}/events`).send({ playerId: scorer.id, type: "goal" });
+      const goalRes = await coach
+        .post(`/api/matches/${matchId}/events`)
+        .send({ playerId: scorer.id, type: "goal" });
       expect(goalRes.status).toBe(201);
       expect(goalRes.body.match.teamScore).toBe(1);
       expect(goalRes.body.stat.goals).toBe(1);
@@ -188,7 +198,9 @@ describe("matches", () => {
         .send({ playerId: players[1].id, type: "own_goal" });
       expect(ownGoalRes.body.match.opponentScore).toBe(1);
 
-      const opponentGoalRes = await coach.post(`/api/matches/${matchId}/events`).send({ type: "opponent_goal" });
+      const opponentGoalRes = await coach
+        .post(`/api/matches/${matchId}/events`)
+        .send({ type: "opponent_goal" });
       expect(opponentGoalRes.status).toBe(201);
       expect(opponentGoalRes.body.match.opponentScore).toBe(2);
 
@@ -198,7 +210,9 @@ describe("matches", () => {
         .send({ playerId: redCardTarget.id, type: "red_card" });
       expect(redCardRes.status).toBe(201);
 
-      const segments = await prisma.playingTimeSegment.findMany({ where: { matchId, playerId: redCardTarget.id } });
+      const segments = await prisma.playingTimeSegment.findMany({
+        where: { matchId, playerId: redCardTarget.id },
+      });
       expect(segments[0].endSecond).not.toBeNull();
 
       const eventsRes = await coach.get(`/api/matches/${matchId}/events`);

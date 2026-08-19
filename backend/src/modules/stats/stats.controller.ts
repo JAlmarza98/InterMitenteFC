@@ -48,7 +48,10 @@ export async function getSeasonStats(req: Request, res: Response) {
     appearancesByPlayer.get(segment.playerId)!.add(segment.matchId);
 
     const key = playerMatchKey(segment.playerId, segment.matchId);
-    secondsByPlayerMatch.set(key, (secondsByPlayerMatch.get(key) ?? 0) + (segment.endSecond! - segment.startSecond));
+    secondsByPlayerMatch.set(
+      key,
+      (secondsByPlayerMatch.get(key) ?? 0) + (segment.endSecond! - segment.startSecond)
+    );
   }
 
   const countersByPlayer = new Map<

@@ -10,14 +10,7 @@ import { FOOTBALL7_POSITIONS, Player, PlayerInput } from '../../../core/services
 @Component({
   selector: 'app-player-form-dialog',
   standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatButtonModule,
-  ],
+  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './player-form-dialog.component.html',
 })
@@ -30,14 +23,12 @@ export class PlayerFormDialogComponent {
   readonly positions = FOOTBALL7_POSITIONS;
 
   readonly primaryPosition = signal(this.data.player?.position ?? '');
-  readonly secondaryPositionOptions = computed(() =>
-    this.positions.filter((p) => p !== this.primaryPosition())
-  );
+  readonly secondaryPositionOptions = computed(() => this.positions.filter((p) => p !== this.primaryPosition()));
 
   readonly form = this.fb.nonNullable.group({
     firstName: [this.data.player?.firstName ?? '', [Validators.required]],
     lastName: [this.data.player?.lastName ?? '', [Validators.required]],
-    jerseyNumber: [this.data.player?.jerseyNumber ?? null as number | null],
+    jerseyNumber: [this.data.player?.jerseyNumber ?? (null as number | null)],
     position: [this.data.player?.position ?? ''],
     secondaryPosition: [this.data.player?.secondaryPosition ?? ''],
   });
