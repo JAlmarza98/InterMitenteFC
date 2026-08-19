@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test --watch=false --browsers=ChromeHeadlessCI",
+    "test:watch": "ng test"
   },
   "private": true,
   "dependencies": {
@@ -37,6 +38,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "puppeteer": "^25.8.0",
     "typescript": "~6.0.3"
   }
 }

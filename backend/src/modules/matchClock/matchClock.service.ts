@@ -19,7 +19,7 @@ const MAX_ON_PITCH = 7;
 
 type PeriodWithPauses = MatchPeriod & { pauses: MatchClockPause[] };
 
-function elapsedSecondsInPeriod(period: MatchPeriod, pauses: MatchClockPause[], now: Date): number {
+export function elapsedSecondsInPeriod(period: MatchPeriod, pauses: MatchClockPause[], now: Date): number {
   if (!period.startedAt) return 0;
   const end = period.endedAt ?? now;
   let elapsedMs = end.getTime() - period.startedAt.getTime();
@@ -30,7 +30,7 @@ function elapsedSecondsInPeriod(period: MatchPeriod, pauses: MatchClockPause[], 
   return Math.max(0, Math.floor(elapsedMs / 1000));
 }
 
-function isPeriodPaused(pauses: MatchClockPause[]): boolean {
+export function isPeriodPaused(pauses: MatchClockPause[]): boolean {
   return pauses.some((p) => p.resumedAt === null);
 }
 

@@ -1,5 +1,16 @@
 node_modules/
 dist/
 .env
+.env.test
 *.log
 .DS_Store
+
+# testing artifacts
+coverage/
+backend/coverage/
+backend/test-results.json
+frontend/coverage/
+e2e/playwright-report/
+e2e/test-results/
+e2e/report.json
+reports/

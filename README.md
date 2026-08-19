@@ -37,7 +37,7 @@ Cada acción anotada en vivo (gol, asistencia, tarjeta, cambio) además crea un 
 
 ## Desarrollo local
 
-Requisitos: Node.js 20+, Docker y Docker Compose.
+Requisitos: Node.js 22+, Docker y Docker Compose.
 
 ```bash
 # Levantar solo Postgres para desarrollar contra él
@@ -63,6 +63,23 @@ En desarrollo, el backend habilita CORS para `http://localhost:4200` y las cooki
 ### Migraciones de Prisma
 
 Los cambios de schema se gestionan con `prisma migrate dev` como es habitual. Una excepción: si Prisma detecta "drift" porque `connect-pg-simple` crea su propia tabla `session` fuera del control de Prisma, no uses `migrate reset` (borra todos los datos) — escribe el SQL de la migración a mano en `prisma/migrations/<timestamp>_nombre/migration.sql`, aplícalo con `docker compose exec postgres psql -U intermitente -d intermitente -f ...` (o pegando el SQL), y regístralo con `npx prisma migrate resolve --applied <timestamp>_nombre`.
+
+## Tests
+
+Unitarios e integración en backend (Vitest + Supertest) y frontend (Karma/Jasmine), y E2E de extremo a extremo (Playwright) contra una base de datos Postgres de test desechable (`docker-compose.test.yml`, aislada de la de desarrollo).
+
+```bash
+npm test              # todo: backend + frontend + E2E, contra la BD de test, con reporte final
+npm run test:backend      # solo backend (unit + integration)
+npm run test:frontend     # solo frontend
+npm run test:e2e          # solo E2E (arranca su propio backend/frontend contra la BD de test)
+```
+
+`npm test` levanta `postgres-test`, aplica las migraciones, corre las tres suites (siempre las tres, aunque alguna falle), tira la base de datos al terminar, y escribe `reports/index.html` con el resultado y cobertura de cada una, enlazando a los reportes detallados (`backend/coverage/`, `frontend/coverage/`, `e2e/playwright-report/`). El código de salida refleja el resultado global — útil para CI.
+
+Antes de la primera vez: `cp backend/.env.test.example backend/.env.test` (ya trae valores de test por defecto, no hace falta tocarlo) y `npm install` en `backend/`, `frontend/` y `e2e/`.
+
+Para depurar sin que se destruya la base de datos al terminar: `npm run test:keep-db`. Para tocar solo la BD de test manualmente: `npm run test:db:up` / `npm run test:db:down`.
 
 ## Despliegue en Proxmox
 
