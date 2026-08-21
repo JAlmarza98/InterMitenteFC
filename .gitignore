@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 .env.test
+docker-compose.override.yml
 *.log
 .DS_Store
 

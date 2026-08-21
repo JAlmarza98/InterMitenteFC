@@ -1,21 +1,106 @@
-<div class="page">
-  <div class="welcome">
-    <img src="branding/crest.png" alt="" class="welcome-watermark" aria-hidden="true" />
-    <h1>Hola, {{ auth.user()?.name }} 👋</h1>
-    <p>¿Qué quieres hacer hoy?</p>
+<div class="page home-page">
+  <div class="greeting">
+    <p>Buenas tardes,</p>
+    <h1>{{ auth.user()?.name }}</h1>
   </div>
 
+  <div class="hero-row">
+    @if (liveMatch(); as match) {
+      <div class="hero-card hero-card-live">
+        <div class="hero-status-row">
+          <span class="live-badge">
+            <span class="live-dot"></span>
+            En vivo @if (periodLabel(); as label) { · {{ label }} }
+          </span>
+          <span class="hero-clock">{{ elapsedDisplay() ?? "—" }}</span>
+        </div>
+        <div class="hero-score-row">
+          <div class="hero-team">
+            <span class="hero-team-name">Inter Mitente</span>
+            <span class="hero-team-score">{{ match.homeAway === 'home' ? (match.teamScore ?? 0) : (match.opponentScore ?? 0) }}</span>
+          </div>
+          <span class="hero-score-sep">—</span>
+          <div class="hero-team">
+            <span class="hero-team-name">{{ match.opponent }}</span>
+            <span class="hero-team-score hero-team-score-them">{{
+              match.homeAway === 'home' ? (match.opponentScore ?? 0) : (match.teamScore ?? 0)
+            }}</span>
+          </div>
+        </div>
+        <a mat-flat-button class="hero-cta" [routerLink]="['/matches', match.id, 'live']">
+          Ver partido en directo
+        </a>
+      </div>
+    } @else if (nextMatch(); as match) {
+      <div class="hero-card hero-card-next">
+        <div class="hero-status-row">
+          <span class="next-badge">
+            <app-icon name="calendar" [size]="14" [strokeWidth]="1.9" />
+            Próximo partido
+          </span>
+          <span class="next-date">{{ match.matchDate | date: "EEE d MMM · HH:mm" }}</span>
+        </div>
+        <div class="hero-matchup">
+          Inter Mitente <span class="hero-vs">vs.</span> {{ match.opponent }}
+        </div>
+        <div class="hero-badges">
+          @if (match.competition) {
+            <span class="hero-badge hero-badge-competition">{{ match.competition }}</span>
+          }
+          <span class="hero-badge hero-badge-location">{{ match.homeAway === 'home' ? 'Local' : 'Visitante' }}</span>
+        </div>
+        <a mat-flat-button class="hero-cta" [routerLink]="['/matches', match.id]">
+          Ver detalles del partido
+        </a>
+      </div>
+    }
+
+    <div class="season-panel desktop-only" [class.season-panel-alone]="!liveMatch() && !nextMatch()">
+      <div class="season-panel-heading">Temporada</div>
+      <div class="season-panel-row">
+        <span>Partidos</span>
+        <span class="season-panel-value">{{ seasonSummary().matchesPlayed }}</span>
+      </div>
+      <div class="season-panel-divider"></div>
+      <div class="season-panel-row">
+        <span>Goles</span>
+        <span class="season-panel-value season-panel-value-amber">{{ seasonSummary().goals }}</span>
+      </div>
+      <div class="season-panel-divider"></div>
+      <div class="season-panel-row">
+        <span>Victorias</span>
+        <span class="season-panel-value season-panel-value-violet">{{ seasonSummary().winRate }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="season-stats mobile-only">
+    <div class="season-stat">
+      <span class="season-stat-value">{{ seasonSummary().matchesPlayed }}</span>
+      <span class="season-stat-label">Partidos</span>
+    </div>
+    <div class="season-stat">
+      <span class="season-stat-value season-stat-goals">{{ seasonSummary().goals }}</span>
+      <span class="season-stat-label">Goles</span>
+    </div>
+    <div class="season-stat">
+      <span class="season-stat-value season-stat-winrate">{{ seasonSummary().winRate }}%</span>
+      <span class="season-stat-label">Victorias</span>
+    </div>
+  </div>
+
+  <div class="shortcuts-heading">Accesos rápidos</div>
   <div class="shortcuts">
     <a routerLink="/matches" class="shortcut-card">
-      <mat-icon>sports_soccer</mat-icon>
+      <app-icon name="matches" [size]="20" />
       <span>Partidos</span>
     </a>
     <a routerLink="/players" class="shortcut-card">
-      <mat-icon>groups</mat-icon>
+      <app-icon name="players" [size]="20" />
       <span>Plantilla</span>
     </a>
-    <a routerLink="/stats" class="shortcut-card">
-      <mat-icon>bar_chart</mat-icon>
+    <a routerLink="/stats" class="shortcut-card shortcut-card-wide">
+      <app-icon name="stats" [size]="20" />
       <span>Estadísticas</span>
     </a>
   </div>

@@ -6,15 +6,16 @@ import * as controller from "./matchClock.controller";
 
 export const matchClockRouter = Router({ mergeParams: true });
 
-// Live-match tracking (the clock, playing-time segments, substitutions)
-// is a coach/admin tool end to end, unlike the rest of the API where
-// reads are open to everyone — a member has no screen that shows this
-// data, so the reads are scoped the same as the writes instead of being
-// reachable only by calling the API directly.
-matchClockRouter.use(requireAuth, requireRole("coach", "admin"));
+matchClockRouter.use(requireAuth);
 
+// Reads are open to any authenticated member, same as the rest of the
+// API — the live-match screen now has a read-only view for members
+// (score, clock, who's on the pitch and for how long). Only the actions
+// that change match state stay coach/admin.
 matchClockRouter.get("/clock", asyncHandler(controller.getClock));
 matchClockRouter.get("/segments", asyncHandler(controller.listSegments));
+
+matchClockRouter.use(requireRole("coach", "admin"));
 
 matchClockRouter.post("/clock/start-period", asyncHandler(controller.startPeriod));
 matchClockRouter.post("/clock/pause", asyncHandler(controller.pause));

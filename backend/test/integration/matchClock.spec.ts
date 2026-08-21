@@ -73,7 +73,7 @@ describe("match clock", () => {
     expect(secondStart.status).toBe(400);
   });
 
-  it("is off-limits to a member", async () => {
+  it("lets a member read the clock but not act on it", async () => {
     const { user: coach, password: coachPassword } = await createApprovedUser("coach");
     const coachAgent = await loginAs(app, coach.email, coachPassword);
     const matchId = await createMatch(coachAgent);
@@ -81,8 +81,11 @@ describe("match clock", () => {
     const { user: member, password: memberPassword } = await createApprovedUser("member");
     const memberAgent = await loginAs(app, member.email, memberPassword);
 
-    const res = await memberAgent.get(`/api/matches/${matchId}/clock`);
-    expect(res.status).toBe(403);
+    const read = await memberAgent.get(`/api/matches/${matchId}/clock`);
+    expect(read.status).toBe(200);
+
+    const write = await memberAgent.post(`/api/matches/${matchId}/clock/start-period`).send({ type: "first_half" });
+    expect(write.status).toBe(403);
   });
 
   async function coachWithStartedMatch() {

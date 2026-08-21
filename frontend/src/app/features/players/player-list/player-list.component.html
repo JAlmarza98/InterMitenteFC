@@ -1,16 +1,25 @@
-<div class="page">
-  <div class="page-header">
-    <h1>Plantilla</h1>
+<div class="page players-page">
+  <div class="players-header">
+    <h1 class="ph-title">Plantilla</h1>
+
     @if (canManage()) {
-      <div class="header-actions">
-        <button mat-stroked-button (click)="toggleShowInactive()">
-          {{ showInactive() ? 'Ocultar inactivos' : 'Mostrar inactivos' }}
-        </button>
-        <button mat-flat-button color="primary" (click)="openCreate()">
-          <mat-icon>person_add</mat-icon>
-          Añadir jugador
-        </button>
-      </div>
+      <p class="players-subheading ph-sub">
+        {{ totalCount() }} jugador{{ totalCount() === 1 ? "" : "es" }} · {{ activeCount() }} activo{{
+          activeCount() === 1 ? "" : "s"
+        }}
+      </p>
+      <button class="toggle-inactive-button ph-toggle" (click)="toggleShowInactive()">
+        {{ showInactive() ? "Ocultar inactivos" : "Mostrar inactivos" }}
+      </button>
+      <button mat-flat-button color="primary" class="add-player-button ph-add" (click)="openCreate()">
+        <app-icon name="user-add" [size]="16" [strokeWidth]="2.1" />
+        <span class="add-player-label-full">Añadir jugador</span>
+        <span class="add-player-label-short">Añadir</span>
+      </button>
+    } @else {
+      <p class="players-subheading ph-sub">
+        {{ activeCount() }} jugador{{ activeCount() === 1 ? "" : "es" }} activo{{ activeCount() === 1 ? "" : "s" }}
+      </p>
     }
   </div>
 
@@ -26,58 +35,77 @@
   } @else if (players().length === 0) {
     <p class="empty-state">Todavía no hay jugadores en la plantilla.</p>
   } @else {
-    <div class="table-scroll">
-      <table mat-table [dataSource]="players()" class="players-table">
-        <ng-container matColumnDef="jerseyNumber">
-          <th mat-header-cell *matHeaderCellDef scope="col">#</th>
-          <td mat-cell *matCellDef="let player">{{ player.jerseyNumber ?? '—' }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef scope="col">Nombre</th>
-          <td mat-cell *matCellDef="let player">{{ player.firstName }} {{ player.lastName }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="position">
-          <th mat-header-cell *matHeaderCellDef scope="col">Posición</th>
-          <td mat-cell *matCellDef="let player">
-            {{ player.position ?? '—' }}{{ player.secondaryPosition ? ' / ' + player.secondaryPosition : '' }}
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
-          <td mat-cell *matCellDef="let player">
-            <mat-chip [class.inactive-chip]="!player.active">
-              {{ player.active ? 'Activo' : 'Inactivo' }}
-            </mat-chip>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef scope="col"><span class="sr-only">Acciones</span></th>
-          <td mat-cell *matCellDef="let player">
+    <div class="players-table-wrap desktop-only">
+      <div class="players-table">
+        <div class="players-table-row players-table-head">
+          <span>#</span>
+          <span>Nombre</span>
+          <span>Posición</span>
+          <span>Estado</span>
+          <span></span>
+        </div>
+        @for (player of players(); track player.id) {
+          <div class="players-table-row" [class.players-table-row-inactive]="!player.active">
+            <span class="jersey-cell">{{ player.jerseyNumber ?? "—" }}</span>
+            <span class="name-cell">{{ player.firstName }} {{ player.lastName }}</span>
+            <span class="position-cell">{{ positionLabel(player) }}</span>
+            <span>
+              <span class="status-pill" [class.status-pill-inactive]="!player.active">
+                {{ player.active ? "Activo" : "Inactivo" }}
+              </span>
+            </span>
             @if (canManage()) {
-              <div class="actions-cell">
-                <button mat-icon-button (click)="openEdit(player)" aria-label="Editar">
-                  <mat-icon>edit</mat-icon>
+              <div class="row-actions">
+                <button class="edit-button" (click)="openEdit(player)" aria-label="Editar">
+                  <app-icon name="edit" [size]="14" [strokeWidth]="1.9" />
                 </button>
-                <mat-slide-toggle
-                  [checked]="player.active"
-                  (change)="toggleActive(player)"
-                  [matTooltip]="player.active ? 'Desactivar' : 'Activar'"
-                  [aria-label]="
-                    (player.active ? 'Desactivar' : 'Activar') + ' a ' + player.firstName + ' ' + player.lastName
-                  "
-                />
+                <button
+                  class="toggle-switch"
+                  [class.toggle-switch-on]="player.active"
+                  (click)="toggleActive(player)"
+                  type="button"
+                  role="switch"
+                  [attr.aria-checked]="player.active"
+                  [attr.aria-label]="(player.active ? 'Desactivar' : 'Activar') + ' a ' + player.firstName + ' ' + player.lastName"
+                >
+                  <span class="toggle-thumb"></span>
+                </button>
               </div>
             }
-          </td>
-        </ng-container>
+          </div>
+        }
+      </div>
+    </div>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      </table>
+    <div class="player-cards mobile-only">
+      @for (player of players(); track player.id) {
+        <div class="player-card" [class.player-card-inactive]="!player.active">
+          <div class="jersey-badge">{{ player.jerseyNumber ?? "—" }}</div>
+          <div class="player-card-main">
+            <div class="player-card-name">{{ player.firstName }} {{ player.lastName }}</div>
+            <div class="player-card-position">{{ positionLabel(player) }}</div>
+          </div>
+          <span class="status-pill" [class.status-pill-inactive]="!player.active">
+            {{ player.active ? "Activo" : "Inactivo" }}
+          </span>
+          @if (canManage()) {
+            <button class="edit-button" (click)="openEdit(player)" aria-label="Editar">
+              <app-icon name="edit" [size]="15" [strokeWidth]="1.9" />
+            </button>
+            <button
+              class="toggle-switch"
+              [class.toggle-switch-on]="player.active"
+              (click)="toggleActive(player)"
+              type="button"
+              role="switch"
+              [attr.aria-checked]="player.active"
+              [attr.aria-label]="(player.active ? 'Desactivar' : 'Activar') + ' a ' + player.firstName + ' ' + player.lastName"
+            >
+              <span class="toggle-thumb"></span>
+            </button>
+          }
+        </div>
+      }
     </div>
   }
 </div>

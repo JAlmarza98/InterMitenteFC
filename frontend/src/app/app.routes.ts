@@ -41,7 +41,7 @@ export const routes: Routes = [
   {
     path: 'matches/:id/live',
     loadComponent: () => import('./features/live-match/live-match.component').then((m) => m.LiveMatchComponent),
-    canActivate: [authGuard, roleGuard('admin', 'coach')],
+    canActivate: [authGuard],
   },
   {
     path: 'matches/:id/stats',

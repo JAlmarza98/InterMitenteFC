@@ -1,53 +1,71 @@
-<mat-toolbar color="primary" class="app-toolbar">
-  <a routerLink="/" class="app-title">
-    <img src="branding/crest.png" alt="Escudo Inter Mitente" class="app-title-crest" width="277" height="320" />
-    <span>Inter Mitente</span>
-  </a>
-  <span class="spacer"></span>
+@if (!isAuthRoute()) {
+  <mat-toolbar class="app-toolbar">
+    <a routerLink="/" class="app-title">
+      <img src="branding/crest.png" alt="Escudo Inter Mitente" class="app-title-crest" width="277" height="320" />
+      <span>Inter Mitente</span>
+    </a>
 
-  @if (auth.isApproved()) {
-    <nav class="desktop-nav">
-      <a mat-button routerLink="/matches" routerLinkActive="active-link">Partidos</a>
-      <a mat-button routerLink="/players" routerLinkActive="active-link">Plantilla</a>
-      <a mat-button routerLink="/stats" routerLinkActive="active-link">Estadísticas</a>
-      @if (auth.role() === 'admin') {
-        <a mat-button routerLink="/admin/seasons" routerLinkActive="active-link">Temporadas</a>
-        <a mat-button routerLink="/admin/users" routerLinkActive="active-link">Usuarios</a>
-      }
-    </nav>
+    @if (auth.isApproved()) {
+      <span class="nav-divider"></span>
+      <nav class="desktop-nav">
+        <a
+          mat-button
+          routerLink="/"
+          routerLinkActive="active-link"
+          [routerLinkActiveOptions]="{ exact: true }"
+          >Inicio</a
+        >
+        <a mat-button routerLink="/matches" routerLinkActive="active-link">Partidos</a>
+        <a mat-button routerLink="/players" routerLinkActive="active-link">Plantilla</a>
+        <a mat-button routerLink="/stats" routerLinkActive="active-link">Estadísticas</a>
+        @if (auth.role() === 'admin') {
+          <span class="admin-nav-links">
+            <a mat-button routerLink="/admin/seasons" routerLinkActive="active-link">Temporadas</a>
+            <a mat-button routerLink="/admin/users" routerLinkActive="active-link">Usuarios</a>
+          </span>
+          <button mat-icon-button class="nav-more-button" [matMenuTriggerFor]="moreMenu" aria-label="Más opciones">
+            <app-icon name="more" [size]="18" />
+          </button>
+        }
+      </nav>
 
-    <span class="user-name">{{ auth.user()?.name }}</span>
-    <button mat-icon-button (click)="logout()" aria-label="Cerrar sesión">
-      <mat-icon>logout</mat-icon>
-    </button>
-  }
-</mat-toolbar>
+      <span class="spacer"></span>
 
-<main class="app-content">
+      <span class="user-name">{{ auth.user()?.name }}</span>
+      <button mat-icon-button class="logout-button" (click)="logout()" aria-label="Cerrar sesión">
+        <app-icon name="logout" [size]="18" />
+      </button>
+    } @else {
+      <span class="spacer"></span>
+    }
+  </mat-toolbar>
+}
+
+<main class="app-content" [class.app-content-full]="isAuthRoute()">
   <router-outlet />
 </main>
 
 @if (auth.isApproved()) {
   <nav class="bottom-nav">
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-      <mat-icon>home</mat-icon>
+      <app-icon name="home" [size]="21" [strokeWidth]="1.9" />
       <span>Inicio</span>
     </a>
     <a routerLink="/matches" routerLinkActive="active">
-      <mat-icon>sports_soccer</mat-icon>
+      <app-icon name="matches" [size]="21" />
       <span>Partidos</span>
     </a>
     <a routerLink="/players" routerLinkActive="active">
-      <mat-icon>groups</mat-icon>
+      <app-icon name="players" [size]="21" />
       <span>Plantilla</span>
     </a>
     <a routerLink="/stats" routerLinkActive="active">
-      <mat-icon>bar_chart</mat-icon>
+      <app-icon name="stats" [size]="21" />
       <span>Stats</span>
     </a>
     @if (auth.role() === 'admin') {
       <button class="bottom-nav-more" [matMenuTriggerFor]="moreMenu">
-        <mat-icon>more_horiz</mat-icon>
+        <app-icon name="more" [size]="21" />
         <span>Más</span>
       </button>
     }
@@ -56,11 +74,11 @@
 
 <mat-menu #moreMenu="matMenu">
   <a mat-menu-item routerLink="/admin/seasons">
-    <mat-icon>event</mat-icon>
+    <app-icon name="calendar" [size]="20" />
     Temporadas
   </a>
   <a mat-menu-item routerLink="/admin/users">
-    <mat-icon>how_to_reg</mat-icon>
+    <app-icon name="user-add" [size]="20" />
     Usuarios
   </a>
 </mat-menu>

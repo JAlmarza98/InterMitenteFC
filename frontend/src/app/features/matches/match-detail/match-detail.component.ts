@@ -1,15 +1,8 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatRadioModule } from '@angular/material/radio';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -17,15 +10,11 @@ import { AuthService } from '../../../core/services/auth.service';
 import { MatchesService, MatchStatus, MatchWithSquad } from '../../../core/services/matches.service';
 import { SeasonsService } from '../../../core/services/seasons.service';
 import { Player, PlayersService } from '../../../core/services/players.service';
-import {
-  MATCH_EVENT_ICONS,
-  MATCH_EVENT_LABELS,
-  MatchEvent,
-  MatchEventsService,
-} from '../../../core/services/match-events.service';
+import { MATCH_EVENT_LABELS, MatchEvent, MatchEventsService, MatchEventType } from '../../../core/services/match-events.service';
 import { formatMinuteSeconds } from '../../../core/services/match-clock.service';
 import { formatRating, ratingTier, MatchPlayerStatRow, StatsService } from '../../../core/services/stats.service';
 import { MatchFormDialogComponent } from '../match-form-dialog/match-form-dialog.component';
+import { IconComponent, IconName } from '../../../shared/icon/icon.component';
 
 interface SquadRow {
   player: Player;
@@ -35,8 +24,22 @@ interface SquadRow {
 
 const STATUS_LABELS: Record<MatchStatus, string> = {
   scheduled: 'Programado',
-  live: 'En juego',
+  live: 'En vivo',
   finished: 'Finalizado',
+};
+
+// Ported from the mockup's match-history icons — a stroked ball for
+// goals, a stroked swap arrow for substitutions, both sized/colored
+// consistently with every other app-icon usage. Cards render as a small
+// filled rect directly in the template instead (see event-card-icon in
+// the html) since they're a solid shape, not a stroke glyph like the rest
+// of the icon set.
+const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
+  goal: 'ball',
+  opponent_goal: 'ball',
+  own_goal: 'ball',
+  assist: 'check',
+  substitution: 'swap',
 };
 
 @Component({
@@ -45,18 +48,12 @@ const STATUS_LABELS: Record<MatchStatus, string> = {
   imports: [
     DatePipe,
     RouterLink,
-    MatCardModule,
     MatButtonModule,
-    MatIconModule,
-    MatChipsModule,
-    MatCheckboxModule,
-    MatRadioModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatInputModule,
+    MatMenuModule,
     MatDialogModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
+    IconComponent,
   ],
   templateUrl: './match-detail.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -81,8 +78,6 @@ export class MatchDetailComponent {
    * via substitutions and playing-time segments instead. */
   readonly canEditSquad = computed(() => this.canManage() && this.match()?.status === 'scheduled');
   readonly statuses: MatchStatus[] = ['scheduled', 'live', 'finished'];
-  readonly eventIcons = MATCH_EVENT_ICONS;
-  readonly eventLabels = MATCH_EVENT_LABELS;
   readonly events = signal<MatchEvent[]>([]);
   readonly playerStats = signal<MatchPlayerStatRow[]>([]);
 
@@ -115,13 +110,33 @@ export class MatchDetailComponent {
     return event.player ? `${event.player.firstName} ${event.player.lastName}` : '';
   }
 
+  // Natural-language phrasing per event type, matching the mockup's own
+  // wording ("Gol de X", "Amarilla a X", "Cambio: sale X, entra Y" — sale
+  // before entra) rather than a generic "<label>: <name>" template.
   eventDescription(event: MatchEvent): string {
-    if (event.type === 'substitution') {
-      const inName = this.eventPlayerName(event);
-      const outName = event.relatedPlayer ? `${event.relatedPlayer.firstName} ${event.relatedPlayer.lastName}` : '';
-      return `Entra ${inName}, sale ${outName}`;
+    const name = this.eventPlayerName(event);
+    switch (event.type) {
+      case 'goal':
+        return `Gol de ${name}`;
+      case 'assist':
+        return `Asistencia de ${name}`;
+      case 'yellow_card':
+        return `Amarilla a ${name}`;
+      case 'red_card':
+        return `Roja a ${name}`;
+      case 'own_goal':
+        return `Gol en propia de ${name}`;
+      case 'opponent_goal':
+        return MATCH_EVENT_LABELS.opponent_goal;
+      case 'substitution': {
+        const outName = event.relatedPlayer ? `${event.relatedPlayer.firstName} ${event.relatedPlayer.lastName}` : '';
+        return `Cambio: sale ${outName}, entra ${name}`;
+      }
     }
-    return `${this.eventLabels[event.type]}: ${this.eventPlayerName(event)}`;
+  }
+
+  eventIconName(type: MatchEventType): IconName {
+    return EVENT_ICON_NAMES[type] ?? 'ball';
   }
 
   statusLabel(status: MatchStatus): string {

@@ -1,11 +1,254 @@
-.users-table {
-  width: 100%;
+// Literal port of the approved mockups — A-Admin-Users-Mobile.dc.html
+// (Pendientes tab, cards) and A-Admin-Users-Tablet.dc.html (table, plus the
+// "editable role" example row). Neither mockup drew the Aprobados/Rechazados
+// tabs on mobile — those cards reuse the same visual language (same card
+// shell, same role pill, only the action buttons differ per status).
+.users-page {
+  padding: 0 20px 24px;
+  gap: 0;
 }
 
-.actions-cell {
-  height: 100%;
+@media (min-width: 768px) {
+  .users-page {
+    padding: 22px 40px 32px;
+  }
+}
+
+.users-page h1 {
+  margin: 26px 0 0;
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 1.4rem;
+  letter-spacing: -0.01em;
+}
+
+@media (min-width: 768px) {
+  .users-page h1 {
+    margin-top: 0;
+    font-size: 1.5rem;
+  }
+}
+
+.status-tabs {
+  margin-top: 16px;
   display: flex;
-  gap: var(--space-sm);
+  gap: 6px;
+  padding: 3px;
+  border-radius: 12px;
+  background: oklch(20% 0.03 262 / 70%);
+}
+
+.status-tab {
+  flex: 1 1 0;
+  text-align: center;
+  padding: 8px 0;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: oklch(65% 0.02 262);
+  font-family: inherit;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  // Only the tablet mockup constrains the tab strip to its content width —
+  // the mobile one stretches full-width with each tab sharing it equally
+  // (flex: 1 1 0 above). Scoping `width: fit-content` to this tier only
+  // matters because the tabs' own flex-basis-0 children would otherwise
+  // shrink the whole strip down to a cramped, wrapped mess at any width.
+  .status-tabs {
+    width: fit-content;
+  }
+
+  .status-tab {
+    flex: 0 0 auto;
+    padding: 8px 20px;
+    font-size: 0.82rem;
+  }
+}
+
+.status-tab-active {
+  background: oklch(30% 0.05 262);
+  color: oklch(97% 0.01 90);
+  font-weight: 700;
+}
+
+// ---- shared role pill ----
+.role-pill {
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
+  width: fit-content;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: oklch(30% 0.04 262);
+  color: oklch(85% 0.01 90);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.role-pill-editable {
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: oklch(30% 0.04 262 / 60%);
+  border: 1px solid oklch(45% 0.03 262 / 40%);
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+
+  app-icon {
+    color: oklch(75% 0.02 262);
+  }
+}
+
+// ---- shared approve/reject buttons ----
+.approve-button,
+.reject-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.approve-button {
+  border: none;
+  background: linear-gradient(135deg, oklch(78% 0.19 70), oklch(70% 0.18 55));
+  color: oklch(18% 0.03 262);
+}
+
+.reject-button {
+  background: transparent;
+  border: 1px solid oklch(60% 0.15 25 / 45%);
+  color: oklch(70% 0.15 25);
+}
+
+// ---- desktop/tablet table ----
+.users-table-wrap {
+  margin-top: 16px;
+  border-radius: 18px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+  overflow: hidden;
+}
+
+.users-table-row {
+  display: grid;
+  grid-template-columns: 1.6fr 2.2fr 1.2fr 1.6fr;
+  align-items: center;
+  padding: 13px 20px;
+  border-bottom: 1px solid oklch(45% 0.03 262 / 15%);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.users-table-head {
+  padding: 12px 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: oklch(65% 0.02 262);
+  border-bottom: 1px solid oklch(45% 0.03 262 / 25%);
+}
+
+.user-name-cell {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.user-email-cell {
+  font-size: 0.82rem;
+  color: oklch(75% 0.02 262);
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.users-table-row {
+  .approve-button,
+  .reject-button {
+    height: 34px;
+    padding: 0 14px;
+    font-size: 0.76rem;
+  }
+}
+
+// ---- mobile card list ----
+.user-cards {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.user-card {
+  padding: 14px;
+  border-radius: 16px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+}
+
+.user-card-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.user-card-email {
+  margin-top: 2px;
+  font-size: 0.76rem;
+  color: oklch(65% 0.02 262);
+}
+
+.user-card .role-pill {
+  margin-top: 10px;
+}
+
+.user-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+
+  .approve-button,
+  .reject-button {
+    flex: 1 1 0;
+    height: 38px;
+    font-size: 0.78rem;
+  }
+}
+
+// ---- shared list-state helpers ----
+.spinner-row {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-lg) 0;
+}
+
+.empty-state {
+  margin-top: 18px;
+  color: oklch(70% 0.02 262);
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .desktop-only {
+    display: block;
+  }
+
+  .user-cards.mobile-only {
+    display: none;
+  }
 }

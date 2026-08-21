@@ -1,5 +1,31 @@
-<div class="page">
-  <h1>Estadísticas de temporada</h1>
+<div class="page stats-page">
+  <div class="stats-header">
+    <h1 class="stats-title">
+      <span class="stats-title-short">Estadísticas</span>
+      <span class="stats-title-full">Estadísticas de temporada</span>
+    </h1>
+
+    @if (!loadingSeasons() && seasons().length > 0) {
+      <button class="season-trigger" [matMenuTriggerFor]="seasonMenu">
+        <span>Temporada {{ selectedSeason()?.name }}</span>
+        <app-icon name="chevron-down" [size]="16" [strokeWidth]="2" />
+      </button>
+      <mat-menu #seasonMenu="matMenu">
+        @for (season of seasons(); track season.id) {
+          <button mat-menu-item (click)="selectSeason(season.id)">{{ season.name }}</button>
+        }
+      </mat-menu>
+    }
+
+    @if (stats(); as s) {
+      <p class="matches-played">
+        {{ s.matchesPlayed }} partido{{ s.matchesPlayed === 1 ? "" : "s" }} finalizado{{
+          s.matchesPlayed === 1 ? "" : "s"
+        }}
+        en esta temporada
+      </p>
+    }
+  </div>
 
   @if (loadingSeasons()) {
     <div class="spinner-row">
@@ -7,208 +33,135 @@
     </div>
   } @else if (seasons().length === 0) {
     <p class="empty-state">Todavía no hay temporadas creadas.</p>
-  } @else {
-    <mat-form-field appearance="outline" class="season-select">
-      <mat-label>Temporada</mat-label>
-      <mat-select [value]="selectedSeasonId()" (selectionChange)="selectSeason($event.value)">
-        @for (season of seasons(); track season.id) {
-          <mat-option [value]="season.id">{{ season.name }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    @if (loadingStats()) {
-      <div class="spinner-row">
-        <mat-spinner diameter="32" />
-      </div>
-    } @else if (stats()) {
-      @let s = stats()!;
-      <p class="matches-played">{{ s.matchesPlayed }} partido(s) finalizado(s) en esta temporada.</p>
-
-      <mat-card appearance="outlined">
-        <mat-card-content>
-          @if (s.players.length === 0) {
-            <p class="empty-state">Todavía no hay estadísticas para esta temporada.</p>
-          } @else {
-            <div class="table-scroll">
-              <table
-                mat-table
-                [dataSource]="sortedPlayers()"
-                class="season-table"
-                matSort
-                [matSortActive]="sort().active"
-                [matSortDirection]="sort().direction"
-                (matSortChange)="onSortChange($event)"
-              >
-                <ng-container matColumnDef="name">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Jugador</th>
-                  <td mat-cell *matCellDef="let row">
-                    <span class="name-cell">
-                      @if (topRatingIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-rating" matTooltip="Mejor promedio"
-                          >military_tech</mat-icon
-                        >
-                      }
-                      {{ row.player.firstName }} {{ row.player.lastName }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="avgRating">
-                  <th
-                    mat-header-cell
-                    *matHeaderCellDef
-                    mat-sort-header
-                    class="num-header"
-                    matTooltip="Nota media de la temporada (0-10)"
-                    scope="col"
-                  >
-                    Promedio
-                  </th>
-                  <td mat-cell *matCellDef="let row" class="num-cell">
-                    <span class="rating-badge" [class]="'rating-badge rating-' + ratingTier(row.avgRating)">{{
-                      formatRating(row.avgRating)
-                    }}</span>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="appearances">
-                  <th
-                    mat-header-cell
-                    *matHeaderCellDef
-                    mat-sort-header
-                    class="num-header"
-                    matTooltip="Partidos jugados"
-                    scope="col"
-                  >
-                    PJ
-                  </th>
-                  <td mat-cell *matCellDef="let row" class="num-cell">
-                    <span class="num-with-icon">
-                      @if (topAppearancesIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-appearances" matTooltip="Más partidos jugados"
-                          >verified</mat-icon
-                        >
-                      }
-                      {{ row.appearances }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="timePlayed">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">Tiempo total</th>
-                  <td mat-cell *matCellDef="let row" class="num-cell">
-                    <span class="num-with-icon">
-                      @if (topTimePlayedIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-time" matTooltip="Más minutos jugados">timer</mat-icon>
-                      }
-                      {{ formatTime(row.secondsPlayed) }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="avgTime">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">
-                    Media/partido
-                  </th>
-                  <td mat-cell *matCellDef="let row" class="num-cell">{{ formatTime(row.avgSecondsPerAppearance) }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="goals">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">Goles</th>
-                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.goals === 0">
-                    <span class="num-with-icon">
-                      @if (topScorerIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-goals" matTooltip="Máximo goleador"
-                          >sports_soccer</mat-icon
-                        >
-                      }
-                      {{ row.goals }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="assists">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">Asist.</th>
-                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.assists === 0">
-                    <span class="num-with-icon">
-                      @if (topAssistsIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-assists" matTooltip="Máximo asistente"
-                          >handshake</mat-icon
-                        >
-                      }
-                      {{ row.assists }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="yellowCards">
-                  <th
-                    mat-header-cell
-                    *matHeaderCellDef
-                    mat-sort-header
-                    class="num-header"
-                    matTooltip="Tarjetas amarillas"
-                    scope="col"
-                  >
-                    TA
-                  </th>
-                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.yellowCards === 0">
-                    <span class="num-with-icon">
-                      @if (topYellowCardsIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-yellow" matTooltip="Más tarjetas amarillas"
-                          >crop_portrait</mat-icon
-                        >
-                      }
-                      {{ row.yellowCards }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="redCards">
-                  <th
-                    mat-header-cell
-                    *matHeaderCellDef
-                    mat-sort-header
-                    class="num-header"
-                    matTooltip="Tarjetas rojas"
-                    scope="col"
-                  >
-                    TR
-                  </th>
-                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.redCards === 0">
-                    <span class="num-with-icon">
-                      @if (topRedCardsIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-red" matTooltip="Más tarjetas rojas"
-                          >crop_portrait</mat-icon
-                        >
-                      }
-                      {{ row.redCards }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="ownGoals">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="num-header" scope="col">G. propia</th>
-                  <td mat-cell *matCellDef="let row" class="num-cell" [class.stat-zero]="row.ownGoals === 0">
-                    <span class="num-with-icon">
-                      @if (topOwnGoalsIds().has(row.playerId)) {
-                        <mat-icon class="leader-icon leader-icon-owngoal" matTooltip="Más goles en propia"
-                          >sports_soccer</mat-icon
-                        >
-                      }
-                      {{ row.ownGoals }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="columns"></tr>
-                <tr mat-row *matRowDef="let row; columns: columns"></tr>
-              </table>
+  } @else if (loadingStats()) {
+    <div class="spinner-row">
+      <mat-spinner diameter="32" />
+    </div>
+  } @else if (stats(); as s) {
+    @if (s.players.length === 0) {
+      <p class="empty-state">Todavía no hay estadísticas para esta temporada.</p>
+    } @else {
+      <div class="stats-table-wrap desktop-only">
+        <div class="stats-table">
+          <div class="stats-table-row stats-table-head">
+            <button class="sort-header" (click)="toggleSort('name')">Jugador</button>
+            <button class="sort-header" (click)="toggleSort('avgRating')">Promedio</button>
+            <button class="sort-header" (click)="toggleSort('appearances')">PJ</button>
+            <button class="sort-header" (click)="toggleSort('timePlayed')">Tiempo</button>
+            <button class="sort-header" (click)="toggleSort('avgTime')">Media/p.</button>
+            <button class="sort-header" (click)="toggleSort('goals')">Goles</button>
+            <button class="sort-header" (click)="toggleSort('assists')">Asist.</button>
+            <button class="sort-header" (click)="toggleSort('yellowCards')">TA</button>
+            <button class="sort-header" (click)="toggleSort('redCards')">TR</button>
+            <button class="sort-header" (click)="toggleSort('ownGoals')">G. propia</button>
+          </div>
+          @for (row of sortedPlayers(); track row.playerId) {
+            <div class="stats-table-row">
+              <span class="player-name-cell">
+                @if (topRatingIds().has(row.playerId)) {
+                  <app-icon name="star" [size]="14" [strokeWidth]="1.9" class="leader-star" />
+                }
+                {{ row.player.firstName }} {{ row.player.lastName }}
+              </span>
+              <span><span [class]="'rating-badge rating-' + ratingTier(row.avgRating)">{{ formatRating(row.avgRating) }}</span></span>
+              <span class="num-cell">{{ row.appearances }}</span>
+              <span class="num-cell">
+                @if (topTimePlayedIds().has(row.playerId)) {
+                  <app-icon name="clock" [size]="12" [strokeWidth]="2" class="leader-icon-time" />
+                }
+                {{ formatTime(row.secondsPlayed) }}
+              </span>
+              <span class="num-cell">{{ formatTime(row.avgSecondsPerAppearance) }}</span>
+              <span class="num-cell">
+                @if (topScorerIds().has(row.playerId)) {
+                  <app-icon name="ball" [size]="13" [strokeWidth]="2" class="leader-icon-goals" />
+                  {{ row.goals }}
+                } @else {
+                  {{ row.goals }}
+                }
+              </span>
+              <span class="num-cell">
+                @if (topAssistsIds().has(row.playerId)) {
+                  <app-icon name="assist" [size]="13" [strokeWidth]="2" class="leader-icon-assists" />
+                  {{ row.assists }}
+                } @else {
+                  {{ row.assists }}
+                }
+              </span>
+              <span class="num-cell" [class.stat-zero]="row.yellowCards === 0">{{ row.yellowCards }}</span>
+              <span class="num-cell" [class.stat-zero]="row.redCards === 0">{{ row.redCards }}</span>
+              <span class="num-cell" [class.stat-zero]="row.ownGoals === 0">{{ row.ownGoals }}</span>
             </div>
           }
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </div>
+
+      <div class="player-cards mobile-only">
+        @for (row of sortedPlayers(); track row.playerId) {
+          <div class="player-card">
+            <div class="player-card-top">
+              <span [class]="'rating-badge rating-' + ratingTier(row.avgRating)">{{ formatRating(row.avgRating) }}</span>
+              <span class="player-card-name">{{ row.player.firstName }} {{ row.player.lastName }}</span>
+              @if (topRatingIds().has(row.playerId)) {
+                <app-icon name="star" [size]="16" [strokeWidth]="1.9" class="leader-star" />
+              }
+            </div>
+            <div class="player-card-line">
+              <span>PJ <b>{{ row.appearances }}</b></span>
+              @if (topScorerIds().has(row.playerId)) {
+                <span class="player-stat-chip">
+                  <app-icon name="ball" [size]="12" [strokeWidth]="2" class="leader-icon-goals" />
+                  <b>{{ row.goals }}</b>
+                </span>
+              } @else {
+                <span>Goles <b>{{ row.goals }}</b></span>
+              }
+              @if (topAssistsIds().has(row.playerId)) {
+                <span class="player-stat-chip">
+                  <app-icon name="assist" [size]="12" [strokeWidth]="2" class="leader-icon-assists" />
+                  <b>{{ row.assists }}</b>
+                </span>
+              } @else {
+                <span>Asist. <b>{{ row.assists }}</b></span>
+              }
+              @if (topTimePlayedIds().has(row.playerId)) {
+                <span class="player-stat-chip">
+                  <app-icon name="clock" [size]="12" [strokeWidth]="2" class="leader-icon-time" />
+                  {{ formatTime(row.secondsPlayed) }}
+                </span>
+              } @else {
+                <span>{{ formatTime(row.secondsPlayed) }}</span>
+              }
+            </div>
+            @if (row.yellowCards > 0 || row.redCards > 0 || row.ownGoals > 0) {
+              <div class="player-card-line player-card-line-bad">
+                @if (row.yellowCards > 0) {
+                  <span class="player-stat-chip">
+                    <svg width="10" height="13" viewBox="0 0 16 20" class="event-card-icon event-card-yellow">
+                      <rect width="16" height="20" rx="2.5" />
+                    </svg>
+                    <b>{{ row.yellowCards }}</b>
+                  </span>
+                }
+                @if (row.redCards > 0) {
+                  <span class="player-stat-chip">
+                    <svg width="10" height="13" viewBox="0 0 16 20" class="event-card-icon event-card-red">
+                      <rect width="16" height="20" rx="2.5" />
+                    </svg>
+                    <b>{{ row.redCards }}</b>
+                  </span>
+                }
+                @if (row.ownGoals > 0) {
+                  <span class="player-stat-chip">
+                    <app-icon name="ball" [size]="12" [strokeWidth]="2" class="event-icon-own_goal" />
+                    <b>{{ row.ownGoals }}</b>
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
     }
   }
 </div>

@@ -1,9 +1,10 @@
-<div class="page">
-  <div class="page-header">
+<div class="page seasons-page">
+  <div class="seasons-header">
     <h1>Temporadas</h1>
-    <button mat-flat-button color="primary" (click)="openCreate()">
-      <mat-icon>add</mat-icon>
-      Nueva temporada
+    <button mat-flat-button color="primary" class="new-season-button" (click)="openCreate()">
+      <app-icon name="add" [size]="16" [strokeWidth]="2.2" />
+      <span class="new-season-label-full">Nueva temporada</span>
+      <span class="new-season-label-short">Nueva</span>
     </button>
   </div>
 
@@ -14,41 +15,54 @@
   } @else if (seasons().length === 0) {
     <p class="empty-state">Todavía no hay temporadas.</p>
   } @else {
-    <div class="table-scroll">
-      <table mat-table [dataSource]="seasons()" class="seasons-table">
-        <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef scope="col">Nombre</th>
-          <td mat-cell *matCellDef="let season">{{ season.name }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="range">
-          <th mat-header-cell *matHeaderCellDef scope="col">Periodo</th>
-          <td mat-cell *matCellDef="let season">
-            {{ season.startDate | date: 'dd/MM/yyyy' }} - {{ season.endDate | date: 'dd/MM/yyyy' }}
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="active">
-          <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
-          <td mat-cell *matCellDef="let season">
-            @if (season.isActive) {
-              <mat-chip>Activa</mat-chip>
-            }
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef scope="col"><span class="sr-only">Acciones</span></th>
-          <td mat-cell *matCellDef="let season">
-            <button mat-icon-button (click)="openEdit(season)" aria-label="Editar">
-              <mat-icon>edit</mat-icon>
+    <div class="seasons-table-wrap desktop-only">
+      <div class="seasons-table">
+        <div class="seasons-table-row seasons-table-head">
+          <span>Nombre</span>
+          <span>Periodo</span>
+          <span>Estado</span>
+          <span></span>
+        </div>
+        @for (season of seasons(); track season.id) {
+          <div class="seasons-table-row" [class.seasons-table-row-active]="season.isActive">
+            <span class="season-name-cell">{{ season.name }}</span>
+            <span class="season-range-cell">
+              {{ season.startDate | date: "dd/MM/yyyy" }} – {{ season.endDate | date: "dd/MM/yyyy" }}
+            </span>
+            <span>
+              @if (season.isActive) {
+                <span class="active-pill">Activa</span>
+              }
+            </span>
+            <button class="edit-button" (click)="openEdit(season)" aria-label="Editar">
+              <app-icon name="edit" [size]="14" [strokeWidth]="1.9" />
             </button>
-          </td>
-        </ng-container>
+          </div>
+        }
+      </div>
+    </div>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      </table>
+    <div class="season-cards mobile-only">
+      @for (season of seasons(); track season.id) {
+        <div class="season-card" [class.season-card-active]="season.isActive">
+          <div class="season-card-row">
+            <div>
+              <div class="season-card-name-row">
+                <span class="season-card-name">{{ season.name }}</span>
+                @if (season.isActive) {
+                  <span class="active-pill">Activa</span>
+                }
+              </div>
+              <div class="season-card-range">
+                {{ season.startDate | date: "dd/MM/yyyy" }} – {{ season.endDate | date: "dd/MM/yyyy" }}
+              </div>
+            </div>
+            <button class="edit-button" (click)="openEdit(season)" aria-label="Editar">
+              <app-icon name="edit" [size]="15" [strokeWidth]="1.9" />
+            </button>
+          </div>
+        </div>
+      }
     </div>
   }
 </div>

@@ -1,107 +1,300 @@
-.season-select {
-  width: 260px;
-  max-width: 100%;
+// Literal port of the approved mockups — A-Stats-Mobile.dc.html for the
+// leaderboard cards, A-Stats-Tablet.dc.html for the desktop table.
+.stats-page {
+  padding: 0 20px 24px;
+  gap: 0;
 }
 
-.matches-played {
-  color: var(--mat-sys-on-surface-variant);
-  margin: 0;
-}
-
-.season-table {
-  width: 100%;
-}
-
-// Player names are the longest content in the row; giving that column
-// more of the table's width keeps names on one line instead of ragging
-// the icon and text across two, which every other (short, numeric)
-// column doesn't need.
-.season-table .mat-column-name {
-  flex: 2;
-}
-
-// `inline-flex` on a span inside the cell, not `display:flex` on the
-// `<td>` itself — mat-table sizes every row to its tallest cell, and a
-// block-level flex `<td>` measures differently than Material's own
-// plain cells, so the "Jugador" cell in a leader's row ends up a
-// different height than the numeric cells beside it in that same row.
-// Keeping the `<td>` a normal cell and flexing only its inline content
-// avoids that entirely.
-.name-cell {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-.num-with-icon {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.leader-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-// Each column's leader gets its own glyph and color instead of a
-// repeated medal — the icon names what they're leading in, echoing the
-// same glyph/color used for that event type in the live tracker and
-// match history (see .event-icon-* in styles.scss), so "leading in
-// assists" looks like the same idea everywhere in the app.
-.leader-icon-goals {
-  color: var(--mat-sys-tertiary);
-}
-
-.leader-icon-rating {
-  color: var(--mat-sys-tertiary);
-}
-
-.leader-icon-appearances,
-.leader-icon-time {
-  color: var(--mat-sys-primary);
-}
-
-.leader-icon-assists {
-  color: var(--mat-sys-primary);
-}
-
-.leader-icon-yellow {
-  color: var(--mat-sys-tertiary);
-}
-
-.leader-icon-red,
-.leader-icon-owngoal {
-  color: var(--mat-sys-error);
-}
-
-// Numbers read as a column of quantities, not a column of text — centered
-// under their header (only the name column is prose) and tabular so
-// digits don't jitter sideways as they change.
-.num-cell {
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.num-header {
-  text-align: center;
-
-  // mat-sort-header renders its own inner flex wrapper around the label
-  // and sort arrow; the header's own text-align has no effect on it, so
-  // the wrapper's justification has to be set directly.
-  ::ng-deep .mat-sort-header-container {
-    justify-content: center;
+@media (min-width: 768px) {
+  .stats-page {
+    padding: 22px 40px 32px;
   }
 }
 
+// Mobile stacks title / season-selector / subheading as three rows;
+// tablet puts title+selector side by side and the subheading spans full
+// width below — same named-grid-areas technique used for the app shell
+// and the Usuarios/MatchDetail headers, so each breakpoint gets its own
+// approved arrangement without duplicating markup.
+.stats-header {
+  margin-top: 26px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  row-gap: 10px;
+  grid-template-areas:
+    'title title'
+    'selector selector'
+    'sub sub';
+}
+
+@media (min-width: 768px) {
+  .stats-header {
+    margin-top: 0;
+    align-items: center;
+    row-gap: 4px;
+    grid-template-areas:
+      'title selector'
+      'sub sub';
+  }
+}
+
+.stats-title {
+  grid-area: title;
+  margin: 0;
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 1.4rem;
+  letter-spacing: -0.01em;
+}
+
+@media (min-width: 768px) {
+  .stats-title {
+    font-size: 1.5rem;
+  }
+}
+
+.stats-title-full {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .stats-title-short {
+    display: none;
+  }
+
+  .stats-title-full {
+    display: inline;
+  }
+}
+
+.season-trigger {
+  grid-area: selector;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 13px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 30%);
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  app-icon {
+    color: oklch(75% 0.02 262);
+  }
+}
+
+@media (min-width: 768px) {
+  .season-trigger {
+    justify-content: flex-start;
+    width: fit-content;
+    padding: 9px 14px;
+    border-radius: 11px;
+    font-size: 0.84rem;
+  }
+}
+
+.matches-played {
+  grid-area: sub;
+  margin: 0;
+  font-size: 0.76rem;
+  color: oklch(65% 0.02 262);
+}
+
+@media (min-width: 768px) {
+  .matches-played {
+    font-size: 0.8rem;
+  }
+}
+
+// ---- shared leader icon colors ----
+.leader-star {
+  color: oklch(78% 0.19 70);
+}
+
+.leader-icon-goals {
+  color: oklch(78% 0.19 70);
+}
+
+.leader-icon-assists,
+.leader-icon-time {
+  color: oklch(65% 0.19 300);
+}
+
+// ---- desktop/tablet table ----
+.stats-table-wrap {
+  margin-top: 16px;
+  border-radius: 18px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+  overflow: hidden;
+}
+
+.stats-table-row {
+  display: grid;
+  grid-template-columns: 2.2fr 0.8fr 0.5fr 0.9fr 0.9fr 0.6fr 0.6fr 0.5fr 0.5fr 0.7fr;
+  align-items: center;
+  padding: 11px 18px;
+  border-bottom: 1px solid oklch(45% 0.03 262 / 15%);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.stats-table-head {
+  padding: 12px 18px;
+  border-bottom: 1px solid oklch(45% 0.03 262 / 25%);
+}
+
+.sort-header {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: oklch(65% 0.02 262);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    color: oklch(85% 0.01 90);
+  }
+}
+
+.player-name-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.num-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
 // A stat table's real job is spotting who did something — a page of
-// zeros competing visually with the players who actually scored, drew a
-// card, or played makes the meaningful numbers harder to find, not
-// easier.
+// zeros competing visually with the players who actually drew a card
+// makes the meaningful numbers harder to find, not easier.
 .stat-zero {
-  color: var(--mat-sys-on-surface-variant);
-  opacity: 0.55;
+  color: oklch(45% 0.02 262);
+}
+
+// ---- mobile leaderboard cards ----
+.player-cards {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player-card {
+  padding: 12px 14px;
+  border-radius: 15px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+}
+
+.player-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.player-card-name {
+  flex: 1 1 auto;
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.player-card-line {
+  display: flex;
+  gap: 14px;
+  margin-top: 9px;
+  padding-left: 2px;
+  font-size: 0.74rem;
+  color: oklch(70% 0.02 262);
+
+  b {
+    color: oklch(90% 0.01 90);
+  }
+}
+
+.player-card-line-bad {
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 0.7rem;
+}
+
+.player-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.event-card-icon {
+  flex-shrink: 0;
+}
+
+.event-card-yellow {
+  fill: oklch(80% 0.16 95);
+}
+
+.event-card-red {
+  fill: oklch(65% 0.2 25);
+}
+
+.event-icon-own_goal {
+  color: var(--mat-sys-error);
+}
+
+// ---- shared list-state helpers ----
+.spinner-row {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-lg) 0;
+}
+
+.empty-state {
+  margin-top: 18px;
+  color: oklch(70% 0.02 262);
+}
+
+.desktop-only {
+  display: none;
+}
+
+.mobile-only {
+  display: block;
+}
+
+// .player-cards already sets display:flex, but it also carries
+// .mobile-only (same file, same specificity) — whichever rule comes
+// later in source order wins, so .mobile-only's plain `display: block`
+// was silently clobbering the flex layout back to block and killing the
+// card gap. Bump specificity instead of relying on declaration order.
+.player-cards.mobile-only {
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .desktop-only {
+    display: block;
+  }
+
+  .mobile-only {
+    display: none;
+  }
 }

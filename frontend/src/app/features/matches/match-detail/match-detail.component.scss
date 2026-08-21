@@ -1,176 +1,644 @@
-.page {
-  --page-max-width: 700px;
+// Literal port of the approved mockups — A-MatchDetail-Mobile(-Member).dc.html
+// for the stacked mobile layout, A-MatchDetail-Tablet.dc.html for the wider
+// two-column layout (which also adds the "Estadísticas de jugadores" table,
+// not present on either mobile mockup — kept desktop-only, see .desktop-only
+// below).
+.match-detail-page {
+  --page-max-width: 880px;
+  padding: 0 20px 24px;
+  gap: 0;
+}
+
+@media (min-width: 768px) {
+  .match-detail-page {
+    padding: 20px 40px 32px;
+  }
 }
 
 .back-link {
+  margin-top: 22px;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-xs);
-  color: var(--mat-sys-primary);
+  gap: 8px;
+  font-size: 0.82rem;
+  color: oklch(85% 0.01 90);
   text-decoration: none;
   width: fit-content;
 }
 
-.home-away {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.85em;
-  font-weight: 400;
+@media (min-width: 768px) {
+  .back-link {
+    margin-top: 0;
+    margin-bottom: 14px;
+    color: oklch(80% 0.02 262);
+  }
 }
 
-.status-row {
+// ---- info card ----
+// A CSS grid with named areas, not flex — the mobile mockup stacks
+// heading/status-row/score/actions as four separate rows, the tablet one
+// puts heading+score side by side on row 1 and status-pill+actions
+// (cambiar-estado folded into the same button group) side by side on row
+// 2. Two genuinely different 2D arrangements of the same pieces, same
+// technique as the Home shell/Usuarios header before it.
+.info-card {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: oklch(22% 0.04 262 / 80%);
+  border: 1px solid oklch(45% 0.03 262 / 30%);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 10px;
+  row-gap: 12px;
+  align-items: center;
+  grid-template-areas:
+    'heading heading'
+    'statuspill cambiarestado'
+    'score score'
+    'actions actions'
+    'livecta livecta'
+    'notes notes';
+}
+
+@media (min-width: 768px) {
+  .info-card {
+    margin-top: 0;
+    padding: 20px 24px;
+    border-radius: 20px;
+    row-gap: 16px;
+    grid-template-columns: 1fr auto auto;
+    grid-template-areas:
+      'heading score score'
+      'statuspill cambiarestado actions'
+      'livecta livecta livecta'
+      'notes notes notes';
+  }
+}
+
+.info-card-heading {
+  grid-area: heading;
+  align-self: start;
+}
+
+.info-card-name {
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 1.15rem;
+
+  .home-away {
+    font-weight: 500;
+    font-size: 0.78rem;
+    color: oklch(65% 0.02 262);
+  }
+}
+
+.info-card-date {
+  margin-top: 3px;
+  font-size: 0.78rem;
+  color: oklch(65% 0.02 262);
+
+  // Only the leading weekday needs capitalizing (CLDR's es locale spells
+  // it lowercase) — `text-transform: capitalize` would also capitalize
+  // "de" mid-string ("9 De Agosto De 2026"), which the mockup doesn't.
+  &::first-letter {
+    text-transform: uppercase;
+  }
+}
+
+@media (min-width: 768px) {
+  .info-card-name {
+    font-size: 1.4rem;
+
+    .home-away {
+      font-size: 0.85rem;
+    }
+  }
+
+  .info-card-date {
+    font-size: 0.82rem;
+  }
+}
+
+// ---- score ----
+.info-card-score {
+  grid-area: score;
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-sm);
-}
-
-.status-select {
-  width: 200px;
-  max-width: 100%;
-}
-
-.score-row {
-  display: flex;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .score-field {
-  flex: 1 1 120px;
-  max-width: 160px;
+  flex: 1 1 0;
+}
+
+@media (min-width: 768px) {
+  .info-card-score {
+    justify-self: end;
+    align-items: flex-end;
+  }
+
+  .score-field {
+    flex: 0 0 auto;
+  }
+}
+
+.score-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.68rem;
+  color: oklch(65% 0.02 262);
+}
+
+@media (min-width: 768px) {
+  .score-label {
+    font-size: 0.66rem;
+  }
+}
+
+.score-box {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  background: oklch(20% 0.03 262);
+  border: 1px solid oklch(45% 0.03 262 / 35%);
+  color: inherit;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0 12px;
+  box-sizing: border-box;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-amber);
+    outline-offset: -2px;
+  }
+}
+
+@media (min-width: 768px) {
+  .score-box {
+    width: 58px;
+    height: 44px;
+    border-radius: 11px;
+    padding: 0;
+    text-align: center;
+    font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+    font-size: 1.2rem;
+  }
+}
+
+.score-sep {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .score-sep {
+    display: block;
+    font-size: 1.3rem;
+    color: oklch(55% 0.02 262);
+    padding-bottom: 9px;
+  }
 }
 
 .score-display {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 2rem;
 }
 
-// Read-only viewers (coach, member) always get a line here — admin gets
-// the editable score-row instead — so the space between the status chip
-// and the actions below never just disappears depending on whether a
-// score happens to be recorded yet.
 .score-pending {
   margin: 0;
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  color: oklch(65% 0.02 262);
   font-style: italic;
 }
 
-.notes {
-  color: var(--mat-sys-on-surface-variant);
-  white-space: pre-wrap;
-}
-
-// The "go live" CTA used to sit in the same cramped row as three other
-// buttons (Estadísticas, Editar, Eliminar) fighting for space — it's the
-// headline action on this card, so it gets its own room, with the
-// lower-emphasis actions grouped separately instead of competing with it.
-.match-actions {
-  display: flex;
-  flex-wrap: wrap;
+// ---- status pill + cambiar estado ----
+.status-pill {
+  grid-area: statuspill;
+  justify-self: start;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
+  width: fit-content;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
-.secondary-actions {
+@media (min-width: 768px) {
+  .status-pill {
+    padding: 5px 12px;
+    font-size: 0.74rem;
+  }
+}
+
+.status-pill-scheduled {
+  background: oklch(30% 0.04 262);
+  color: oklch(80% 0.01 90);
+}
+
+.status-pill-live {
+  background: oklch(78% 0.19 70 / 18%);
+  color: oklch(78% 0.19 70);
+}
+
+.status-pill-finished {
+  background: oklch(65% 0.19 300 / 16%);
+  color: oklch(75% 0.14 300);
+}
+
+.status-menu-trigger {
+  grid-area: cambiarestado;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: oklch(30% 0.04 262 / 60%);
+  border: 1px solid oklch(45% 0.03 262 / 40%);
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+
+  app-icon {
+    color: oklch(75% 0.02 262);
+  }
+}
+
+@media (min-width: 768px) {
+  .status-menu-trigger {
+    padding: 8px 14px;
+    border-radius: 11px;
+    font-size: 0.82rem;
+  }
+}
+
+// ---- Estadísticas / Editar / Eliminar ----
+.info-card-actions {
+  grid-area: actions;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 8px;
 }
 
-@media (max-width: 599px) {
-  .live-cta {
-    width: 100%;
+@media (min-width: 768px) {
+  .info-card-actions {
+    justify-self: end;
   }
+}
 
-  .secondary-actions {
-    width: 100%;
-    justify-content: flex-end;
+.outline-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 13px;
+  border-radius: 10px;
+  border: 1px solid oklch(45% 0.03 262 / 45%);
+  background: transparent;
+  color: oklch(88% 0.01 90);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.74rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .outline-button {
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 11px;
+    font-size: 0.8rem;
   }
+}
+
+.outline-button-danger {
+  border-color: oklch(60% 0.15 25 / 45%);
+  color: oklch(70% 0.15 25);
+}
+
+// ---- live CTA + notes ----
+// No mockup covers this state (the example match is always Finalizado) —
+// reuses the exact CTA treatment already established for the Home hero
+// card's own primary action, for consistency with the rest of the app.
+.live-cta {
+  grid-area: livecta;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 46px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  background: linear-gradient(135deg, oklch(78% 0.19 70), oklch(70% 0.18 55));
+  color: oklch(18% 0.03 262);
+}
+
+@media (min-width: 768px) {
+  .live-cta {
+    width: auto;
+    padding: 0 24px;
+  }
+}
+
+.notes {
+  grid-area: notes;
+  margin: 0;
+  color: oklch(70% 0.02 262);
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+}
+
+// ---- convocatoria + historial ----
+.detail-columns {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .detail-columns {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+}
+
+.squad-card,
+.events-card,
+.player-stats-card {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+}
+
+@media (min-width: 768px) {
+  .squad-card,
+  .events-card {
+    padding: 18px 20px;
+  }
+}
+
+.card-title {
+  margin-bottom: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+@media (min-width: 768px) {
+  .card-title {
+    margin-bottom: 12px;
+  }
+}
+
+.squad-table-head,
+.squad-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  align-items: center;
+}
+
+.squad-table-head {
+  padding-bottom: 6px;
+  border-bottom: 1px solid oklch(45% 0.03 262 / 20%);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: oklch(65% 0.02 262);
+}
+
+@media (min-width: 768px) {
+  .squad-table-head {
+    font-size: 0.68rem;
+  }
+}
+
+.select-all-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  color: oklch(85% 0.01 90);
+  cursor: pointer;
+}
+
+.squad-table-row {
+  padding: 8px 0;
+  font-size: 0.82rem;
+}
+
+@media (min-width: 768px) {
+  .squad-table-row {
+    font-size: 0.84rem;
+  }
+}
+
+.squad-checkbox {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent-amber);
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.squad-check-yes {
+  color: oklch(78% 0.19 70);
+}
+
+.squad-check-no {
+  color: oklch(50% 0.02 262);
 }
 
 .starters-count {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.875rem;
-  margin: 0 0 var(--space-sm);
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  color: oklch(70% 0.02 262);
 }
 
 .starters-count-invalid {
-  color: var(--mat-sys-error);
+  color: oklch(70% 0.15 25);
 }
 
-// Matches the mat-table header treatment used everywhere else (see
-// `th[mat-header-cell]` in styles.scss) — this table is hand-rolled, not
-// a mat-table, so it doesn't inherit that rule automatically and needs
-// its own copy to keep the same "tinted row, tracked caps" identity.
-.squad-table {
-  width: 100%;
-  border-collapse: collapse;
-
-  th {
-    text-align: left;
-    padding: var(--space-sm);
-    background: var(--mat-sys-surface-container);
-    color: var(--mat-sys-on-surface-variant);
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-
-    .mat-mdc-checkbox {
-      vertical-align: middle;
-
-      ::ng-deep label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--mat-sys-on-surface-variant);
-      }
-    }
-  }
-
-  td {
-    padding: var(--space-xs) var(--space-sm);
-    border-top: 1px solid var(--mat-sys-outline-variant);
-  }
+.save-squad-button {
+  margin-top: 10px;
 }
 
-// The stats table's columns are all single values (minutes, rating,
-// counters) that read better centered under their header than ragging
-// left with the player name — only the name column itself stays
-// left-aligned, since it's the one column that's actually prose.
-.player-stats-table {
-  th:not(:first-child),
-  td:not(:first-child) {
-    text-align: center;
-  }
+.empty-state {
+  margin: 0;
+  color: oklch(70% 0.02 262);
 }
 
-.read-only-check {
-  color: var(--mat-sys-on-surface-variant);
-  vertical-align: middle;
+// ---- historial ----
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
 }
 
 .event-row {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: 6px 0;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
-  font-size: 0.9rem;
-}
-
-.event-row:last-child {
-  border-bottom: none;
+  gap: 9px;
 }
 
 .event-minute {
-  min-width: 2.5em;
+  width: 26px;
+  flex-shrink: 0;
   font-variant-numeric: tabular-nums;
-  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.76rem;
+  color: oklch(65% 0.02 262);
+}
+
+@media (min-width: 768px) {
+  .event-minute {
+    font-size: 0.78rem;
+  }
+}
+
+.event-desc {
+  font-size: 0.8rem;
+}
+
+@media (min-width: 768px) {
+  .event-desc {
+    font-size: 0.82rem;
+  }
+}
+
+// Cards render as a small filled rect, not a stroke glyph like the rest
+// of the icon set — drawn inline rather than through app-icon.
+.event-card-icon {
+  flex-shrink: 0;
+}
+
+.event-card-yellow {
+  fill: oklch(80% 0.16 95);
+}
+
+.event-card-red {
+  fill: oklch(65% 0.2 25);
+}
+
+// ---- player stats — desktop gets the full table, mobile gets cards
+// (no mockup covers a per-match stats table on mobile, so this follows
+// the same card language A-Stats-Mobile's season leaderboard already
+// established, rather than cramming an 8-column table into 375px) ----
+.player-stats-card {
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.player-stat-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player-stat-card {
+  padding: 12px 14px;
+  border-radius: 15px;
+  background: oklch(20% 0.03 262 / 60%);
+  border: 1px solid oklch(45% 0.03 262 / 20%);
+}
+
+.player-stat-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.player-stat-name {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.player-stat-card-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+  font-size: 0.74rem;
+  color: oklch(70% 0.02 262);
+
+  &:first-of-type {
+    padding-left: 2px;
+  }
+}
+
+.player-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: oklch(90% 0.01 90);
+  font-weight: 700;
+}
+
+.player-stats-table-head,
+.player-stats-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 0.8fr 0.8fr 0.6fr 0.6fr 0.8fr;
+  align-items: center;
+}
+
+.player-stats-table-head {
+  margin-top: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid oklch(45% 0.03 262 / 25%);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: oklch(65% 0.02 262);
+
+  span:not(:first-child) {
+    text-align: center;
+  }
+}
+
+.player-stats-table-row {
+  padding: 11px 0;
+  border-bottom: 1px solid oklch(45% 0.03 262 / 15%);
+  font-size: 0.84rem;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  span:not(:first-child) {
+    text-align: center;
+  }
+}
+
+.desktop-only {
+  display: none;
+}
+
+.mobile-only {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .desktop-only {
+    display: block;
+  }
+
+  .mobile-only {
+    display: none;
+  }
 }

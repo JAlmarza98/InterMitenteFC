@@ -1,3 +1,228 @@
-.seasons-table {
-  width: 100%;
+// Literal port of the approved mockups — A-Admin-Seasons-Mobile.dc.html for
+// the card list, A-Admin-Seasons-Tablet.dc.html for the desktop table.
+.seasons-page {
+  padding: 0 20px 24px;
+  gap: 0;
+}
+
+@media (min-width: 768px) {
+  .seasons-page {
+    padding: 22px 40px 32px;
+  }
+}
+
+.seasons-header {
+  margin-top: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  h1 {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.01em;
+  }
+}
+
+@media (min-width: 768px) {
+  .seasons-header {
+    margin-top: 0;
+
+    h1 {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+.new-season-button.mat-mdc-unelevated-button {
+  height: 38px;
+  padding: 0 14px !important;
+  border-radius: 11px !important;
+  font-weight: 700;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+
+  .new-season-label-full {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .new-season-button.mat-mdc-unelevated-button {
+    height: 42px;
+    padding: 0 18px !important;
+    border-radius: 12px !important;
+    font-size: 0.84rem;
+    gap: 7px;
+
+    .new-season-label-full {
+      display: inline;
+    }
+
+    .new-season-label-short {
+      display: none;
+    }
+  }
+}
+
+.active-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: oklch(78% 0.19 70 / 18%);
+  color: oklch(78% 0.19 70);
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+@media (min-width: 768px) {
+  .active-pill {
+    padding: 3px 10px;
+    font-size: 0.7rem;
+  }
+}
+
+.edit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  border-radius: 9px;
+  background: oklch(30% 0.04 262 / 60%);
+  color: oklch(85% 0.01 90);
+  flex-shrink: 0;
+}
+
+// ---- desktop/tablet table ----
+.seasons-table-wrap {
+  margin-top: 18px;
+  border-radius: 18px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+  overflow: hidden;
+}
+
+.seasons-table-row {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 0.6fr;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid oklch(45% 0.03 262 / 15%);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.seasons-table-row-active {
+  background: oklch(78% 0.19 70 / 6%);
+}
+
+.seasons-table-head {
+  padding: 12px 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: oklch(65% 0.02 262);
+  border-bottom: 1px solid oklch(45% 0.03 262 / 25%);
+}
+
+.season-name-cell {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.season-range-cell {
+  font-size: 0.84rem;
+  color: oklch(80% 0.02 262);
+}
+
+.seasons-table-row .edit-button {
+  width: 32px;
+  height: 32px;
+}
+
+// ---- mobile card list ----
+.season-cards {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.season-card {
+  padding: 14px;
+  border-radius: 16px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+}
+
+.season-card-active {
+  background: oklch(22% 0.04 262 / 80%);
+  border: 1px solid oklch(78% 0.19 70 / 35%);
+}
+
+.season-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.season-card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.season-card-name {
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.season-card-range {
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: oklch(65% 0.02 262);
+}
+
+.season-cards .edit-button {
+  width: 34px;
+  height: 34px;
+}
+
+// ---- shared list-state helpers ----
+.spinner-row {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-lg) 0;
+}
+
+.empty-state {
+  margin-top: 18px;
+  color: oklch(70% 0.02 262);
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .desktop-only {
+    display: block;
+  }
+
+  .season-cards.mobile-only {
+    display: none;
+  }
 }

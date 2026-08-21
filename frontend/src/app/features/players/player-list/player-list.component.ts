@@ -1,31 +1,17 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { MatTableModule } from '@angular/material/table';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../../core/services/auth.service';
 import { Player, PlayersService } from '../../../core/services/players.service';
 import { PlayerFormDialogComponent } from '../player-form-dialog/player-form-dialog.component';
+import { IconComponent } from '../../../shared/icon/icon.component';
 
 @Component({
   selector: 'app-player-list',
   standalone: true,
-  imports: [
-    MatTableModule,
-    MatButtonModule,
-    MatIconModule,
-    MatChipsModule,
-    MatDialogModule,
-    MatSnackBarModule,
-    MatProgressSpinnerModule,
-    MatSlideToggleModule,
-    MatTooltipModule,
-  ],
+  imports: [MatButtonModule, MatDialogModule, MatSnackBarModule, MatProgressSpinnerModule, IconComponent],
   templateUrl: './player-list.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './player-list.component.scss',
@@ -37,12 +23,24 @@ export class PlayerListComponent {
   private readonly auth = inject(AuthService);
 
   readonly canManage = this.auth.canManage;
-  readonly displayedColumns = ['jerseyNumber', 'name', 'position', 'status', 'actions'];
 
-  readonly players = signal<Player[]>([]);
   readonly loading = signal(false);
   readonly loadError = signal(false);
   readonly showInactive = signal(false);
+
+  // Always fetched with inactive players included — the mockup's header
+  // ("18 jugadores · 17 activos") needs both the total and the active-only
+  // count at once, so "Mostrar inactivos" just toggles a client-side filter
+  // over the one fetched list instead of triggering a network round trip.
+  private readonly allPlayers = signal<Player[]>([]);
+
+  readonly totalCount = computed(() => this.allPlayers().length);
+  readonly activeCount = computed(() => this.allPlayers().filter((p) => p.active).length);
+
+  readonly players = computed(() => {
+    if (this.canManage() && this.showInactive()) return this.allPlayers();
+    return this.allPlayers().filter((p) => p.active);
+  });
 
   constructor() {
     this.load();
@@ -51,9 +49,9 @@ export class PlayerListComponent {
   load() {
     this.loading.set(true);
     this.loadError.set(false);
-    this.playersService.list(this.showInactive()).subscribe({
+    this.playersService.list(true).subscribe({
       next: (res) => {
-        this.players.set(res.players);
+        this.allPlayers.set(res.players);
         this.loading.set(false);
       },
       error: (err) => {
@@ -66,7 +64,11 @@ export class PlayerListComponent {
 
   toggleShowInactive() {
     this.showInactive.set(!this.showInactive());
-    this.load();
+  }
+
+  positionLabel(player: Player): string {
+    const base = player.position ?? '—';
+    return player.secondaryPosition ? `${base} / ${player.secondaryPosition}` : base;
   }
 
   private showError(err: unknown, fallback: string) {

@@ -1,6 +1,6 @@
-<div class="page">
+<div class="page match-detail-page">
   <a routerLink="/matches" class="back-link">
-    <mat-icon>arrow_back</mat-icon>
+    <app-icon name="chevron-left" [size]="18" [strokeWidth]="1.9" />
     Partidos
   </a>
 
@@ -8,159 +8,160 @@
     <div class="spinner-row">
       <mat-spinner diameter="32" />
     </div>
-  } @else if (match()) {
-    @let m = match()!;
-    <mat-card appearance="outlined" class="info-card">
-      <mat-card-header>
-        <mat-card-title>
+  } @else if (match(); as m) {
+    <div class="info-card">
+      <div class="info-card-heading">
+        <div class="info-card-name">
           {{ m.opponent }}
-          <span class="home-away">({{ m.homeAway === 'home' ? 'local' : 'visitante' }})</span>
-        </mat-card-title>
-        <mat-card-subtitle>
+          <span class="home-away">({{ m.homeAway === "home" ? "local" : "visitante" }})</span>
+        </div>
+        <div class="info-card-date">
           {{ m.matchDate | date: "EEEE d 'de' MMMM 'de' yyyy, HH:mm" }}
           @if (m.competition) {
             · {{ m.competition }}
           }
-        </mat-card-subtitle>
-      </mat-card-header>
-
-      <mat-card-content>
-        <div class="status-row">
-          <mat-chip [class]="'status-chip status-' + m.status">{{ statusLabel(m.status) }}</mat-chip>
-
-          @if (isAdmin()) {
-            <mat-form-field appearance="outline" class="status-select">
-              <mat-label>Cambiar estado</mat-label>
-              <mat-select [value]="m.status" (selectionChange)="changeStatus($event.value)">
-                @for (status of statuses; track status) {
-                  <mat-option [value]="status">{{ statusLabel(status) }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          }
         </div>
+      </div>
 
+      <div class="info-card-score">
         @if (isAdmin()) {
-          <div class="score-row">
-            <mat-form-field appearance="outline" class="score-field">
-              <mat-label>Goles equipo</mat-label>
-              <input
-                matInput
-                type="number"
-                min="0"
-                [value]="m.status !== 'scheduled' ? (m.teamScore ?? 0) : ''"
-                #teamScoreInput
-                (change)="updateScore(teamScoreInput.value, opponentScoreInput.value)"
-              />
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="score-field">
-              <mat-label>Goles rival</mat-label>
-              <input
-                matInput
-                type="number"
-                min="0"
-                [value]="m.status !== 'scheduled' ? (m.opponentScore ?? 0) : ''"
-                #opponentScoreInput
-                (change)="updateScore(teamScoreInput.value, opponentScoreInput.value)"
-              />
-            </mat-form-field>
+          <div class="score-field">
+            <span class="score-label">Goles equipo</span>
+            <input
+              class="score-box"
+              type="number"
+              min="0"
+              [value]="m.status !== 'scheduled' ? (m.teamScore ?? 0) : ''"
+              #teamScoreInput
+              (change)="updateScore(teamScoreInput.value, opponentScoreInput.value)"
+            />
           </div>
-        } @else if (m.status !== 'scheduled') {
+          <span class="score-sep">–</span>
+          <div class="score-field">
+            <span class="score-label">Goles rival</span>
+            <input
+              class="score-box"
+              type="number"
+              min="0"
+              [value]="m.status !== 'scheduled' ? (m.opponentScore ?? 0) : ''"
+              #opponentScoreInput
+              (change)="updateScore(teamScoreInput.value, opponentScoreInput.value)"
+            />
+          </div>
+        } @else if (m.status !== "scheduled") {
           <p class="score-display">{{ m.teamScore ?? 0 }} - {{ m.opponentScore ?? 0 }}</p>
         } @else {
           <p class="score-pending">Resultado pendiente</p>
         }
+      </div>
 
-        @if (m.notes) {
-          <p class="notes">{{ m.notes }}</p>
-        }
-      </mat-card-content>
+      <span class="status-pill" [class]="'status-pill status-pill-' + m.status">{{ statusLabel(m.status) }}</span>
 
-      <mat-card-actions class="match-actions">
-        @if (canManage() && m.status !== 'finished') {
-          <a mat-flat-button color="primary" class="live-cta" [routerLink]="['/matches', m.id, 'live']">
-            <mat-icon>sports_soccer</mat-icon>
-            Ir al partido en vivo
-          </a>
-        }
-        <div class="secondary-actions">
+      @if (isAdmin()) {
+        <button class="status-menu-trigger" [matMenuTriggerFor]="statusMenu">
+          Cambiar estado
+          <app-icon name="chevron-down" [size]="13" [strokeWidth]="2" />
+        </button>
+        <mat-menu #statusMenu="matMenu">
+          @for (status of statuses; track status) {
+            <button mat-menu-item (click)="changeStatus(status)">{{ statusLabel(status) }}</button>
+          }
+        </mat-menu>
+      }
+
+      @if (isAdmin() || canManage()) {
+        <div class="info-card-actions">
           @if (isAdmin()) {
-            <a mat-button [routerLink]="['/matches', m.id, 'stats']">
-              <mat-icon>bar_chart</mat-icon>
+            <a class="outline-button" [routerLink]="['/matches', m.id, 'stats']">
+              <app-icon name="stats" [size]="15" [strokeWidth]="1.9" />
               Estadísticas
             </a>
           }
           @if (canManage()) {
-            <button mat-button (click)="editMatch()">
-              <mat-icon>edit</mat-icon>
+            <button class="outline-button" (click)="editMatch()">
+              <app-icon name="edit" [size]="15" [strokeWidth]="1.9" />
               Editar
             </button>
           }
           @if (isAdmin()) {
-            <button mat-button color="warn" (click)="deleteMatch()">
-              <mat-icon>delete</mat-icon>
+            <button class="outline-button outline-button-danger" (click)="deleteMatch()">
+              <app-icon name="delete" [size]="15" [strokeWidth]="1.9" />
               Eliminar
             </button>
           }
         </div>
-      </mat-card-actions>
-    </mat-card>
+      }
 
-    <mat-card appearance="outlined" class="squad-card">
-      <mat-card-header>
-        <mat-card-title>Convocatoria</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
+      @if (canManage() && m.status !== "finished") {
+        <a class="live-cta" [routerLink]="['/matches', m.id, 'live']">Ir al partido en directo</a>
+      }
+
+      @if (m.notes) {
+        <p class="notes">{{ m.notes }}</p>
+      }
+    </div>
+
+    <div class="detail-columns">
+      <div class="squad-card">
+        <div class="card-title">Convocatoria</div>
         @if (squadRows().length === 0) {
           <p class="empty-state">No hay jugadores activos en la plantilla.</p>
         } @else {
-          <div class="table-scroll">
-            <table class="squad-table">
-              <thead>
-                <tr>
-                  <th scope="col">Jugador</th>
-                  <th scope="col">
-                    @if (canEditSquad()) {
-                      <mat-checkbox
-                        [checked]="allCalled()"
-                        [indeterminate]="someCalled() && !allCalled()"
-                        (change)="toggleAllCalled()"
-                      >
-                        Convocado
-                      </mat-checkbox>
-                    } @else {
-                      Convocado
-                    }
-                  </th>
-                  <th scope="col">Titular</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of squadRows(); track row.player.id) {
-                  <tr>
-                    <td>{{ row.player.firstName }} {{ row.player.lastName }}</td>
-                    <td>
-                      @if (canEditSquad()) {
-                        <mat-checkbox [checked]="row.called" (change)="toggleCalled(row)" />
-                      } @else {
-                        <mat-icon class="read-only-check">{{ row.called ? 'check' : 'remove' }}</mat-icon>
-                      }
-                    </td>
-                    <td>
-                      @if (canEditSquad()) {
-                        <mat-checkbox
-                          [checked]="row.starter"
-                          [disabled]="!row.called || (!row.starter && startersCount() >= requiredStarters)"
-                          (change)="toggleStarter(row)"
-                        />
-                      } @else {
-                        <mat-icon class="read-only-check">{{ row.starter ? 'check' : 'remove' }}</mat-icon>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          @if (canEditSquad()) {
+            <label class="select-all-row">
+              <input
+                type="checkbox"
+                class="squad-checkbox"
+                [checked]="allCalled()"
+                [indeterminate]="someCalled() && !allCalled()"
+                (change)="toggleAllCalled()"
+              />
+              Convocar a todos
+            </label>
+          }
+          <div class="squad-table">
+            <div class="squad-table-head">
+              <span>Jugador</span>
+              <span>Convocado</span>
+              <span>Titular</span>
+            </div>
+            @for (row of squadRows(); track row.player.id) {
+              <div class="squad-table-row">
+                <span>{{ row.player.firstName }} {{ row.player.lastName }}</span>
+                <span>
+                  @if (canEditSquad()) {
+                    <input type="checkbox" class="squad-checkbox" [checked]="row.called" (change)="toggleCalled(row)" />
+                  } @else {
+                    <app-icon
+                      [name]="row.called ? 'check' : 'minus'"
+                      [size]="15"
+                      [strokeWidth]="2.2"
+                      [class.squad-check-yes]="row.called"
+                      [class.squad-check-no]="!row.called"
+                    />
+                  }
+                </span>
+                <span>
+                  @if (canEditSquad()) {
+                    <input
+                      type="checkbox"
+                      class="squad-checkbox"
+                      [checked]="row.starter"
+                      [disabled]="!row.called || (!row.starter && startersCount() >= requiredStarters)"
+                      (change)="toggleStarter(row)"
+                    />
+                  } @else {
+                    <app-icon
+                      [name]="row.starter ? 'check' : 'minus'"
+                      [size]="15"
+                      [strokeWidth]="2.2"
+                      [class.squad-check-yes]="row.starter"
+                      [class.squad-check-no]="!row.starter"
+                    />
+                  }
+                </span>
+              </div>
+            }
           </div>
 
           @if (canEditSquad()) {
@@ -170,6 +171,7 @@
             <button
               mat-flat-button
               color="primary"
+              class="save-squad-button"
               [disabled]="savingSquad() || startersCount() !== requiredStarters"
               (click)="saveSquad()"
             >
@@ -183,68 +185,117 @@
             <p class="empty-state">La convocatoria ya no se puede modificar una vez el partido no está programado.</p>
           }
         }
-      </mat-card-content>
-    </mat-card>
+      </div>
 
-    @if (events().length > 0) {
-      <mat-card appearance="outlined" class="events-card">
-        <mat-card-header>
-          <mat-card-title>Historial del partido</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          @for (event of events(); track event.id) {
-            <div class="event-row">
-              <span class="event-minute">{{ formatEventTime(event) }}'</span>
-              <mat-icon [class]="'event-icon event-icon-' + event.type">{{ eventIcons[event.type] }}</mat-icon>
-              <span class="event-desc">{{ eventDescription(event) }}</span>
-            </div>
-          }
-        </mat-card-content>
-      </mat-card>
-    }
+      @if (events().length > 0) {
+        <div class="events-card">
+          <div class="card-title">Historial del partido</div>
+          <div class="event-list">
+            @for (event of events(); track event.id) {
+              <div class="event-row">
+                <span class="event-minute">{{ formatEventTime(event) }}'</span>
+                @if (event.type === "yellow_card") {
+                  <svg width="11" height="14" viewBox="0 0 16 20" class="event-card-icon event-card-yellow">
+                    <rect width="16" height="20" rx="2.5" />
+                  </svg>
+                } @else if (event.type === "red_card") {
+                  <svg width="11" height="14" viewBox="0 0 16 20" class="event-card-icon event-card-red">
+                    <rect width="16" height="20" rx="2.5" />
+                  </svg>
+                } @else {
+                  <app-icon
+                    [name]="eventIconName(event.type)"
+                    [size]="15"
+                    [strokeWidth]="event.type === 'substitution' ? 1.9 : 2"
+                    [class]="'event-icon-' + event.type"
+                  />
+                }
+                <span class="event-desc">{{ eventDescription(event) }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
 
     @if (playedPlayerStats().length > 0) {
-      <mat-card appearance="outlined" class="player-stats-card">
-        <mat-card-header>
-          <mat-card-title>Estadísticas de jugadores</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="table-scroll">
-            <table class="squad-table player-stats-table">
-              <thead>
-                <tr>
-                  <th scope="col">Jugador</th>
-                  <th scope="col">Minutos</th>
-                  <th scope="col">Nota</th>
-                  <th scope="col">Goles</th>
-                  <th scope="col">Asist.</th>
-                  <th scope="col">TA</th>
-                  <th scope="col">TR</th>
-                  <th scope="col">En propia</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of playedPlayerStats(); track row.playerId) {
-                  <tr>
-                    <td>{{ row.player.firstName }} {{ row.player.lastName }}</td>
-                    <td>{{ formatPlayedTime(row.secondsPlayed) }}</td>
-                    <td>
-                      <span [class]="'rating-badge rating-' + ratingTier(row.rating)">{{
-                        formatRating(row.rating)
-                      }}</span>
-                    </td>
-                    <td>{{ row.goals }}</td>
-                    <td>{{ row.assists }}</td>
-                    <td>{{ row.yellowCards }}</td>
-                    <td>{{ row.redCards }}</td>
-                    <td>{{ row.ownGoals }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+      <div class="player-stats-card desktop-only">
+        <div class="card-title">Estadísticas de jugadores</div>
+        <div class="player-stats-table">
+          <div class="player-stats-table-head">
+            <span>Jugador</span>
+            <span>Minutos</span>
+            <span>Nota</span>
+            <span>Goles</span>
+            <span>Asist.</span>
+            <span>TA</span>
+            <span>TR</span>
+            <span>En propia</span>
           </div>
-        </mat-card-content>
-      </mat-card>
+          @for (row of playedPlayerStats(); track row.playerId) {
+            <div class="player-stats-table-row">
+              <span>{{ row.player.firstName }} {{ row.player.lastName }}</span>
+              <span>{{ formatPlayedTime(row.secondsPlayed) }}</span>
+              <span>
+                <span [class]="'rating-badge rating-' + ratingTier(row.rating)">{{ formatRating(row.rating) }}</span>
+              </span>
+              <span>{{ row.goals }}</span>
+              <span>{{ row.assists }}</span>
+              <span>{{ row.yellowCards }}</span>
+              <span>{{ row.redCards }}</span>
+              <span>{{ row.ownGoals }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="player-stats-card mobile-only">
+        <div class="card-title">Estadísticas de jugadores</div>
+        <div class="player-stat-cards">
+          @for (row of playedPlayerStats(); track row.playerId) {
+            <div class="player-stat-card">
+              <div class="player-stat-card-top">
+                <span class="player-stat-name">{{ row.player.firstName }} {{ row.player.lastName }}</span>
+                <span [class]="'rating-badge rating-' + ratingTier(row.rating)">{{ formatRating(row.rating) }}</span>
+              </div>
+              <div class="player-stat-card-line">
+                <span>{{ formatPlayedTime(row.secondsPlayed) }}</span>
+                <span class="player-stat-chip">
+                  <app-icon name="ball" [size]="12" [strokeWidth]="2" class="event-icon-goal" />
+                  {{ row.goals }}
+                </span>
+                <span>Asist. {{ row.assists }}</span>
+              </div>
+              @if (row.yellowCards > 0 || row.redCards > 0 || row.ownGoals > 0) {
+                <div class="player-stat-card-line">
+                  @if (row.yellowCards > 0) {
+                    <span class="player-stat-chip">
+                      <svg width="9" height="12" viewBox="0 0 16 20" class="event-card-icon event-card-yellow">
+                        <rect width="16" height="20" rx="2.5" />
+                      </svg>
+                      {{ row.yellowCards }}
+                    </span>
+                  }
+                  @if (row.redCards > 0) {
+                    <span class="player-stat-chip">
+                      <svg width="9" height="12" viewBox="0 0 16 20" class="event-card-icon event-card-red">
+                        <rect width="16" height="20" rx="2.5" />
+                      </svg>
+                      {{ row.redCards }}
+                    </span>
+                  }
+                  @if (row.ownGoals > 0) {
+                    <span class="player-stat-chip">
+                      <app-icon name="ball" [size]="12" [strokeWidth]="2" class="event-icon-own_goal" />
+                      {{ row.ownGoals }}
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
     }
   } @else {
     <div class="empty-state">

@@ -1,94 +1,365 @@
-.matches-table {
-  width: 100%;
+// Literal port of the approved mockups — A-Matches-Mobile(-Member).dc.html
+// for the card list, A-Matches-Tablet.dc.html for the desktop table. Same
+// discipline as home.component.scss: oklch/px values copied as-is instead
+// of derived from Material's M3 tokens.
+.matches-page {
+  padding: 0 20px 24px;
+  gap: 0;
 }
 
-.clickable-row {
+@media (min-width: 768px) {
+  .matches-page {
+    padding: 22px 40px 32px;
+  }
+}
+
+.matches-header {
+  margin-top: 26px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+
+  h1 {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.01em;
+  }
+}
+
+@media (min-width: 768px) {
+  .matches-header {
+    margin-top: 0;
+    align-items: center;
+
+    h1 {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+.matches-subheading {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: oklch(65% 0.02 262);
+}
+
+@media (min-width: 768px) {
+  .matches-subheading {
+    margin-top: 2px;
+    font-size: 0.8rem;
+  }
+}
+
+.new-match-button.mat-mdc-unelevated-button {
+  height: 38px;
+  padding: 0 14px !important;
+  border-radius: 11px !important;
+  font-weight: 700;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+
+  .new-match-label-full {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .new-match-button.mat-mdc-unelevated-button {
+    height: 42px;
+    padding: 0 18px !important;
+    border-radius: 12px !important;
+    font-size: 0.84rem;
+    gap: 7px;
+
+    .new-match-label-full {
+      display: inline;
+    }
+
+    .new-match-label-short {
+      display: none;
+    }
+  }
+}
+
+// ---- shared status pills (mobile card + desktop table both use these) ----
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .status-pill {
+    padding: 3px 10px;
+    font-size: 0.7rem;
+    gap: 5px;
+  }
+}
+
+.status-pill-live {
+  background: oklch(78% 0.19 70 / 16%);
+  border: 1px solid oklch(78% 0.19 70 / 40%);
+  font-weight: 800;
+  color: oklch(78% 0.19 70);
+}
+
+.status-pill-scheduled {
+  padding: 4px 10px;
+  background: oklch(30% 0.04 262);
+  color: oklch(80% 0.01 90);
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .status-pill-scheduled {
+    padding: 3px 10px;
+  }
+}
+
+.status-pill-finished {
+  background: oklch(65% 0.19 300 / 16%);
+  color: oklch(75% 0.14 300);
+  font-weight: 700;
+}
+
+.live-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: oklch(78% 0.19 70);
+  animation: match-live-pulse 1.8s ease-in-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes match-live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 oklch(78% 0.19 70 / 55%);
+  }
+  50% {
+    box-shadow: 0 0 0 6px oklch(78% 0.19 70 / 0%);
+  }
+}
+
+.delete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
   cursor: pointer;
+  background: oklch(30% 0.04 262 / 60%);
+  color: oklch(70% 0.15 25);
 }
 
-.clickable-row:hover {
-  background: var(--mat-sys-surface-container-highest);
+// ---- desktop/tablet table ----
+.matches-table-wrap {
+  margin-top: 18px;
+  border-radius: 18px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+  overflow: hidden;
 }
 
-.clickable-row:focus-visible {
-  outline: 2px solid var(--mat-sys-tertiary);
-  outline-offset: -2px;
+.matches-table-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1.6fr 1fr 1fr 0.9fr 0.5fr;
+  align-items: center;
+  padding: 13px 20px;
+  border-bottom: 1px solid oklch(45% 0.03 262 / 15%);
+  font-size: 0.84rem;
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
-.home-away {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.85em;
+.matches-table-row-live {
+  background: oklch(78% 0.19 70 / 6%);
+}
+
+.matches-table-head {
+  padding: 12px 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: oklch(65% 0.02 262);
+  border-bottom: 1px solid oklch(45% 0.03 262 / 25%);
+}
+
+[tabindex].matches-table-row {
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: oklch(25% 0.04 262 / 60%);
+  }
+}
+
+.matches-table-row-live[tabindex]:hover,
+.matches-table-row-live[tabindex]:focus-visible {
+  background: oklch(78% 0.19 70 / 10%);
+}
+
+.competition-cell {
+  color: oklch(80% 0.02 262);
 }
 
 .score-cell {
-  font-variant-numeric: tabular-nums;
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.score-dash {
+  font-family: inherit;
+  font-weight: 400;
+  color: oklch(55% 0.02 262);
+}
+
+.matches-table-row .delete-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
+
+.home-away {
+  color: oklch(65% 0.02 262);
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
-.match-cards {
-  display: none;
-  flex-direction: column;
-  gap: var(--space-sm);
+@media (min-width: 768px) {
+  .home-away {
+    font-size: 0.76rem;
+    font-weight: 400;
+  }
 }
 
-@media (max-width: 767px) {
-  .desktop-only {
-    display: none;
-  }
-
-  .match-cards.mobile-only {
-    display: flex;
-  }
+// ---- mobile card list ----
+.match-cards {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
 }
 
 .match-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  border: none;
-  border-radius: 12px;
-  background: var(--mat-sys-surface-container);
-  color: inherit;
-  font: inherit;
-  text-align: left;
+  position: relative;
+  padding: 13px 14px;
+  border-radius: 16px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
   cursor: pointer;
-  box-shadow: var(--surface-card-shadow);
-  transition:
-    background-color 0.15s ease,
-    box-shadow 0.15s ease;
 
-  &:hover {
-    background: var(--mat-sys-surface-container-highest);
-    box-shadow: var(--surface-card-shadow-hover);
+  &:hover,
+  &:focus-visible {
+    background: oklch(25% 0.04 262 / 60%);
   }
 }
 
-.match-card-main {
+.match-card-live {
+  background: oklch(22% 0.04 262 / 80%);
+  border: 1px solid oklch(78% 0.19 70 / 35%);
+
+  &:hover,
+  &:focus-visible {
+    background: oklch(24% 0.045 262 / 85%);
+  }
+}
+
+.match-card-row {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.match-card-main {
   min-width: 0;
 }
 
 .match-card-opponent {
-  font-weight: 500;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
 .match-card-date {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.85rem;
+  margin-top: 2px;
+  font-size: 0.74rem;
+  color: oklch(65% 0.02 262);
+  text-transform: capitalize;
 }
 
 .match-card-side {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
   flex-shrink: 0;
+  text-align: right;
 }
 
 .match-card-score {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.match-card-side .status-pill {
+  margin-top: 4px;
+}
+
+.match-cards .delete-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+// The mockup floats the delete button over the card's top-right corner
+// with no regard for what's underneath — fine for its one static example
+// card (a finished match with no score in that exact spot), but the score
+// number sits in that same corner on live/finished cards in general and
+// collides with it for real data. Reserve the button's width as padding
+// instead of letting content run underneath it.
+.match-card-manageable {
+  padding-right: 42px;
+}
+
+// ---- shared list-state helpers ----
+.spinner-row {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-lg) 0;
+}
+
+.empty-state {
+  margin-top: 18px;
+  color: oklch(70% 0.02 262);
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .desktop-only {
+    display: block;
+  }
+
+  .match-cards.mobile-only {
+    display: none;
+  }
 }

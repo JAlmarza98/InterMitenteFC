@@ -1,10 +1,18 @@
-<div class="page">
-  <div class="page-header">
-    <h1>Partidos</h1>
+<div class="page matches-page">
+  <div class="matches-header">
+    <div>
+      <h1>Partidos</h1>
+      @if (season(); as s) {
+        <p class="matches-subheading">
+          Temporada {{ s.name }} · {{ matches().length }} partido{{ matches().length === 1 ? "" : "s" }}
+        </p>
+      }
+    </div>
     @if (canManage()) {
-      <button mat-flat-button color="primary" (click)="openCreate()">
-        <mat-icon>add</mat-icon>
-        Nuevo partido
+      <button mat-flat-button color="primary" class="new-match-button" (click)="openCreate()">
+        <app-icon name="add" [size]="16" [strokeWidth]="2.2" />
+        <span class="new-match-label-full">Nuevo partido</span>
+        <span class="new-match-label-short">Nuevo</span>
       </button>
     }
   </div>
@@ -21,82 +29,119 @@
   } @else if (matches().length === 0) {
     <p class="empty-state">Todavía no hay partidos.</p>
   } @else {
-    <div class="table-scroll desktop-only">
-      <table mat-table [dataSource]="matches()" class="matches-table">
-        <ng-container matColumnDef="date">
-          <th mat-header-cell *matHeaderCellDef scope="col">Fecha</th>
-          <td mat-cell *matCellDef="let match">{{ match.matchDate | date: 'dd/MM/yyyy HH:mm' }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="opponent">
-          <th mat-header-cell *matHeaderCellDef scope="col">Rival</th>
-          <td mat-cell *matCellDef="let match">
-            {{ match.opponent }}
-            <span class="home-away">({{ match.homeAway === 'home' ? 'local' : 'visitante' }})</span>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="competition">
-          <th mat-header-cell *matHeaderCellDef scope="col">Competición</th>
-          <td mat-cell *matCellDef="let match">{{ match.competition ?? '—' }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
-          <td mat-cell *matCellDef="let match">
-            <mat-chip [class]="'status-chip status-' + match.status">{{ statusLabel(match.status) }}</mat-chip>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="score">
-          <th mat-header-cell *matHeaderCellDef scope="col">Resultado</th>
-          <td mat-cell *matCellDef="let match" class="score-cell">
-            @if (match.status !== 'scheduled') {
-              {{ match.teamScore ?? 0 }} - {{ match.opponentScore ?? 0 }}
-            } @else {
-              —
-            }
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef scope="col"><span class="sr-only">Acciones</span></th>
-          <td mat-cell *matCellDef="let match">
-            @if (isAdmin()) {
-              <button mat-icon-button (click)="deleteMatch($event, match)" aria-label="Eliminar">
-                <mat-icon>delete</mat-icon>
-              </button>
-            }
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr
-          mat-row
-          *matRowDef="let row; columns: displayedColumns"
-          (click)="openMatch(row)"
-          (keydown.enter)="openMatch(row)"
-          (keydown.space)="$event.preventDefault(); openMatch(row)"
-          tabindex="0"
-          class="clickable-row"
-        ></tr>
-      </table>
+    <div class="matches-table-wrap desktop-only">
+      <div class="matches-table">
+        <div class="matches-table-row matches-table-head">
+          <span>Fecha</span>
+          <span>Rival</span>
+          <span>Competición</span>
+          <span>Estado</span>
+          <span>Resultado</span>
+          <span></span>
+        </div>
+        @for (match of matches(); track match.id) {
+          <div
+            class="matches-table-row"
+            [class.matches-table-row-live]="match.status === 'live'"
+            (click)="openMatch(match)"
+            (keydown.enter)="openMatch(match)"
+            (keydown.space)="$event.preventDefault(); openMatch(match)"
+            tabindex="0"
+          >
+            <span>
+              @if (isToday(match.matchDate)) {
+                Hoy
+              } @else {
+                {{ match.matchDate | date: "dd/MM/yyyy HH:mm" }}
+              }
+            </span>
+            <span>
+              {{ match.opponent }}
+              <span class="home-away">({{ match.homeAway === "home" ? "local" : "visit." }})</span>
+            </span>
+            <span class="competition-cell">{{ match.competition ?? "—" }}</span>
+            <span>
+              @if (match.status === "live") {
+                <span class="status-pill status-pill-live">
+                  <span class="live-dot"></span>
+                  En vivo
+                </span>
+              } @else if (match.status === "scheduled") {
+                <span class="status-pill status-pill-scheduled">Programado</span>
+              } @else {
+                <span class="status-pill status-pill-finished">Finalizado</span>
+              }
+            </span>
+            <span class="score-cell">
+              @if (match.status !== "scheduled") {
+                {{ match.teamScore ?? 0 }}-{{ match.opponentScore ?? 0 }}
+              } @else {
+                <span class="score-dash">—</span>
+              }
+            </span>
+            <span>
+              @if (isAdmin()) {
+                <button class="delete-button" (click)="deleteMatch($event, match)" aria-label="Eliminar">
+                  <app-icon name="delete" [size]="15" [strokeWidth]="2" />
+                </button>
+              }
+            </span>
+          </div>
+        }
+      </div>
     </div>
 
     <div class="match-cards mobile-only">
       @for (match of matches(); track match.id) {
-        <button class="match-card" (click)="openMatch(match)">
-          <div class="match-card-main">
-            <span class="match-card-opponent">{{ match.opponent }}</span>
-            <span class="match-card-date">{{ match.matchDate | date: 'dd/MM/yyyy HH:mm' }}</span>
+        <div
+          class="match-card"
+          [class.match-card-live]="match.status === 'live'"
+          [class.match-card-manageable]="isAdmin()"
+          (click)="openMatch(match)"
+          (keydown.enter)="openMatch(match)"
+          (keydown.space)="$event.preventDefault(); openMatch(match)"
+          tabindex="0"
+        >
+          @if (isAdmin()) {
+            <button class="delete-button" (click)="deleteMatch($event, match)" aria-label="Eliminar">
+              <app-icon name="delete" [size]="14" [strokeWidth]="2" />
+            </button>
+          }
+          <div class="match-card-row">
+            <div class="match-card-main">
+              <div class="match-card-opponent">
+                {{ match.opponent }}
+                <span class="home-away">({{ match.homeAway === "home" ? "local" : "visitante" }})</span>
+              </div>
+              <div class="match-card-date">
+                @if (isToday(match.matchDate)) {
+                  Hoy
+                } @else if (match.status === "scheduled") {
+                  {{ match.matchDate | date: "EEE dd/MM · HH:mm" }}
+                } @else {
+                  {{ match.matchDate | date: "dd/MM" }}
+                }
+                @if (match.competition) {
+                  · {{ match.competition }}
+                }
+              </div>
+            </div>
+            <div class="match-card-side">
+              @if (match.status === "live") {
+                <div class="match-card-score">{{ match.teamScore ?? 0 }}-{{ match.opponentScore ?? 0 }}</div>
+                <span class="status-pill status-pill-live">
+                  <span class="live-dot"></span>
+                  En vivo
+                </span>
+              } @else if (match.status === "scheduled") {
+                <span class="status-pill status-pill-scheduled">Programado</span>
+              } @else {
+                <div class="match-card-score">{{ match.teamScore ?? 0 }}-{{ match.opponentScore ?? 0 }}</div>
+                <span class="status-pill status-pill-finished">Finalizado</span>
+              }
+            </div>
           </div>
-          <div class="match-card-side">
-            @if (match.status !== 'scheduled') {
-              <span class="match-card-score">{{ match.teamScore ?? 0 }}-{{ match.opponentScore ?? 0 }}</span>
-            }
-            <mat-chip [class]="'status-chip status-' + match.status">{{ statusLabel(match.status) }}</mat-chip>
-          </div>
-        </button>
+        </div>
       }
     </div>
   }

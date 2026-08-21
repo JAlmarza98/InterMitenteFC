@@ -1,28 +1,17 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Season, SeasonsService } from '../../../core/services/seasons.service';
 import { SeasonFormDialogComponent } from '../season-form-dialog/season-form-dialog.component';
+import { IconComponent } from '../../../shared/icon/icon.component';
 
 @Component({
   selector: 'app-season-list',
   standalone: true,
-  imports: [
-    DatePipe,
-    MatTableModule,
-    MatButtonModule,
-    MatIconModule,
-    MatChipsModule,
-    MatDialogModule,
-    MatSnackBarModule,
-    MatProgressSpinnerModule,
-  ],
+  imports: [DatePipe, MatButtonModule, MatDialogModule, MatSnackBarModule, MatProgressSpinnerModule, IconComponent],
   templateUrl: './season-list.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './season-list.component.scss',
@@ -32,7 +21,6 @@ export class SeasonListComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
 
-  readonly displayedColumns = ['name', 'range', 'active', 'actions'];
   readonly seasons = signal<Season[]>([]);
   readonly loading = signal(false);
 

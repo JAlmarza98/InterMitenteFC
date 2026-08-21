@@ -1,86 +1,540 @@
-.page {
-  --page-max-width: 640px;
+// Literal port of the approved mockups (A-Home.dc.html mobile,
+// A-Home-Tablet.dc.html desktop) — oklch/px values copied as-is rather than
+// derived from Material's M3 tokens, so this reads pixel-for-pixel like
+// what was signed off, not just "in the spirit of" it.
+.home-page {
+  --page-max-width: 880px;
+  // The shared `.page` class's own padding/gap don't match the mockup's
+  // per-element spacing (20px/40px insets, exact margin-top cascade) — zero
+  // them out here and let every child below carry its own exact value
+  // instead, so this isn't fighting a second, conflicting spacing system.
+  padding: 0 20px 24px;
+  gap: 0;
 }
 
-.welcome {
-  position: relative;
-  padding: var(--space-lg) 0 var(--space-md);
-  overflow: hidden;
-
-  h1 {
-    position: relative;
-    margin: 0 0 4px;
-    font-size: 2.25rem;
+@media (min-width: 768px) {
+  .home-page {
+    padding: 22px 40px 32px;
   }
+}
+
+.greeting {
+  padding: 18px 0 0;
 
   p {
-    position: relative;
     margin: 0;
-    color: var(--mat-sys-on-surface-variant);
-    font-size: 1.05rem;
+    color: oklch(75% 0.02 262);
+    font-size: 0.85rem;
+  }
+
+  h1 {
+    margin: 2px 0 0;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
   }
 }
 
-// The crest as a hero watermark rather than a small logo: huge, faint,
-// bleeding off the top-right corner like a stadium badge printed on the
-// wall behind the tunnel. Absolutely-positioned elements paint above
-// non-positioned in-flow content regardless of DOM order, so h1/p above
-// are given `position: relative` — putting them in the same positioned
-// paint group, ordered after this img — purely to stay legible on top.
-.welcome-watermark {
-  position: absolute;
-  top: -60px;
-  right: -60px;
-  width: 260px;
-  height: 260px;
-  opacity: 0.08;
-  filter: grayscale(1) brightness(1.6);
-  pointer-events: none;
+@media (min-width: 768px) {
+  .greeting {
+    padding-top: 0;
+
+    h1 {
+      font-size: 1.6rem;
+    }
+  }
 }
 
+.hero-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+@media (min-width: 768px) {
+  .hero-row {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 20px;
+    margin-top: 20px;
+  }
+}
+
+.hero-card {
+  flex: 1 1 60%;
+  padding: 20px;
+  border-radius: 22px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(155deg, oklch(24% 0.045 262 / 92%) 0%, oklch(19% 0.04 262 / 92%) 100%);
+  border: 1px solid oklch(50% 0.05 262 / 35%);
+  box-shadow: 0 1px 0 0 oklch(100% 0 0 / 6%) inset, 0 10px 30px oklch(0% 0 0 / 45%);
+
+  // The glow blob every hero card carries in the mockups, parked in the
+  // top-right corner behind the content — amber while a match is live,
+  // violet while showing the next scheduled match (matches the two
+  // authored idle/live mockup variants, not just one reused for both).
+  &::before {
+    content: '';
+    position: absolute;
+    right: -30px;
+    top: -40px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+  }
+}
+
+.hero-card-live::before {
+  background: radial-gradient(oklch(78% 0.19 70 / 22%), transparent 70%);
+}
+
+.hero-card-next::before {
+  background: radial-gradient(oklch(65% 0.19 300 / 16%), transparent 70%);
+}
+
+@media (min-width: 768px) {
+  .hero-card {
+    padding: 22px 26px;
+
+    &::before {
+      right: -30px;
+      top: -50px;
+      width: 200px;
+      height: 200px;
+    }
+  }
+
+  .hero-card-live::before {
+    background: radial-gradient(oklch(78% 0.19 70 / 20%), transparent 70%);
+  }
+
+  .hero-card-next::before {
+    background: radial-gradient(oklch(65% 0.19 300 / 16%), transparent 70%);
+  }
+}
+
+.hero-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-badge,
+.next-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.live-badge {
+  color: oklch(78% 0.19 70);
+  text-transform: uppercase;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: oklch(78% 0.19 70);
+  // Reuses the same blink defined once in styles.scss for the match-status
+  // chip, so "this is live" always means the identical animation.
+  animation: indicator-blink 1.6s ease-in-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+.next-badge {
+  color: oklch(75% 0.02 262);
+}
+
+.hero-clock {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: oklch(90% 0.01 90);
+}
+
+.next-date {
+  margin-left: auto;
+  font-size: 0.76rem;
+  color: oklch(80% 0.02 262);
+  text-transform: capitalize;
+}
+
+@media (min-width: 768px) {
+  .hero-status-row {
+    font-size: 0.72rem;
+  }
+
+  .live-badge,
+  .next-badge {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+  }
+
+  .hero-clock {
+    font-size: 0.88rem;
+  }
+
+  .next-date {
+    font-size: 0.82rem;
+  }
+}
+
+.hero-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+@media (min-width: 768px) {
+  .hero-score-row {
+    margin-top: 20px;
+  }
+}
+
+.hero-team {
+  flex: 1 1 0;
+  text-align: center;
+}
+
+.hero-team-name {
+  display: block;
+  font-size: 0.72rem;
+  color: oklch(75% 0.02 262);
+  margin-bottom: 6px;
+}
+
+.hero-team-score {
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 2.1rem;
+}
+
+.hero-team-score-them {
+  color: oklch(75% 0.02 262);
+}
+
+.hero-score-sep {
+  color: oklch(55% 0.02 262);
+  font-size: 1.1rem;
+  padding: 0 6px;
+}
+
+@media (min-width: 768px) {
+  .hero-team-name {
+    font-size: 0.76rem;
+  }
+
+  .hero-team-score {
+    font-size: 2.4rem;
+  }
+
+  .hero-score-sep {
+    font-size: 1.2rem;
+    padding: 0 10px;
+  }
+}
+
+.hero-matchup {
+  margin-top: 18px;
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 1.3rem;
+  line-height: 1.3;
+
+  .hero-vs {
+    color: oklch(60% 0.02 262);
+    font-weight: 500;
+  }
+}
+
+@media (min-width: 768px) {
+  .hero-matchup {
+    margin-top: 22px;
+    font-size: 1.7rem;
+  }
+}
+
+.hero-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+@media (min-width: 768px) {
+  .hero-badges {
+    margin-top: 16px;
+  }
+}
+
+.hero-badge {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+}
+
+@media (min-width: 768px) {
+  .hero-badge {
+    padding: 6px 14px;
+    font-size: 0.74rem;
+  }
+}
+
+.hero-badge-competition {
+  background: oklch(65% 0.19 300 / 16%);
+  color: oklch(75% 0.14 300);
+  font-weight: 700;
+}
+
+.hero-badge-location {
+  background: oklch(30% 0.04 262);
+  color: oklch(85% 0.01 90);
+  font-weight: 600;
+}
+
+.hero-cta {
+  margin-top: 18px;
+  width: 100%;
+  height: 46px;
+  border-radius: 14px !important;
+  font-weight: 700;
+  font-size: 0.9rem;
+  background: linear-gradient(135deg, oklch(78% 0.19 70), oklch(70% 0.18 55)) !important;
+  color: oklch(18% 0.03 262) !important;
+}
+
+@media (min-width: 768px) {
+  .hero-cta {
+    margin-top: 20px;
+    width: auto;
+    padding: 0 24px;
+  }
+}
+
+// Desktop-only divided list beside the hero card (A-Home-Tablet.dc.html) —
+// mobile gets the pill-row `.season-stats` further down instead. Combined
+// selectors (not a shared .mobile-only/.desktop-only utility) so the
+// display toggle can't lose a specificity tie against these components'
+// own `display` rules — see the NOTE in styles.scss.
+.season-panel.desktop-only {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .season-panel.desktop-only {
+    display: flex;
+  }
+
+  .season-stats.mobile-only {
+    display: none;
+  }
+}
+
+.season-panel {
+  flex: 1 1 40%;
+  padding: 22px;
+  border-radius: 22px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 30%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.season-panel-heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: oklch(70% 0.02 262);
+}
+
+.season-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.84rem;
+  color: oklch(85% 0.01 90);
+}
+
+.season-panel-value {
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 1.3rem;
+  color: oklch(97% 0.01 90);
+}
+
+.season-panel-value-amber {
+  color: oklch(78% 0.19 70);
+}
+
+.season-panel-value-violet {
+  color: oklch(65% 0.19 300);
+}
+
+.season-panel-divider {
+  height: 1px;
+  background: oklch(45% 0.03 262 / 30%);
+}
+
+// No mockup covers "no live/next match on desktop" — the panel just takes
+// the full row alone rather than sitting next to an empty hero slot.
+.season-panel-alone {
+  flex: 1 1 100%;
+  max-width: 360px;
+}
+
+// Mobile pill row (A-Home.dc.html) — hidden on desktop in favor of
+// .season-panel above.
+.season-stats {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.season-stat {
+  flex: 1 1 0;
+  padding: 12px 10px;
+  border-radius: 14px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 30%);
+  text-align: center;
+}
+
+.season-stat-value {
+  display: block;
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: oklch(97% 0.01 90);
+}
+
+.season-stat-goals {
+  color: oklch(78% 0.19 70);
+}
+
+.season-stat-winrate {
+  color: oklch(65% 0.19 300);
+}
+
+.season-stat-label {
+  display: block;
+  font-size: 0.66rem;
+  color: oklch(70% 0.02 262);
+  margin-top: 2px;
+}
+
+.shortcuts-heading {
+  margin-top: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: oklch(70% 0.02 262);
+}
+
+@media (min-width: 768px) {
+  .shortcuts-heading {
+    margin-top: 26px;
+  }
+}
+
+// Mobile: Partidos + Plantilla split the width, Estadísticas spans full
+// width below. Tablet/desktop: all three sit in one row — the same three
+// cards just reflow, no separate markup per breakpoint.
 .shortcuts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--space-md);
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+// Doubled-up selector (not just `.shortcut-card-wide`) so its `align-items`
+// reliably beats `.shortcut-card`'s own — both classes sit on the same
+// element with equal specificity otherwise, and source order alone is a
+// fragile way to guarantee which one wins.
+.shortcut-card.shortcut-card-wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .shortcuts {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 12px;
+  }
+
+  .shortcut-card.shortcut-card-wide {
+    grid-column: auto;
+    flex-direction: row;
+  }
 }
 
 .shortcut-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  padding: var(--space-lg) var(--space-md);
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px;
   border-radius: 16px;
-  background: var(--mat-sys-surface-container);
-  color: var(--mat-sys-on-surface);
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 30%);
+  color: oklch(97% 0.01 90);
   text-decoration: none;
-  font-weight: 500;
-  // The resting shadow, plus a corner glow parked at zero spread/alpha so
-  // it can transition in on hover instead of popping.
-  box-shadow:
-    var(--surface-card-shadow),
-    inset 90px 70px 90px -60px transparent;
+  font-size: 0.8rem;
+  font-weight: 600;
   transition:
     background-color 0.15s ease,
-    box-shadow 0.25s ease,
+    border-color 0.2s ease,
     transform 0.15s ease;
 
-  mat-icon {
-    font-size: 32px;
-    width: 32px;
-    height: 32px;
-    color: var(--mat-sys-primary);
+  app-icon {
+    color: oklch(78% 0.19 70);
   }
 
-  // A headlight switching on: the club's own gold blooms in from the
-  // top-left corner instead of a generic lift-and-brighten.
   &:hover,
   &:focus-visible {
-    background: var(--mat-sys-surface-container-highest);
-    box-shadow:
-      var(--surface-card-shadow-hover),
-      inset 90px 70px 90px -60px color-mix(in srgb, var(--mat-sys-tertiary) 35%, transparent);
+    background: oklch(25% 0.04 262 / 80%);
+    border-color: color-mix(in srgb, oklch(78% 0.19 70) 45%, transparent);
     transform: translateY(-2px);
   }
+}
+
+@media (min-width: 768px) {
+  .shortcut-card {
+    padding: 16px 18px;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.86rem;
+
+    app-icon {
+      --icon-size: 22px;
+    }
+  }
+}
+
+// Plantilla's icon uses the violet data accent in the mockup (the ball and
+// stats icons both use amber; players uses violet).
+.shortcuts a:nth-child(2) app-icon {
+  color: oklch(65% 0.19 300);
 }

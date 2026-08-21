@@ -1,37 +1,26 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
 import { Match, MatchesService } from '../../../core/services/matches.service';
-import { SeasonsService } from '../../../core/services/seasons.service';
+import { Season, SeasonsService } from '../../../core/services/seasons.service';
 import { MatchFormDialogComponent } from '../match-form-dialog/match-form-dialog.component';
+import { IconComponent } from '../../../shared/icon/icon.component';
 
 const STATUS_LABELS: Record<Match['status'], string> = {
   scheduled: 'Programado',
-  live: 'En juego',
+  live: 'En vivo',
   finished: 'Finalizado',
 };
 
 @Component({
   selector: 'app-match-list',
   standalone: true,
-  imports: [
-    DatePipe,
-    MatTableModule,
-    MatButtonModule,
-    MatIconModule,
-    MatChipsModule,
-    MatDialogModule,
-    MatSnackBarModule,
-    MatProgressSpinnerModule,
-  ],
+  imports: [DatePipe, MatButtonModule, MatDialogModule, MatSnackBarModule, MatProgressSpinnerModule, IconComponent],
   templateUrl: './match-list.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './match-list.component.scss',
@@ -46,14 +35,23 @@ export class MatchListComponent {
 
   readonly canManage = this.auth.canManage;
   readonly isAdmin = this.auth.isAdmin;
-  readonly displayedColumns = ['date', 'opponent', 'competition', 'status', 'score', 'actions'];
 
+  // Scoped to the active season, same as the Home hero/season panel — the
+  // mockup's "Temporada 2025/26 · 6 partidos" subheading only makes sense
+  // against a single season's matches, not every match ever played.
+  readonly season = signal<Season | null>(null);
   readonly matches = signal<Match[]>([]);
   readonly loading = signal(false);
   readonly loadError = signal(false);
 
   statusLabel(status: Match['status']): string {
     return STATUS_LABELS[status];
+  }
+
+  isToday(dateStr: string): boolean {
+    const d = new Date(dateStr);
+    const now = new Date();
+    return d.toDateString() === now.toDateString();
   }
 
   constructor() {
@@ -63,10 +61,26 @@ export class MatchListComponent {
   load() {
     this.loading.set(true);
     this.loadError.set(false);
-    this.matchesService.list().subscribe({
+    this.seasonsService.list().subscribe({
       next: (res) => {
-        this.matches.set(res.matches);
-        this.loading.set(false);
+        const active = res.seasons.find((s) => s.isActive) ?? res.seasons[0] ?? null;
+        this.season.set(active);
+        if (!active) {
+          this.matches.set([]);
+          this.loading.set(false);
+          return;
+        }
+        this.matchesService.list(active.id).subscribe({
+          next: (matchesRes) => {
+            this.matches.set(matchesRes.matches);
+            this.loading.set(false);
+          },
+          error: (err) => {
+            this.loading.set(false);
+            this.loadError.set(true);
+            this.showError(err, 'No se pudieron cargar los partidos');
+          },
+        });
       },
       error: (err) => {
         this.loading.set(false);

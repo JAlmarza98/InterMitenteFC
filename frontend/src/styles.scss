@@ -12,26 +12,18 @@
 // a runtime dependency on Google's CDN being reachable. Same files Google
 // Fonts itself serves for the Latin subset (covers Spanish diacritics —
 // á, é, í, ó, ú, ñ, ü all fall within U+0000–00FF).
+//
+// Rebrand (2026): Manrope replaces Roboto as the body/UI font (also fed into
+// Material's own `typography:` token below, so buttons/inputs/labels pick it
+// up too). One variable-font file covers the whole 400–800 weight range —
+// Google's own CSS2 API served this exact file for that weight list, so
+// there is nothing to pick between static instances here.
 @font-face {
-  font-family: 'Roboto';
+  font-family: 'Manrope';
   font-style: normal;
-  font-weight: 300;
+  font-weight: 400 800;
   font-display: swap;
-  src: url('/fonts/roboto-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Roboto';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/roboto-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Roboto';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/fonts/roboto-latin.woff2') format('woff2');
+  src: url('/fonts/manrope-variable.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Material Icons';
@@ -42,9 +34,8 @@
 }
 
 // Display face for headings and the wordmark only — body copy, forms, and
-// buttons stay on Roboto. Same self-hosting rationale as Roboto above
-// (CSP has no third-party font-src). Latin subset covers Spanish
-// diacritics (see Roboto comment).
+// buttons stay on Manrope. Same self-hosting rationale as Manrope above
+// (CSP has no third-party font-src).
 @font-face {
   font-family: 'Bricolage Grotesque';
   font-style: normal;
@@ -103,17 +94,36 @@ html {
   --surface-card-shadow-hover:
     0 1px 0 0 color-mix(in srgb, white 8%, transparent) inset, 0 6px 20px color-mix(in srgb, black 50%, transparent);
 
+  // Rebrand (2026): the "glass card" surface used everywhere in the
+  // mockups — a faint gradient between two surface tones plus a hairline
+  // border, layered on top of --surface-card-shadow rather than replacing
+  // it. Built from the existing --mat-sys-surface-container* tokens (not
+  // hardcoded navy) so it stays theme-driven if the palette ever changes.
+  --glass-card-bg: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--mat-sys-surface-container-high) 92%, transparent) 0%,
+    color-mix(in srgb, var(--mat-sys-surface-container) 92%, transparent) 100%
+  );
+  --glass-card-border: 1px solid color-mix(in srgb, var(--mat-sys-outline) 35%, transparent);
+
   @include mat.theme(
     (
       color: (
         theme-type: dark,
         primary: brand.$navy-palette,
-        tertiary: brand.$gold-palette,
+        tertiary: brand.$amber-palette,
       ),
-      typography: Roboto,
+      typography: Manrope,
       density: 0,
     )
   );
+
+  // Rebrand (2026): the mockups' literal vivid accents, used directly
+  // instead of through M3 role tones (see the comment on $accent-amber in
+  // theme-palettes.scss for why — the M3 tertiary/secondary roles both
+  // gamut-clamp to paler colors at these hues).
+  --accent-amber: #{brand.$accent-amber};
+  --accent-violet: #{brand.$accent-violet};
 }
 
 @media (max-width: 599px) {
@@ -129,16 +139,22 @@ body {
 
 body {
   margin: 0;
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
-  // A stadium under floodlights at night, not a flat panel: a wide, faint
-  // gold glow falls from above and fades into the navy well before it
-  // could compete with content. Fixed so it reads as the room's light,
-  // not something that scrolls with the page.
+  font-family: Manrope, 'Helvetica Neue', sans-serif;
+  // A stadium under floodlights at night, not a flat panel: a wide amber
+  // glow falls from above, and a cooler violet glow lifts the opposite
+  // corner — the same two-glow treatment every mockup screen used. Fixed
+  // so it reads as the room's light, not something that scrolls with the
+  // page.
   background:
     radial-gradient(
-      ellipse 1400px 700px at 50% -120px,
-      color-mix(in srgb, var(--mat-sys-tertiary) 10%, transparent) 0%,
-      transparent 70%
+      ellipse 1400px 700px at 90% -120px,
+      color-mix(in srgb, var(--accent-amber) 14%, transparent) 0%,
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 1000px 700px at -10% 30%,
+      color-mix(in srgb, var(--accent-violet) 10%, transparent) 0%,
+      transparent 65%
     ),
     var(--mat-sys-surface);
   background-attachment: fixed;
@@ -148,7 +164,7 @@ body {
 h1,
 h2,
 h3 {
-  font-family: 'Bricolage Grotesque', Roboto, 'Helvetica Neue', sans-serif;
+  font-family: 'Bricolage Grotesque', Manrope, 'Helvetica Neue', sans-serif;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -162,12 +178,12 @@ h1 {
 // indicator in app.component.scss) — focus and selection are the same
 // kind of state, so they reuse it instead of the browser's default blue.
 :focus-visible {
-  outline: 2px solid var(--mat-sys-tertiary);
+  outline: 2px solid var(--accent-amber);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--mat-sys-tertiary) 35%, transparent);
+  background: color-mix(in srgb, var(--accent-amber) 35%, transparent);
   color: var(--mat-sys-on-surface);
 }
 
@@ -193,6 +209,52 @@ th[mat-header-cell] {
 // designed elevation system rather than a flat template default.
 mat-card {
   box-shadow: var(--surface-card-shadow);
+}
+
+// The rebrand's "glass card" treatment (hero cards, the floating desktop
+// nav bar) — a shared utility class instead of every component re-deriving
+// the same gradient/border by hand.
+.glass-card {
+  background: var(--glass-card-bg);
+  border: var(--glass-card-border);
+  box-shadow: var(--surface-card-shadow);
+}
+
+// The rebrand's amber "this is the primary action" treatment — hero CTA
+// buttons, the active nav link. `color="primary"` on a `mat-button` renders
+// Material's dark-theme primary role (a pale tone-80 navy), not this, so
+// anything meant to read as the vivid accent applies this class instead
+// (plain `background`/`color`, `!important` needed to beat Material's own
+// button color tokens).
+.cta-gradient,
+// Blanket coverage, not just the opt-in class above: EVERY `color="primary"`
+// filled button across the whole app (most of it still unmigrated to its
+// own rebrand phase) was rendering Material's pale tone-80 navy — a jarring
+// pastel-lavender block next to the vivid amber everywhere else. This one
+// rule fixes every screen at once instead of hunting down and editing
+// `color="primary"` on every button in every not-yet-restyled component.
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-raised-button.mat-primary {
+  background: linear-gradient(135deg, var(--accent-amber), color-mix(in srgb, var(--accent-amber) 80%, black)) !important;
+  // The mockups' CTA text color — dark navy, not the warm dark-brown M3
+  // would compute as "on-tertiary" for this hue, since --accent-amber
+  // bypasses M3's tertiary role entirely (see theme-palettes.scss).
+  color: #161c26 !important;
+}
+
+// Same story for outlined/text buttons and form-field focus states: primary
+// meant "pale tone-80 navy" and now needs to mean "amber."
+.mat-mdc-outlined-button.mat-primary,
+.mat-mdc-button.mat-primary:not(.mat-mdc-unelevated-button):not(.mat-mdc-raised-button) {
+  color: var(--accent-amber) !important;
+
+  &.mat-mdc-outlined-button {
+    border-color: color-mix(in srgb, var(--accent-amber) 45%, transparent) !important;
+  }
+}
+
+.mat-mdc-form-field.mat-focused:not(.mat-form-field-invalid) {
+  --mat-sys-primary: var(--accent-amber);
 }
 
 // Visually hidden but still announced by screen readers — for table header
@@ -266,71 +328,216 @@ mat-card {
   text-align: center;
 }
 
-// Shared shell for login/register/pending-approval: a branded header
-// above a centered card, on a subtle tinted background so auth screens
-// don't look like a bare, unbranded form floating on white.
+// Shared shell for login/register/pending-approval — literal port of the
+// approved mockups (A-Login/A-Register/A-Pending, mobile + tablet). No
+// per-page background gradient here: the app's existing global `body`
+// background (the two-glow amber/violet floodlight, above) already gives
+// every page that ambient glow, same as Home/Partidos/Plantilla/etc. never
+// re-derive their own — auth pages follow that same convention instead of
+// stacking a second, redundant gradient on top.
+// Every mockup screen scopes a `box-sizing: border-box` reset to itself
+// (`.x-screen, .x-screen * { box-sizing: border-box }`) — missing it here
+// is what let `.auth-card` (width: 100%, padding, border, all at once)
+// balloon past its intended size: with the default content-box model its
+// 26px padding + 1px border added on top of the already-100%-wide box
+// instead of being carved out of it, so the card overflowed the page's
+// own 32px padding on both sides and rendered nearly edge-to-edge.
+.auth-page,
+.auth-page * {
+  box-sizing: border-box;
+}
+
 .auth-page {
   min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-lg);
-  padding: var(--space-lg);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--mat-sys-primary) 10%, var(--mat-sys-surface)) 0%,
-    var(--mat-sys-surface) 320px
-  );
+  padding: 32px;
 }
 
 .auth-brand {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 10px;
+  margin-bottom: 28px;
 
   .auth-brand-badge {
-    height: 88px;
-    width: auto;
-    // A soft gold glow hugging the crest's own silhouette (drop-shadow
-    // follows alpha, unlike box-shadow) — the badge under the same
-    // floodlight the page background implies, not a flat logo.
-    filter: drop-shadow(0 0 22px color-mix(in srgb, var(--mat-sys-tertiary) 45%, transparent));
+    width: 76px;
+    height: auto;
+    filter: drop-shadow(0 0 22px oklch(78% 0.19 70 / 45%));
   }
 
   h1 {
     margin: 0;
-    font-size: 1.4rem;
+    font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: -0.01em;
+  }
+}
+
+@media (min-width: 768px) {
+  .auth-brand {
+    .auth-brand-badge {
+      width: 80px;
+      filter: drop-shadow(0 0 24px oklch(78% 0.19 70 / 45%));
+    }
+
+    h1 {
+      font-size: 1.4rem;
+    }
   }
 }
 
 .auth-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  padding: 26px;
+  border-radius: 24px;
+  background: linear-gradient(155deg, oklch(24% 0.045 262 / 92%) 0%, oklch(19% 0.04 262 / 92%) 100%);
+  border: 1px solid oklch(50% 0.05 262 / 35%);
+  box-shadow: 0 1px 0 0 oklch(100% 0 0 / 6%) inset, 0 10px 30px oklch(0% 0 0 / 45%);
+
+  h2 {
+    margin: 0 0 20px;
+    font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+    font-weight: 800;
+    font-size: 1.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .auth-card {
+    padding: 32px;
+
+    h2 {
+      margin-bottom: 22px;
+      font-size: 1.35rem;
+    }
+  }
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
 
-  button {
-    margin-top: var(--space-sm);
+  button[type='submit'] {
+    margin-top: 18px;
     width: 100%;
-    height: 44px;
+    height: 48px;
+    border-radius: 14px !important;
+    font-weight: 700;
+    font-size: 0.92rem;
   }
 }
 
+@media (min-width: 768px) {
+  .auth-form button[type='submit'] {
+    margin-top: 20px;
+  }
+}
+
+.auth-field {
+  margin-bottom: 14px;
+}
+
+.auth-field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: oklch(70% 0.02 262);
+}
+
+@media (min-width: 768px) {
+  .auth-field-label {
+    margin-bottom: 7px;
+    font-size: 0.72rem;
+  }
+}
+
+.auth-input-box {
+  height: 48px;
+  border-radius: 12px;
+  background: oklch(20% 0.03 262);
+  border: 1px solid oklch(45% 0.03 262 / 35%);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+}
+
+.auth-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: oklch(90% 0.01 90);
+  font-family: inherit;
+  font-size: 0.92rem;
+
+  &:focus {
+    outline: none;
+  }
+
+  &::placeholder {
+    color: oklch(50% 0.02 262);
+  }
+}
+
+.auth-input-box:has(.auth-input:focus) {
+  border-color: color-mix(in srgb, var(--accent-amber) 55%, transparent);
+}
+
+.auth-password-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: oklch(65% 0.02 262);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.auth-field-error {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: oklch(70% 0.15 25);
+}
+
 .auth-error {
-  color: var(--mat-sys-error);
-  font-size: 0.875rem;
-  margin: 0 0 var(--space-sm);
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: oklch(70% 0.15 25);
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 0.84rem;
+  color: oklch(65% 0.02 262);
+
+  a {
+    color: var(--accent-amber);
+    text-decoration: none;
+    font-weight: 700;
+
+    &:hover {
+      color: color-mix(in srgb, var(--accent-amber) 80%, white);
+    }
+  }
 }
 
 // Color-code match status chips instead of leaving every chip identical —
-// scheduled stays neutral, live pops in primary navy, finished settles
-// into the tertiary gold accent.
+// scheduled stays neutral, live pops in the amber tertiary accent (the
+// "this is active" signal used everywhere else), finished settles into the
+// violet data accent.
 .status-chip.status-scheduled {
   --mat-chip-elevated-container-color: var(--mat-sys-surface-container-high);
   --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
@@ -343,16 +550,16 @@ mat-card {
 @keyframes indicator-blink {
   0%,
   100% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mat-sys-tertiary) 50%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-amber) 50%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mat-sys-tertiary) 4%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-amber) 4%, transparent);
   }
 }
 
 .status-chip.status-live {
-  --mat-chip-elevated-container-color: var(--mat-sys-primary-container);
-  --mat-chip-label-text-color: var(--mat-sys-on-primary-container);
+  --mat-chip-elevated-container-color: color-mix(in srgb, var(--accent-amber) 16%, var(--mat-sys-surface-container-high));
+  --mat-chip-label-text-color: var(--accent-amber);
   animation: indicator-blink 1.6s ease-in-out infinite;
 
   @media (prefers-reduced-motion: reduce) {
@@ -361,8 +568,8 @@ mat-card {
 }
 
 .status-chip.status-finished {
-  --mat-chip-elevated-container-color: var(--mat-sys-tertiary-container);
-  --mat-chip-label-text-color: var(--mat-sys-on-tertiary-container);
+  --mat-chip-elevated-container-color: color-mix(in srgb, var(--accent-violet) 20%, var(--mat-sys-surface-container-high));
+  --mat-chip-label-text-color: var(--accent-violet);
 }
 
 // Match-event glyphs (goal/assist/card/substitution), shared between the
@@ -379,7 +586,7 @@ mat-card {
 
 .event-icon-goal,
 .event-icon-assist {
-  color: var(--mat-sys-primary);
+  color: var(--accent-amber);
 }
 
 .event-icon-own_goal,
@@ -387,12 +594,15 @@ mat-card {
   color: var(--mat-sys-error);
 }
 
+// Mockup value (oklch(85% 0.01 90), a near-white) — not on-surface-variant's
+// muted gray, which reads as de-emphasized/disabled next to the vivid
+// goal/card icons either side of it in the event history.
 .event-icon-substitution {
-  color: var(--mat-sys-on-surface-variant);
+  color: oklch(85% 0.01 90);
 }
 
 .event-icon-yellow_card {
-  color: var(--mat-sys-tertiary);
+  color: var(--accent-amber);
 }
 
 .event-icon-red_card {
@@ -433,14 +643,17 @@ mat-card {
   background: color-mix(in srgb, var(--mat-sys-on-surface-variant) 16%, transparent);
 }
 
+// Mockup value — the violet data accent used everywhere else for a
+// secondary/positive-but-not-peak reading (season win-rate, "Finalizado"
+// pills), not primary's broken pale-navy tone-80.
 .rating-good {
-  color: var(--mat-sys-primary);
-  background: color-mix(in srgb, var(--mat-sys-primary) 20%, transparent);
+  color: oklch(75% 0.14 300);
+  background: oklch(65% 0.19 300 / 20%);
 }
 
 .rating-excellent {
-  color: var(--mat-sys-tertiary);
-  background: color-mix(in srgb, var(--mat-sys-tertiary) 26%, transparent);
+  color: var(--accent-amber);
+  background: color-mix(in srgb, var(--accent-amber) 26%, transparent);
 }
 
 // Consistent field spacing inside every create/edit dialog.
@@ -455,6 +668,33 @@ mat-card {
   }
 }
 
+// The 4 create/edit dialogs (player, match, season, playing-time segment)
+// still ship as plain Material — same near-black tone as the page behind
+// them, no elevation shadow, so the surface never visually separates from
+// the (fairly light, 32%) backdrop. Reusing the same .glass-card recipe
+// used everywhere else in the rebrand instead of leaving them flat.
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  background: var(--glass-card-bg);
+  border: var(--glass-card-border);
+  box-shadow: var(--surface-card-shadow);
+}
+
+// Dialog titles default to plain Manrope/400 — every other heading in the
+// app (page titles, card section titles) is Bricolage Grotesque/800.
+.mat-mdc-dialog-title {
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em;
+}
+
+// The unthemed "Cancelar" button renders M3's default pale tone-80 blue —
+// the same class of broken pale color fixed everywhere else in the rebrand
+// (see .mat-mdc-unelevated-button.mat-primary above). A neutral, not an
+// accent: cancelling isn't the action being encouraged.
+.mat-mdc-dialog-actions .mat-mdc-button.mat-unthemed {
+  color: oklch(85% 0.01 90) !important;
+}
+
 // Material dialogs go full-screen on small viewports so forms are
 // comfortable to fill in on a phone instead of a cramped floating box.
 @media (max-width: 599px) {
@@ -462,9 +702,13 @@ mat-card {
     --mat-dialog-container-max-width: 100vw;
   }
 
+  // Every dialog.open() call passes an explicit width (e.g. '420px') —
+  // Angular CDK applies that as an inline style on the overlay pane, which
+  // beats any non-!important CSS rule regardless of specificity. Both
+  // width and max-width need !important here to actually override it.
   .cdk-overlay-pane:has(.mat-mdc-dialog-container) {
+    width: 100vw !important;
     max-width: 100vw !important;
-    width: 100vw;
     height: 100%;
     margin: 0;
   }
@@ -477,10 +721,10 @@ mat-card {
 
 // Snackbars default to the bottom of the viewport, same as the mobile
 // bottom-nav bar (app.component.scss) — without this they land right on
-// top of it instead of above it. Height must track that bar's own 64px +
+// top of it instead of above it. Height must track that bar's own 72px +
 // safe-area exactly, or a mismatch reopens the gap either direction.
 @media (max-width: 767px) {
   .mat-mdc-snack-bar-container {
-    margin-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+    margin-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
   }
 }

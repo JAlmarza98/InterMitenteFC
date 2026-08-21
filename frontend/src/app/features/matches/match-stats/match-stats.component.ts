@@ -1,11 +1,5 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -18,22 +12,12 @@ import {
   formatMinuteSeconds,
 } from '../../../core/services/match-clock.service';
 import { SegmentFormDialogComponent } from '../segment-form-dialog/segment-form-dialog.component';
+import { IconComponent } from '../../../shared/icon/icon.component';
 
 @Component({
   selector: 'app-match-stats',
   standalone: true,
-  imports: [
-    RouterLink,
-    MatCardModule,
-    MatTableModule,
-    MatButtonModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatDialogModule,
-    MatSnackBarModule,
-    MatProgressSpinnerModule,
-  ],
+  imports: [RouterLink, MatDialogModule, MatSnackBarModule, MatProgressSpinnerModule, IconComponent],
   templateUrl: './match-stats.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './match-stats.component.scss',
@@ -52,15 +36,27 @@ export class MatchStatsComponent {
   readonly canManage = this.auth.isAdmin;
   readonly matchId = this.route.snapshot.paramMap.get('id')!;
 
-  readonly statColumns = ['name', 'timePlayed', 'rating', 'goals', 'assists', 'yellowCards', 'redCards', 'ownGoals'];
-  readonly segmentColumns = ['player', 'period', 'start', 'end', 'source', 'actions'];
-
   periodLabel(type: Segment['periodType']): string {
     return PERIOD_LABELS[type];
   }
 
   formatTime(totalSeconds: number): string {
     return formatMinuteSeconds(totalSeconds);
+  }
+
+  endLabel(seg: Segment): string {
+    return seg.endSecond !== null ? this.formatTime(seg.endSecond) : '—';
+  }
+
+  sourceLabel(source: Segment['source']): string {
+    return source === 'live' ? 'En vivo' : 'Manual';
+  }
+
+  // Mobile shows one concatenated line per segment (the mockup has no room
+  // for a 5-column row there); tablet keeps period/entra/sale/origen as
+  // separate table cells instead — see the two markup blocks in the template.
+  segmentDescription(seg: Segment): string {
+    return `${this.periodLabel(seg.periodType)} · ${this.formatTime(seg.startSecond)} – ${this.endLabel(seg)} · ${this.sourceLabel(seg.source)}`;
   }
 
   readonly formatRating = formatRating;

@@ -1,3 +1,7 @@
+// Literal port of the approved mockups — A-Home.dc.html's embedded header
+// row for the mobile toolbar, A-Home-Tablet.dc.html's floating nav bar for
+// desktop. Two genuinely different treatments per breakpoint, not one
+// style reflowed, because that's what was mocked and approved.
 :host {
   display: flex;
   flex-direction: column;
@@ -6,80 +10,227 @@
 
 .app-toolbar {
   flex: 0 0 auto;
-  gap: var(--space-sm);
+  gap: 10px;
   position: relative;
-  // The crest's own livery — vertical navy/blue stripes behind the
-  // headlight — repeated as a near-invisible texture instead of a flat
-  // fill, so the toolbar reads as "the crest's material," not a stock
-  // Material app-bar. Kept low-contrast enough to stay out of the way
-  // of the nav labels sitting on top of it.
-  background-image: repeating-linear-gradient(
-    90deg,
-    color-mix(in srgb, white 5%, transparent) 0 10px,
-    transparent 10px 26px
-  );
+  padding: 26px 20px 4px;
+  height: auto;
+  background: transparent;
+  color: oklch(97% 0.01 90);
+}
 
-  // A thin band of the same floodlight gold the page background glows
-  // with, grounding the bar instead of letting it end on a hard edge.
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in srgb, var(--mat-sys-tertiary) 45%, transparent) 50%,
-      transparent
-    );
+@media (min-width: 768px) {
+  .app-toolbar {
+    // Tighter than the mockup's own 32px/22px — the artboard was only ever
+    // authored and approved at 1024px wide, and at that exact spacing 6 nav
+    // links + username + logout overflow the card on real tablet widths
+    // (768-1023px), clipping the logout button off the right edge. Below
+    // 1024px, shrink the outside margin and inter-section gap just enough
+    // to keep everything on the card; the 1024px tier below restores the
+    // exact approved values once there's room for them.
+    margin: 18px 16px 0;
+    // mat-toolbar sets its own `width: 100%`, which combined with the
+    // margins above overflows past the right edge — margin doesn't shrink
+    // a 100%-wide box, only an auto-wide one. Compute the width explicitly
+    // instead of fighting Material's rule.
+    width: calc(100% - 32px);
+    padding: 0 20px;
+    height: 60px;
+    border-radius: 18px;
+    gap: 12px;
+    background: oklch(23% 0.045 262 / 82%);
+    border: 1px solid oklch(50% 0.05 262 / 32%);
+    box-shadow: 0 1px 0 0 oklch(100% 0 0 / 6%) inset, 0 8px 22px oklch(0% 0 0 / 35%);
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-toolbar {
+    margin: 18px 32px 0;
+    width: calc(100% - 64px);
+    gap: 22px;
   }
 }
 
 .app-title {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
+  gap: 10px;
   color: inherit;
   text-decoration: none;
-  font-family: 'Bricolage Grotesque', Roboto, 'Helvetica Neue', sans-serif;
-  font-size: 1.25rem;
+  font-family: 'Bricolage Grotesque', Manrope, 'Helvetica Neue', sans-serif;
   font-weight: 800;
-  letter-spacing: -0.01em;
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+  .app-title {
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+    text-transform: none;
+  }
 }
 
 .app-title-crest {
-  height: 2rem;
-  width: auto;
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--mat-sys-tertiary) 55%, transparent));
+  width: 34px;
+  height: auto;
+  filter: drop-shadow(0 0 8px oklch(78% 0.19 70 / 55%));
+}
+
+@media (min-width: 768px) {
+  .app-title-crest {
+    width: 26px;
+    filter: drop-shadow(0 0 6px oklch(78% 0.19 70 / 55%));
+  }
 }
 
 .spacer {
   flex: 1 1 auto;
 }
 
-.desktop-nav {
-  display: flex;
-  gap: var(--space-xs);
+// The mockup's hairline separator between the crest and the nav pills —
+// desktop/tablet only, matching the mobile header which has no divider.
+.nav-divider {
+  display: none;
 }
 
-// Gold is the crest's indicator color (the headlight/turn-signal the club's
-// name puns on), so it marks "this is the active one" throughout the nav
-// instead of restating the toolbar's own navy.
+@media (min-width: 768px) {
+  .nav-divider {
+    display: block;
+    // Being a bare empty span, its min-content is 0 — without flex-shrink:0
+    // it's the first thing the flex layout sacrifices to zero width whenever
+    // the row is even slightly tight, vanishing silently with no visible
+    // overflow to show for it. Pin it so the hairline always renders.
+    flex: 0 0 1px;
+    width: 1px;
+    height: 24px;
+    background: oklch(45% 0.03 262 / 40%);
+  }
+}
+
+.desktop-nav {
+  display: flex;
+  gap: 2px;
+
+  a {
+    border-radius: 11px;
+    font-size: 0.84rem;
+    padding: 8px 10px;
+    color: oklch(82% 0.02 262);
+  }
+}
+
+@media (min-width: 1024px) {
+  .desktop-nav {
+    gap: 4px;
+
+    a {
+      padding: 9px 16px;
+    }
+  }
+}
+
+// Below 1024px there isn't room for every admin pill plus the username —
+// that's what was overflowing the toolbar card on real tablet widths.
+// Collapse Temporadas/Usuarios into the same overflow menu the mobile
+// bottom nav already uses, and drop the username (the greeting under it
+// already says who's logged in) until there's room for the full mockup
+// layout again.
+.admin-nav-links,
+.nav-more-button {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .user-name {
+    display: none;
+  }
+
+  .nav-more-button {
+    display: inline-flex;
+    color: oklch(82% 0.02 262);
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-nav-links {
+    display: contents;
+  }
+
+  .nav-more-button {
+    display: none;
+  }
+
+  .user-name {
+    display: inline;
+  }
+}
+
+// Amber is the crest's indicator color (the headlight/turn-signal the
+// club's name puns on), so it marks "this is the active one" throughout
+// the nav — a filled gradient pill, the same treatment as every primary
+// CTA button in the rebrand.
 .active-link {
-  background: color-mix(in srgb, var(--mat-sys-tertiary) 24%, transparent);
+  background: linear-gradient(135deg, oklch(78% 0.19 70), oklch(70% 0.18 55)) !important;
+  color: oklch(18% 0.03 262) !important;
+  font-weight: 700 !important;
   border-radius: 999px;
 }
 
 .user-name {
-  margin-right: var(--space-sm);
+  margin-right: 4px;
+  font-size: 0.82rem;
   opacity: 0.9;
+}
+
+// The mockups' circular (mobile) / rounded-square (desktop) icon badge —
+// a settings-style button in the mockups, this one actually logs out.
+// `mat-icon-button` ships its own padding sized for a 24px `mat-icon`;
+// left alone it doesn't center an arbitrary-sized custom SVG inside our
+// resized 38/34px box, so it's zeroed out here in favor of flex centering.
+// `display` is deliberately left alone — `.nav-more-button` toggles its own
+// display: none/inline-flex per breakpoint above, and an `!important` here
+// would permanently beat that toggle regardless of which rule comes later.
+.logout-button,
+.nav-more-button {
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+}
+
+.logout-button {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: oklch(24% 0.03 262);
+  border: 1px solid oklch(40% 0.03 262 / 45%);
+  color: oklch(85% 0.01 90);
+}
+
+@media (min-width: 768px) {
+  .logout-button {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: oklch(28% 0.045 262);
+    border: 1px solid oklch(45% 0.03 262 / 40%);
+    color: oklch(82% 0.02 262);
+  }
 }
 
 .app-content {
   flex: 1 1 auto;
   overflow: auto;
+}
+
+// Auth screens (login/register/pending-approval) never render the bottom
+// nav — `auth.isApproved()` is always false there — so the 72px reserved
+// for it below shouldn't apply; without this override that dead space was
+// part of why those pages needed to scroll on mobile.
+.app-content.app-content-full {
+  padding-bottom: 0;
 }
 
 .bottom-nav {
@@ -93,7 +244,7 @@
   }
 
   .app-content {
-    padding-bottom: 64px;
+    padding-bottom: 72px;
   }
 
   .bottom-nav {
@@ -102,9 +253,12 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 64px;
-    background: var(--mat-sys-surface-container);
-    border-top: 1px solid var(--mat-sys-outline-variant);
+    height: 72px;
+    align-items: center;
+    justify-content: space-around;
+    background: oklch(14% 0.03 262 / 92%);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid oklch(45% 0.03 262 / 30%);
     padding-bottom: env(safe-area-inset-bottom);
     z-index: 10;
 
@@ -115,23 +269,18 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 2px;
-      color: var(--mat-sys-on-surface-variant);
+      gap: 3px;
+      color: oklch(60% 0.02 262);
       text-decoration: none;
-      font-size: 0.7rem;
+      font-size: 0.6rem;
       border: none;
       background: transparent;
       font-family: inherit;
       cursor: pointer;
 
-      mat-icon {
-        font-size: 22px;
-        width: 22px;
-        height: 22px;
-      }
-
       &.active {
-        color: var(--mat-sys-tertiary);
+        color: oklch(78% 0.19 70);
+        font-weight: 700;
       }
     }
   }

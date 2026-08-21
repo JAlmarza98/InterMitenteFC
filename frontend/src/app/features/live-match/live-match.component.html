@@ -1,14 +1,15 @@
-<div class="page">
+<div class="page live-match-page">
   <a [routerLink]="['/matches', matchId]" class="back-link">
-    <mat-icon>arrow_back</mat-icon>
-    Volver al partido
+    <app-icon name="chevron-left" [size]="18" [strokeWidth]="1.9" />
+    <span class="back-link-mobile">{{ match()?.opponent }}</span>
+    <span class="back-link-desktop">Volver al partido · {{ match()?.opponent }}</span>
   </a>
 
   @if (syncError()) {
     <div class="sync-error-banner">
-      <mat-icon>wifi_off</mat-icon>
+      <app-icon name="eye-off" [size]="18" [strokeWidth]="1.9" />
       <span>No se ha podido sincronizar. Los datos pueden no estar actualizados.</span>
-      <button mat-button (click)="resync()">Reintentar</button>
+      <button class="retry-btn" (click)="resync()">Reintentar</button>
     </div>
   }
 
@@ -19,166 +20,257 @@
   } @else if (match()) {
     @let m = match()!;
     @let isHome = m.homeAway === 'home';
-    <mat-card
-      appearance="outlined"
-      class="clock-card"
-      [class.clock-card-live]="clockState()?.activePeriodType && !clockState()?.isPaused"
-    >
-      <mat-card-content>
-        <div class="clock-header">
-          <div class="scoreboard-block">
-            <div class="scoreboard">
-              <div class="scoreboard-side">
-                <span class="team-label" [class.team-label-us]="isHome">{{
-                  isHome ? 'Inter Mitente FC' : m.opponent
-                }}</span>
-                <span class="scoreboard-value" [class.scoreboard-us]="isHome" [class.scoreboard-them]="!isHome">{{
-                  isHome ? (m.teamScore ?? 0) : (m.opponentScore ?? 0)
-                }}</span>
-              </div>
-              <span class="scoreboard-sep">–</span>
-              <div class="scoreboard-side">
-                <span class="team-label" [class.team-label-us]="!isHome">{{
-                  isHome ? m.opponent : 'Inter Mitente FC'
-                }}</span>
-                <span class="scoreboard-value" [class.scoreboard-us]="!isHome" [class.scoreboard-them]="isHome">{{
-                  isHome ? (m.opponentScore ?? 0) : (m.teamScore ?? 0)
-                }}</span>
-              </div>
-            </div>
-            <div class="status-row-live">
-              @if (clockState()?.activePeriodType; as periodType) {
-                <mat-chip [class.live-chip]="!clockState()?.isPaused">{{ periodLabels[periodType] }}</mat-chip>
-                @if (clockState()?.isPaused) {
-                  <mat-chip class="paused-chip">Pausado</mat-chip>
-                }
-              }
-            </div>
+    @let period = clockState()?.activePeriodType ?? null;
+    @let paused = clockState()?.isPaused ?? false;
+
+    <div class="clock-card" [class.clock-card-live]="period && !paused">
+      <!-- mobile: period badge + time on top, score centered below -->
+      <div class="clock-top-row mobile-only">
+        <div class="period-badge-slot">
+          @if (period) {
+            <span class="period-badge">
+              <span class="pulse-dot" [class.pulse-dot-paused]="paused"></span>
+              {{ periodLabels[period] }}
+            </span>
+            @if (paused) {
+              <span class="paused-badge">Pausado</span>
+            }
+          }
+        </div>
+        <div class="clock-time">{{ elapsedDisplay() ?? '—' }}</div>
+      </div>
+      <div class="clock-score-row mobile-only">
+        <div class="clock-team">
+          <div class="clock-team-label">{{ isHome ? 'Inter Mitente' : m.opponent }}</div>
+          <div class="clock-team-score" [class.clock-score-them]="!isHome">{{ isHome ? (m.teamScore ?? 0) : (m.opponentScore ?? 0) }}</div>
+        </div>
+        <span class="clock-sep">—</span>
+        <div class="clock-team">
+          <div class="clock-team-label">{{ isHome ? m.opponent : 'Inter Mitente' }}</div>
+          <div class="clock-team-score" [class.clock-score-them]="isHome">{{ isHome ? (m.opponentScore ?? 0) : (m.teamScore ?? 0) }}</div>
+        </div>
+      </div>
+
+      <!-- tablet: score + period badge grouped left, time on the right -->
+      <div class="clock-top-row desktop-only">
+        <div class="clock-score-group">
+          <div class="clock-team">
+            <div class="clock-team-label">{{ isHome ? 'Inter Mitente' : m.opponent }}</div>
+            <div class="clock-team-score" [class.clock-score-them]="!isHome">{{ isHome ? (m.teamScore ?? 0) : (m.opponentScore ?? 0) }}</div>
           </div>
-          <div class="time-display">{{ elapsedDisplay() ?? '—' }}</div>
+          <span class="clock-sep">—</span>
+          <div class="clock-team">
+            <div class="clock-team-label">{{ isHome ? m.opponent : 'Inter Mitente' }}</div>
+            <div class="clock-team-score" [class.clock-score-them]="isHome">{{ isHome ? (m.opponentScore ?? 0) : (m.teamScore ?? 0) }}</div>
+          </div>
+          @if (period) {
+            <span class="period-badge">
+              <span class="pulse-dot" [class.pulse-dot-paused]="paused"></span>
+              {{ periodLabels[period] }}
+            </span>
+            @if (paused) {
+              <span class="paused-badge">Pausado</span>
+            }
+          }
         </div>
+        <div class="clock-time">{{ elapsedDisplay() ?? '—' }}</div>
+      </div>
 
-        <div class="score-row">
-          <button mat-stroked-button (click)="logOpponentGoal()">
-            <mat-icon>add</mat-icon>
-            Gol rival
-          </button>
-        </div>
+      @if (canManage()) {
+        <div class="clock-actions">
+          <button class="clock-btn clock-btn-amber" (click)="logOpponentGoal()">+ Gol rival</button>
 
-        <div class="controls-row">
           @if (canStartNext()) {
-            <button mat-flat-button color="primary" [disabled]="actionLoading()" (click)="startNextPeriod()">
-              <mat-icon>play_arrow</mat-icon>
+            <button class="clock-btn clock-btn-amber" [disabled]="actionLoading()" (click)="startNextPeriod()">
               Iniciar {{ periodLabels[nextPeriodType()!] }}
             </button>
           }
 
-          @if (clockState()?.activePeriodType) {
-            @if (clockState()?.isPaused) {
-              <button mat-stroked-button (click)="resume()">
-                <mat-icon>play_arrow</mat-icon>
-                Reanudar
-              </button>
+          @if (period) {
+            @if (paused) {
+              <button class="clock-btn clock-btn-neutral" (click)="resume()">Reanudar</button>
             } @else {
-              <button mat-stroked-button (click)="pause()">
-                <mat-icon>pause</mat-icon>
-                Pausar
-              </button>
+              <button class="clock-btn clock-btn-neutral" (click)="pause()">Pausar</button>
             }
-            <button mat-stroked-button (click)="endPeriod()">
-              <mat-icon>stop</mat-icon>
-              Terminar {{ periodLabels[clockState()!.activePeriodType!] }}
-            </button>
+            <button class="clock-btn clock-btn-neutral" (click)="endPeriod()">Terminar {{ periodLabels[period] }}</button>
           }
 
-          <button mat-stroked-button color="warn" (click)="finishMatch()">
-            <mat-icon>sports_score</mat-icon>
-            Finalizar partido
-          </button>
+          <button class="clock-btn clock-btn-red" (click)="finishMatch()">Finalizar partido</button>
         </div>
-      </mat-card-content>
-    </mat-card>
+      }
+    </div>
 
-    <div class="roster-columns">
-      <mat-card appearance="outlined" class="roster-card">
-        <mat-card-header>
-          <mat-card-title>En el campo ({{ onPitch().length }})</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
+    @if (canManage()) {
+      <!-- mobile: tabbed on-pitch/bench roster -->
+      <div class="roster-tabs mobile-only">
+        <button class="roster-tab" [class.roster-tab-active]="activeRosterTab() === 'pitch'" (click)="setRosterTab('pitch')">
+          En campo · {{ onPitch().length }}
+        </button>
+        <button class="roster-tab" [class.roster-tab-active]="activeRosterTab() === 'bench'" (click)="setRosterTab('bench')">
+          Banquillo · {{ bench().length }}
+        </button>
+      </div>
+
+      <div class="mobile-only">
+        @if (activeRosterTab() === 'pitch') {
+          @if (onPitch().length === 0) {
+            <p class="empty-state">Nadie en el campo todavía.</p>
+          }
+          <div class="on-pitch-cards">
+            @for (row of onPitch(); track row.playerId) {
+              <div class="on-pitch-card">
+                <button class="on-pitch-main" [class.selectable]="selectedIncomingId()" (click)="substituteWith(row.playerId)">
+                  <span class="jersey-badge">{{ row.jerseyNumber ?? '–' }}</span>
+                  <span class="on-pitch-name">{{ row.name }}</span>
+                  <span class="on-pitch-time">
+                    <span class="pulse-dot" [class.pulse-dot-paused]="paused"></span>
+                    {{ row.playedDisplay }}
+                  </span>
+                  @if (selectedIncomingId()) {
+                    <app-icon name="swap" [size]="14" [strokeWidth]="2" />
+                  }
+                </button>
+                <div class="stat-actions">
+                  <button
+                    type="button"
+                    class="stat-btn stat-btn-goal"
+                    [class.stat-btn-active]="row.stats.goals > 0"
+                    (click)="incrementStat($event, row, 'goals')"
+                    aria-label="Añadir gol"
+                  >
+                    <app-icon name="ball" [size]="14" [strokeWidth]="2" />
+                    @if (row.stats.goals) {
+                      {{ row.stats.goals }}
+                    }
+                  </button>
+                  <button
+                    type="button"
+                    class="stat-btn stat-btn-assist"
+                    [class.stat-btn-active]="row.stats.assists > 0"
+                    (click)="incrementStat($event, row, 'assists')"
+                    aria-label="Añadir asistencia"
+                  >
+                    <app-icon name="assist" [size]="14" [strokeWidth]="2" />
+                    @if (row.stats.assists) {
+                      {{ row.stats.assists }}
+                    }
+                  </button>
+                  <button
+                    type="button"
+                    class="stat-btn"
+                    (click)="incrementStat($event, row, 'yellowCards')"
+                    aria-label="Añadir tarjeta amarilla"
+                  >
+                    <svg width="10" height="13" viewBox="0 0 16 20" class="event-card-icon event-card-yellow"><rect width="16" height="20" rx="2.5" /></svg>
+                    @if (row.stats.yellowCards) {
+                      {{ row.stats.yellowCards }}
+                    }
+                  </button>
+                  <button
+                    type="button"
+                    class="stat-btn"
+                    (click)="incrementStat($event, row, 'redCards')"
+                    aria-label="Añadir tarjeta roja"
+                  >
+                    <svg width="10" height="13" viewBox="0 0 16 20" class="event-card-icon event-card-red"><rect width="16" height="20" rx="2.5" /></svg>
+                    @if (row.stats.redCards) {
+                      {{ row.stats.redCards }}
+                    }
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          @if (bench().length === 0) {
+            <p class="empty-state">No hay suplentes convocados.</p>
+          }
+          <div class="bench-cards">
+            @for (row of bench(); track row.playerId) {
+              <button
+                class="bench-row"
+                [class.selected]="selectedIncomingId() === row.playerId"
+                [disabled]="row.isRedCarded"
+                [attr.aria-label]="row.isRedCarded ? row.name + ' (expulsado)' : row.name"
+                (click)="selectIncoming(row.playerId)"
+              >
+                <span class="jersey-badge">{{ row.jerseyNumber ?? '–' }}</span>
+                <span class="on-pitch-name">{{ row.name }}</span>
+                <span class="player-time">{{ row.playedDisplay }}</span>
+                @if (row.isRedCarded) {
+                  <svg width="10" height="13" viewBox="0 0 16 20" class="event-card-icon event-card-red"><rect width="16" height="20" rx="2.5" /></svg>
+                } @else if (selectedIncomingId() === row.playerId) {
+                  <app-icon name="check" [size]="16" [strokeWidth]="2" />
+                }
+              </button>
+            }
+          </div>
+          @if (selectedIncomingId()) {
+            <p class="hint">Ahora toca al jugador del campo que sale.</p>
+          }
+        }
+      </div>
+
+      <!-- tablet: on-pitch/bench side by side -->
+      <div class="roster-columns desktop-only">
+        <div class="roster-card">
+          <div class="roster-card-title">En el campo ({{ onPitch().length }})</div>
           @if (onPitch().length === 0) {
             <p class="empty-state">Nadie en el campo todavía.</p>
           }
           @for (row of onPitch(); track row.playerId) {
-            <div class="player-row on-pitch-row" [class.selectable]="selectedIncomingId()">
-              <button class="player-row-main" (click)="substituteWith(row.playerId)">
+            <div class="roster-row-desktop">
+              <button class="roster-row-main" [class.selectable]="selectedIncomingId()" (click)="substituteWith(row.playerId)">
                 <span>{{ row.name }}</span>
-                <span class="player-time">{{ row.playedDisplay }}</span>
                 @if (selectedIncomingId()) {
-                  <mat-icon>swap_horiz</mat-icon>
+                  <app-icon name="swap" [size]="14" [strokeWidth]="2" />
                 }
               </button>
+              <span class="player-time">{{ row.playedDisplay }}</span>
               <div class="stat-actions">
                 <button
                   type="button"
-                  class="stat-btn stat-btn-goal"
+                  class="stat-btn-sm stat-btn-goal"
+                  [class.stat-btn-active]="row.stats.goals > 0"
                   (click)="incrementStat($event, row, 'goals')"
                   aria-label="Añadir gol"
                 >
-                  <mat-icon>sports_soccer</mat-icon>
+                  <app-icon name="ball" [size]="13" [strokeWidth]="2" />
                   @if (row.stats.goals) {
-                    <span class="stat-count">{{ row.stats.goals }}</span>
+                    {{ row.stats.goals }}
                   }
                 </button>
                 <button
                   type="button"
-                  class="stat-btn stat-btn-assist"
+                  class="stat-btn-sm stat-btn-assist"
+                  [class.stat-btn-active]="row.stats.assists > 0"
                   (click)="incrementStat($event, row, 'assists')"
                   aria-label="Añadir asistencia"
                 >
-                  <mat-icon>handshake</mat-icon>
+                  <app-icon name="assist" [size]="13" [strokeWidth]="2" />
                   @if (row.stats.assists) {
-                    <span class="stat-count">{{ row.stats.assists }}</span>
+                    {{ row.stats.assists }}
                   }
                 </button>
-                <button
-                  type="button"
-                  class="stat-btn stat-btn-yellow"
-                  (click)="incrementStat($event, row, 'yellowCards')"
-                  aria-label="Añadir tarjeta amarilla"
-                >
-                  <mat-icon>crop_portrait</mat-icon>
-                  @if (row.stats.yellowCards) {
-                    <span class="stat-count">{{ row.stats.yellowCards }}</span>
-                  }
+                <button type="button" class="stat-btn-sm" (click)="incrementStat($event, row, 'yellowCards')" aria-label="Añadir tarjeta amarilla">
+                  <svg width="9" height="12" viewBox="0 0 16 20" class="event-card-icon event-card-yellow"><rect width="16" height="20" rx="2.5" /></svg>
                 </button>
-                <button
-                  type="button"
-                  class="stat-btn stat-btn-red"
-                  (click)="incrementStat($event, row, 'redCards')"
-                  aria-label="Añadir tarjeta roja"
-                >
-                  <mat-icon>crop_portrait</mat-icon>
-                  @if (row.stats.redCards) {
-                    <span class="stat-count">{{ row.stats.redCards }}</span>
-                  }
+                <button type="button" class="stat-btn-sm" (click)="incrementStat($event, row, 'redCards')" aria-label="Añadir tarjeta roja">
+                  <svg width="9" height="12" viewBox="0 0 16 20" class="event-card-icon event-card-red"><rect width="16" height="20" rx="2.5" /></svg>
                 </button>
               </div>
             </div>
           }
-        </mat-card-content>
-      </mat-card>
+        </div>
 
-      <mat-card appearance="outlined" class="roster-card">
-        <mat-card-header>
-          <mat-card-title>Banquillo ({{ bench().length }})</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
+        <div class="roster-card">
+          <div class="roster-card-title">Banquillo ({{ bench().length }})</div>
           @if (bench().length === 0) {
             <p class="empty-state">No hay suplentes convocados.</p>
           }
           @for (row of bench(); track row.playerId) {
             <button
-              class="player-row"
+              class="bench-row-desktop"
               [class.selected]="selectedIncomingId() === row.playerId"
               [disabled]="row.isRedCarded"
               [attr.aria-label]="row.isRedCarded ? row.name + ' (expulsado)' : row.name"
@@ -186,40 +278,72 @@
             >
               <span>{{ row.name }}</span>
               <span class="player-time">{{ row.playedDisplay }}</span>
-              @if (row.isRedCarded) {
-                <span aria-hidden="true">🟥</span>
-              } @else if (selectedIncomingId() === row.playerId) {
-                <mat-icon>check_circle</mat-icon>
-              }
             </button>
           }
           @if (selectedIncomingId()) {
-            <p class="hint">Ahora toca al jugador del campo que sale.</p>
+            <p class="hint">Toca un suplente y luego al jugador del campo que sale.</p>
           }
-        </mat-card-content>
-      </mat-card>
-    </div>
+        </div>
+      </div>
 
-    @if (events().length > 0) {
-      <mat-card appearance="outlined" class="events-card">
-        <mat-card-header>
-          <mat-card-title>Historial del partido</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
+      @if (events().length > 0) {
+        <!-- mobile: compact last-event teaser, links to the full history on Match Detail -->
+        @let lastEvent = recentEvents()[0];
+        <a [routerLink]="['/matches', matchId]" class="event-teaser mobile-only">
+          <app-icon [name]="eventIconName(lastEvent.type)" [size]="15" [strokeWidth]="2" [class]="'event-icon event-icon-' + lastEvent.type" />
+          <span class="event-teaser-desc">{{ formatEventTime(lastEvent) }}' {{ eventDescription(lastEvent) }}</span>
+          <app-icon name="chevron-left" [size]="14" [strokeWidth]="2" class="event-teaser-chevron" />
+        </a>
+
+        <!-- tablet: full history card -->
+        <div class="events-card desktop-only">
+          <div class="roster-card-title">Historial del partido</div>
           @for (event of recentEvents(); track event.id) {
             <div class="event-row">
               <span class="event-minute">{{ formatEventTime(event) }}'</span>
-              <mat-icon [class]="'event-icon event-icon-' + event.type">{{ eventIcons[event.type] }}</mat-icon>
+              <app-icon [name]="eventIconName(event.type)" [size]="15" [strokeWidth]="2" [class]="'event-icon event-icon-' + event.type" />
               <span class="event-desc">{{ eventDescription(event) }}</span>
             </div>
           }
-        </mat-card-content>
-      </mat-card>
+        </div>
+      }
+    } @else {
+      <!-- member: read-only lineup, on-pitch first, no tabs, no stat buttons -->
+      <div class="member-lineup-header">
+        <span class="member-lineup-label">Alineación</span>
+        <span class="member-lineup-sub">{{ onPitch().length }} en campo · {{ bench().length }} banquillo</span>
+      </div>
+
+      <div class="member-lineup">
+        @for (row of memberRoster(); track row.playerId) {
+          <div class="member-row" [class.member-row-bench]="!row.onPitch">
+            <span class="jersey-badge" [class.jersey-badge-bench]="!row.onPitch">{{ row.jerseyNumber ?? '–' }}</span>
+            <div class="member-row-info">
+              <div class="on-pitch-name">{{ row.name }}</div>
+              <div class="member-row-position">{{ row.onPitch ? row.position : 'Banquillo' }}</div>
+            </div>
+            <span class="member-row-time" [class.member-row-time-live]="row.onPitch">{{ row.playedDisplay }}</span>
+          </div>
+        }
+      </div>
+
+      @if (events().length > 0) {
+        <div class="member-events">
+          <div class="member-lineup-label">Últimos eventos</div>
+          @for (event of recentEvents(); track event.id) {
+            <div class="event-row">
+              <span class="event-minute">{{ formatEventTime(event) }}'</span>
+              <app-icon [name]="eventIconName(event.type)" [size]="15" [strokeWidth]="2" [class]="'event-icon event-icon-' + event.type" />
+              <span class="event-desc">{{ eventDescription(event) }}</span>
+            </div>
+          }
+        </div>
+      }
     }
   } @else {
     <div class="empty-state">
       <p>No se pudo cargar el partido. Comprueba tu conexión.</p>
-      <button mat-stroked-button (click)="loadAll()">Reintentar</button>
+      <button class="retry-btn" (click)="loadAll()">Reintentar</button>
     </div>
   }
 </div>

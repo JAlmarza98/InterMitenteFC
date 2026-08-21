@@ -1,19 +1,17 @@
 import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AuthService } from '../../core/services/auth.service';
 import { MatchesService, MatchWithSquad } from '../../core/services/matches.service';
 import { StatsService } from '../../core/services/stats.service';
+import { IconComponent, IconName } from '../../shared/icon/icon.component';
 import {
-  MATCH_EVENT_ICONS,
   MATCH_EVENT_LABELS,
   LoggableEventType,
   MatchEvent,
   MatchEventsService,
+  MatchEventType,
 } from '../../core/services/match-events.service';
 import {
   ClockState,
@@ -46,6 +44,8 @@ interface LiveStatCounts {
 interface RosterRow {
   playerId: string;
   name: string;
+  jerseyNumber: number | null;
+  position: string | null;
   isStarter: boolean;
   onPitch: boolean;
   isRedCarded: boolean;
@@ -55,18 +55,22 @@ interface RosterRow {
 
 const EMPTY_STATS: LiveStatCounts = { goals: 0, assists: 0, yellowCards: 0, redCards: 0 };
 
+// Same mapping/reasoning as match-detail's EVENT_ICON_NAMES — a stroked
+// ball for goals, a stroked swap arrow for substitutions. Cards render as
+// a small filled rect directly in the template (see .event-card-icon)
+// since they're a solid shape, not a stroke glyph like the rest of the set.
+const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
+  goal: 'ball',
+  opponent_goal: 'ball',
+  own_goal: 'ball',
+  assist: 'assist',
+  substitution: 'swap',
+};
+
 @Component({
   selector: 'app-live-match',
   standalone: true,
-  imports: [
-    RouterLink,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatChipsModule,
-    MatSnackBarModule,
-    MatProgressSpinnerModule,
-  ],
+  imports: [RouterLink, MatSnackBarModule, MatProgressSpinnerModule, IconComponent],
   templateUrl: './live-match.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './live-match.component.scss',
@@ -80,11 +84,27 @@ export class LiveMatchComponent {
   private readonly matchEventsService = inject(MatchEventsService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly auth = inject(AuthService);
 
   readonly matchId = this.route.snapshot.paramMap.get('id')!;
   readonly periodLabels = PERIOD_LABELS;
-  readonly eventIcons = MATCH_EVENT_ICONS;
   readonly eventLabels = MATCH_EVENT_LABELS;
+
+  // Coach/admin get the full editable tracker (clock controls, stat
+  // buttons, substitutions); a plain member gets a read-only view of the
+  // same live data (score, clock, who's on the pitch and for how long) —
+  // see AuthService.canManage.
+  readonly canManage = this.auth.canManage;
+
+  eventIconName(type: MatchEventType): IconName {
+    return EVENT_ICON_NAMES[type] ?? 'ball';
+  }
+
+  readonly activeRosterTab = signal<'pitch' | 'bench'>('pitch');
+
+  setRosterTab(tab: 'pitch' | 'bench') {
+    this.activeRosterTab.set(tab);
+  }
 
   readonly loading = signal(true);
   readonly actionLoading = signal(false);
@@ -213,6 +233,8 @@ export class LiveMatchComponent {
     return match.squad.map((entry) => ({
       playerId: entry.playerId,
       name: `${entry.player.firstName} ${entry.player.lastName}`,
+      jerseyNumber: entry.player.jerseyNumber,
+      position: entry.player.position,
       isStarter: entry.isStarter,
       onPitch: onPitchIds.has(entry.playerId),
       isRedCarded: redCarded.has(entry.playerId),
@@ -220,6 +242,11 @@ export class LiveMatchComponent {
       playedDisplay: formatMinuteSeconds(playedSeconds.get(entry.playerId) ?? 0),
     }));
   });
+
+  // The member read-only view has no on-pitch/bench tabs — one list,
+  // on-pitch players first (still playing, so still the most relevant),
+  // matching the approved mockup.
+  readonly memberRoster = computed<RosterRow[]>(() => [...this.onPitch(), ...this.bench()]);
 
   constructor() {
     this.loadAll();

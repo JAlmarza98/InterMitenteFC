@@ -1,10 +1,18 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet, NavigationEnd } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map } from 'rxjs/operators';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { AuthService } from './core/services/auth.service';
+import { IconComponent } from './shared/icon/icon.component';
+
+// The auth screens (login/register/pending-approval) are full-screen,
+// self-contained mockups with no nav of their own — the app shell's
+// toolbar above them doesn't match the design and eats into the vertical
+// space they need to fit without scrolling on mobile.
+const AUTH_ROUTES = new Set(['/login', '/register', '/pending-approval']);
 
 @Component({
   selector: 'app-root',
@@ -15,8 +23,8 @@ import { AuthService } from './core/services/auth.service';
     RouterLinkActive,
     MatToolbarModule,
     MatButtonModule,
-    MatIconModule,
     MatMenuModule,
+    IconComponent,
   ],
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -25,6 +33,16 @@ import { AuthService } from './core/services/auth.service';
 export class AppComponent {
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects)
+    ),
+    { initialValue: this.router.url }
+  );
+
+  readonly isAuthRoute = computed(() => AUTH_ROUTES.has(this.currentUrl().split('?')[0].split('#')[0]));
 
   constructor() {
     this.auth.fetchMe().subscribe();

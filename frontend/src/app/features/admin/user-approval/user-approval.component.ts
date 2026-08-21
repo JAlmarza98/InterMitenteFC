@@ -1,28 +1,16 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { MatTableModule } from '@angular/material/table';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatChipsModule } from '@angular/material/chips';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AdminUsersService } from '../../../core/services/admin-users.service';
 import { CurrentUser, UserRole, UserStatus } from '../../../core/services/auth.service';
+import { IconComponent } from '../../../shared/icon/icon.component';
 
 @Component({
   selector: 'app-user-approval',
   standalone: true,
-  imports: [
-    MatTableModule,
-    MatTabsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatSelectModule,
-    MatChipsModule,
-    MatSnackBarModule,
-    MatProgressSpinnerModule,
-  ],
+  imports: [MatButtonModule, MatMenuModule, MatSnackBarModule, MatProgressSpinnerModule, IconComponent],
   templateUrl: './user-approval.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './user-approval.component.scss',
@@ -32,19 +20,29 @@ export class UserApprovalComponent {
   private readonly snackBar = inject(MatSnackBar);
 
   readonly statuses: UserStatus[] = ['pending', 'approved', 'rejected'];
+  readonly statusLabels: Record<UserStatus, string> = {
+    pending: 'Pendientes',
+    approved: 'Aprobados',
+    rejected: 'Rechazados',
+  };
   readonly roles: UserRole[] = ['admin', 'coach', 'member'];
-  readonly displayedColumns = ['name', 'email', 'role', 'actions'];
 
   readonly selectedStatus = signal<UserStatus>('pending');
   readonly users = signal<CurrentUser[]>([]);
   readonly loading = signal(false);
 
+  // Shown as a badge on the "Pendientes" tab regardless of which tab is
+  // currently selected — fetched independently of the tab's own list so it
+  // doesn't go stale while looking at Aprobados/Rechazados.
+  readonly pendingCount = signal(0);
+
   constructor() {
     this.load();
+    this.refreshPendingCount();
   }
 
-  onTabChange(index: number) {
-    this.selectedStatus.set(this.statuses[index]);
+  selectStatus(status: UserStatus) {
+    this.selectedStatus.set(status);
     this.load();
   }
 
@@ -59,6 +57,10 @@ export class UserApprovalComponent {
     });
   }
 
+  private refreshPendingCount() {
+    this.adminUsers.list('pending').subscribe((res) => this.pendingCount.set(res.users.length));
+  }
+
   private showError(err: unknown, fallback: string) {
     const message = (err as { error?: { error?: string } })?.error?.error ?? fallback;
     this.snackBar.open(message, 'Cerrar', { duration: 3000 });
@@ -69,6 +71,7 @@ export class UserApprovalComponent {
       next: () => {
         this.snackBar.open(`${user.name} aprobado`, 'Cerrar', { duration: 3000 });
         this.load();
+        this.refreshPendingCount();
       },
       error: (err) => this.showError(err, `No se pudo aprobar a ${user.name}`),
     });
@@ -79,21 +82,20 @@ export class UserApprovalComponent {
       next: () => {
         this.snackBar.open(`${user.name} rechazado`, 'Cerrar', { duration: 3000 });
         this.load();
+        this.refreshPendingCount();
       },
       error: (err) => this.showError(err, `No se pudo rechazar a ${user.name}`),
     });
   }
 
   changeRole(user: CurrentUser, role: UserRole) {
+    if (role === user.role) return;
     this.adminUsers.updateRole(user.id, role).subscribe({
       next: () => {
         this.snackBar.open(`Rol de ${user.name} actualizado a ${role}`, 'Cerrar', { duration: 3000 });
         this.load();
       },
-      error: (err) => {
-        this.showError(err, `No se pudo actualizar el rol de ${user.name}`);
-        this.load(); // revert the select back to the actual stored role
-      },
+      error: (err) => this.showError(err, `No se pudo actualizar el rol de ${user.name}`),
     });
   }
 }

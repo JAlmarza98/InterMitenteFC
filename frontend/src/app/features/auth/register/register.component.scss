@@ -1,0 +1,103 @@
+// Register's mockup is a visibly more compact variant of the shared
+// auth shell (styles.scss) — smaller badge, tighter card padding/fields —
+// presumably to fit its extra "Nombre" field without growing the card.
+// View encapsulation scopes these selectors to this component alone, so
+// they override the shared defaults without touching Login/Pending.
+.auth-page {
+  padding: 28px;
+}
+
+.auth-brand {
+  gap: 8px;
+  margin-bottom: 20px;
+
+  .auth-brand-badge {
+    width: 60px;
+  }
+
+  h1 {
+    font-size: 1.15rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .auth-brand {
+    margin-bottom: 24px;
+
+    .auth-brand-badge {
+      width: 72px;
+    }
+
+    h1 {
+      font-size: 1.3rem;
+    }
+  }
+}
+
+.auth-card {
+  max-width: 440px;
+  padding: 24px;
+
+  h2 {
+    margin-bottom: 0;
+    font-size: 1.2rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .auth-card {
+    padding: 32px;
+
+    h2 {
+      font-size: 1.3rem;
+    }
+  }
+}
+
+.auth-card-subtitle {
+  margin: 4px 0 18px;
+  font-size: 0.8rem;
+  color: oklch(65% 0.02 262);
+}
+
+@media (min-width: 768px) {
+  .auth-card-subtitle {
+    margin-bottom: 20px;
+    font-size: 0.82rem;
+  }
+}
+
+.auth-field {
+  margin-bottom: 12px;
+}
+
+@media (min-width: 768px) {
+  .auth-field {
+    margin-bottom: 14px;
+  }
+}
+
+.auth-input-box {
+  height: 46px;
+}
+
+.auth-form button[type='submit'] {
+  margin-top: 16px;
+}
+
+@media (min-width: 768px) {
+  .auth-form button[type='submit'] {
+    margin-top: 18px;
+  }
+}
+
+.auth-switch {
+  margin-top: 16px;
+  font-size: 0.82rem;
+}
+
+@media (min-width: 768px) {
+  .auth-switch {
+    font-size: 0.84rem;
+  }
+}

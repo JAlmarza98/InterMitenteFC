@@ -1,25 +1,64 @@
-.page {
+// Literal port of A-Live.dc.html (mobile coach/admin), A-Live-Member.dc.html
+// (mobile read-only member) and A-Live-Tablet.dc.html (tablet coach/admin).
+// No dedicated tablet mockup exists for the member role — its read-only
+// lineup list is reused as-is at that width too.
+.live-match-page {
   --page-max-width: 800px;
 }
 
+// A bare tag selector, not `.live-match-page button` — Angular's emulated
+// view encapsulation scopes this to the component either way (it appends
+// `[_ngcontent-x]` to every compiled selector), and nesting under
+// `.live-match-page` duplicates that attribute across two compound parts
+// (one per side of the descendant combinator), which quietly out-specifies
+// any plain two-class override below (e.g. `.bench-row-desktop.selected`)
+// even though two classes reads like it should win.
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: transparent;
+  color: inherit;
+}
+
 .back-link {
+  margin-top: 22px;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-xs);
-  color: var(--mat-sys-primary);
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: oklch(85% 0.01 90);
   text-decoration: none;
   width: fit-content;
 }
 
-// Persistent, not a snackbar that disappears — a stale live clock/roster
-// during an actual match needs to stay visible until the coach notices it
-// or the next successful resync clears it.
+.back-link-desktop {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .back-link {
+    margin-top: 0;
+    font-weight: 400;
+    color: oklch(80% 0.02 262);
+  }
+
+  .back-link-mobile {
+    display: none;
+  }
+
+  .back-link-desktop {
+    display: inline;
+  }
+}
+
 .sync-error-banner {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--mat-sys-error-container);
   color: var(--mat-sys-on-error-container);
 
@@ -28,365 +67,634 @@
   }
 }
 
-// The clock card is the one screen where the club's "live" language
-// (see the pulsing status chip in styles.scss) belongs on the container
-// itself, not just a chip inside it — the whole scoreboard is the live
-// thing. Border glow only, so it stays legible from a few steps away on
-// the sideline; disabled for reduced-motion the same as the chip.
+.retry-btn {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.spinner-row {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-lg) 0;
+}
+
+.empty-state {
+  color: oklch(70% 0.02 262);
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 oklch(78% 0.19 70 / 55%);
+  }
+  50% {
+    box-shadow: 0 0 0 6px oklch(78% 0.19 70 / 0%);
+  }
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-amber);
+  animation: live-pulse 1.8s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.pulse-dot-paused {
+  background: oklch(60% 0.02 262);
+  animation: none;
+}
+
 .clock-card {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: oklch(22% 0.04 262 / 80%);
+  border: 1px solid oklch(45% 0.03 262 / 30%);
   transition: box-shadow 0.3s ease;
 }
 
 .clock-card-live {
-  border-color: color-mix(in srgb, var(--mat-sys-tertiary) 55%, transparent);
   animation: clock-card-live-pulse 2.4s ease-in-out infinite;
-
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-  }
 }
 
 @keyframes clock-card-live-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--mat-sys-tertiary) 25%, transparent);
+    box-shadow: 0 0 0 0 oklch(78% 0.19 70 / 20%);
   }
   50% {
-    box-shadow: 0 0 22px 2px color-mix(in srgb, var(--mat-sys-tertiary) 3%, transparent);
+    box-shadow: 0 0 22px 2px oklch(78% 0.19 70 / 3%);
   }
 }
 
-.clock-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--space-md);
-}
-
-.scoreboard-block {
-  min-width: 0;
-}
-
-// A real scoreboard reads "who" before "how many": each side gets its
-// own stacked team label so the numbers alone never have to carry that.
-.scoreboard {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  margin-bottom: var(--space-sm);
-}
-
-.scoreboard-side {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 0;
-}
-
-.team-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--mat-sys-on-surface-variant);
-  max-width: 12ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.team-label-us {
-  color: var(--mat-sys-primary);
-  max-width: none;
-}
-
-.scoreboard-value {
-  font-size: 2.75rem;
-  font-weight: 800;
-  font-family: 'Bricolage Grotesque', Roboto, sans-serif;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.scoreboard-us {
-  color: var(--mat-sys-primary);
-}
-
-.scoreboard-them {
-  color: var(--mat-sys-on-surface-variant);
-  font-weight: 700;
-}
-
-.scoreboard-sep {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 1.5rem;
-  align-self: flex-end;
-  padding-bottom: 0.5rem;
-}
-
-.status-row-live {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-// The active period chip breathes the same gold pulse as the club's
-// live-status chip elsewhere (see .status-chip.status-live in
-// styles.scss) — same signal, same visual word, on the screen where it
-// matters most.
-.live-chip {
-  animation: indicator-blink 1.6s ease-in-out infinite;
-
-  @media (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot,
+  .clock-card-live {
     animation: none;
   }
 }
 
-.paused-chip {
-  margin-left: var(--space-sm);
+@media (min-width: 768px) {
+  .clock-card {
+    padding: 20px 26px;
+    border-radius: 20px;
+  }
+}
+
+.desktop-only {
+  display: none;
+}
+
+.mobile-only {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .desktop-only {
+    display: block;
+  }
+
+  .mobile-only {
+    display: none;
+  }
+}
+
+.clock-top-row {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.clock-top-row.mobile-only,
+.clock-score-row.mobile-only,
+.roster-tabs.mobile-only,
+.event-teaser.mobile-only {
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .clock-top-row.mobile-only,
+  .clock-score-row.mobile-only,
+  .roster-tabs.mobile-only,
+  .event-teaser.mobile-only {
+    display: none;
+  }
+
+  .clock-top-row.desktop-only {
+    display: flex;
+  }
+
+  .roster-columns.desktop-only {
+    display: grid;
+  }
+}
+
+.period-badge-slot,
+.clock-score-group {
+  display: flex;
+  align-items: center;
+}
+
+.period-badge-slot {
+  gap: 8px;
+}
+
+.period-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: oklch(78% 0.19 70 / 14%);
+  border: 1px solid oklch(78% 0.19 70 / 40%);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--accent-amber);
+  text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+  .period-badge {
+    font-size: 0.68rem;
+    padding: 5px 12px;
+  }
+}
+
+.paused-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
   background: var(--mat-sys-error-container);
   color: var(--mat-sys-on-error-container);
+  font-size: 0.62rem;
+  font-weight: 700;
 }
 
-.time-display {
-  font-size: 3rem;
-  font-weight: 600;
+.clock-time,
+.clock-team-score {
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+}
+
+.clock-time {
+  font-size: 1.7rem;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
-  font-feature-settings: 'tnum';
-  text-shadow: 0 0 24px color-mix(in srgb, var(--mat-sys-tertiary) 30%, transparent);
+  letter-spacing: -0.01em;
+  text-shadow: 0 0 24px oklch(78% 0.19 70 / 25%);
 }
 
-.score-row {
-  display: flex;
+@media (min-width: 768px) {
+  .clock-time {
+    font-size: 2.4rem;
+  }
+}
+
+.clock-score-row {
   align-items: center;
-  gap: var(--space-sm);
-  margin-top: var(--space-sm);
+  justify-content: center;
+  gap: 18px;
+  margin-top: 10px;
 }
 
-.controls-row {
+.clock-score-group {
+  gap: 24px;
+}
+
+.clock-team {
+  text-align: center;
+}
+
+.clock-team-label {
+  font-size: 0.66rem;
+  color: oklch(75% 0.02 262);
+}
+
+@media (min-width: 768px) {
+  .clock-team-label {
+    font-size: 0.72rem;
+  }
+}
+
+.clock-team-score {
+  font-size: 1.4rem;
+}
+
+@media (min-width: 768px) {
+  .clock-team-score {
+    font-size: 1.7rem;
+  }
+}
+
+.clock-score-them {
+  color: oklch(75% 0.02 262);
+}
+
+.clock-sep {
+  color: oklch(50% 0.02 262);
+}
+
+.clock-actions {
   display: flex;
-  gap: var(--space-sm);
   flex-wrap: wrap;
-  margin-top: var(--space-md);
+  gap: 8px;
+  margin-top: 14px;
+}
 
-  button {
-    min-height: 44px;
+@media (min-width: 768px) {
+  .clock-actions {
+    gap: 10px;
+    margin-top: 18px;
   }
 }
 
-.roster-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-md);
-}
-
-@media (max-width: 767px) {
-  .scoreboard-block{
-    width: 100%;
-  }
-
-  .clock-header {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .scoreboard {
-    justify-content: center;
-  }
-
-  .scoreboard-value {
-    font-size: 3.4rem;
-  }
-
-  .team-label {
-    font-size: 0.8rem;
-  }
-
-  .scoreboard-sep {
-    font-size: 1.75rem;
-  }
-
-  .time-display {
-    font-size: 3.5rem;
-  }
-
-  .controls-row button {
-    flex: 1 1 calc(50% - var(--space-sm));
-  }
-
-  .roster-columns {
-    grid-template-columns: 1fr;
-  }
-}
-
-.player-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-height: 48px;
-  padding: var(--space-sm) var(--space-md);
-  border: none;
+.clock-btn {
+  height: 44px;
+  padding: 0 14px;
   border-radius: 10px;
-  background: transparent;
-  color: var(--mat-sys-on-surface);
+  font-weight: 700;
+  font-size: 0.76rem;
+  flex: 1 1 calc(50% - 4px);
+}
+
+@media (min-width: 768px) {
+  .clock-btn {
+    flex: 0 1 auto;
+    padding: 0 18px;
+    border-radius: 11px;
+    font-size: 0.82rem;
+  }
+}
+
+.clock-btn-amber {
+  border: 1px solid oklch(78% 0.19 70 / 45%);
+  color: var(--accent-amber);
+}
+
+.clock-btn-neutral {
+  border: 1px solid oklch(45% 0.03 262 / 45%);
+  color: oklch(90% 0.01 90);
+}
+
+.clock-btn-red {
+  border: 1px solid oklch(60% 0.15 25 / 45%);
+  color: oklch(70% 0.15 25);
+}
+
+.roster-tabs {
+  gap: 6px;
+  padding: 3px;
+  border-radius: 12px;
+  background: oklch(20% 0.03 262 / 70%);
+}
+
+.roster-tab {
+  flex: 1 1 0;
+  text-align: center;
+  padding: 8px 0;
+  border-radius: 9px;
+  color: oklch(65% 0.02 262);
+  font-size: 0.76rem;
+}
+
+.roster-tab-active {
+  background: oklch(30% 0.05 262);
+  color: inherit;
+  font-weight: 700;
+}
+
+.on-pitch-cards,
+.bench-cards,
+.member-lineup,
+.member-events {
+  display: flex;
+  flex-direction: column;
+}
+
+.on-pitch-cards,
+.bench-cards,
+.member-events {
+  gap: 8px;
+}
+
+.on-pitch-card,
+.roster-card,
+.member-row {
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+}
+
+.on-pitch-card {
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.on-pitch-main,
+.roster-row-main {
   font: inherit;
   text-align: left;
-  cursor: pointer;
 }
 
-.player-row:hover {
-  background: var(--mat-sys-surface-container-highest);
-}
-
-// Gold marks "the thing you're about to act on" everywhere in the app
-// (nav, focus rings, the live chip) — the bench player awaiting a swap,
-// and the on-pitch players you can now swap them with, are that same
-// kind of state, so they reuse the same color instead of a generic blue.
-.player-row.selected {
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
-}
-
-.player-row.selectable {
-  outline: 1px dashed color-mix(in srgb, var(--mat-sys-tertiary) 55%, transparent);
-}
-
-.player-row:disabled {
-  color: var(--mat-sys-on-surface-variant);
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.player-row:disabled:hover {
-  background: transparent;
-}
-
-.on-pitch-row {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
-  cursor: default;
-  width: auto;
-}
-
-.player-row-main {
+.on-pitch-main {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   width: 100%;
-  min-height: 36px;
-  border: none;
-  background: transparent;
-  color: inherit;
+  padding: 0;
+}
+
+.on-pitch-main.selectable {
+  outline: 1px dashed color-mix(in srgb, var(--accent-amber) 55%, transparent);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.jersey-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: oklch(30% 0.05 262);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.66rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.on-pitch-name {
+  flex: 1 1 auto;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.on-pitch-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--accent-amber);
+  flex-shrink: 0;
+}
+
+.stat-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.stat-btn,
+.stat-btn-sm {
+  background: oklch(30% 0.04 262);
+  color: oklch(85% 0.01 90);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.stat-btn {
+  flex: 1 1 0;
+  min-height: 44px;
+  border-radius: 9px;
+  gap: 4px;
+  font-size: 0.68rem;
+}
+
+.stat-btn-goal.stat-btn-active,
+.stat-btn-sm.stat-btn-goal.stat-btn-active {
+  background: oklch(78% 0.19 70 / 16%);
+  color: var(--accent-amber);
+}
+
+.stat-btn-assist.stat-btn-active,
+.stat-btn-sm.stat-btn-assist.stat-btn-active {
+  background: oklch(30% 0.04 262 / 60%);
+  color: var(--accent-violet);
+}
+
+.event-card-icon {
+  flex-shrink: 0;
+}
+
+.event-card-yellow {
+  fill: oklch(80% 0.16 95);
+}
+
+.event-card-red {
+  fill: oklch(65% 0.2 25);
+}
+
+.bench-row,
+.bench-row-desktop {
+  display: flex;
+  align-items: center;
+  width: 100%;
   font: inherit;
   text-align: left;
-  cursor: pointer;
-  padding: 0;
+}
+
+.bench-row {
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+  border-radius: 14px;
+  background: oklch(22% 0.035 262 / 70%);
+}
+
+.bench-row.selected,
+.bench-row-desktop.selected {
+  background: color-mix(in srgb, var(--accent-amber) 20%, transparent);
+  color: var(--accent-amber);
+}
+
+.bench-row.selected {
+  border-color: color-mix(in srgb, var(--accent-amber) 45%, transparent);
+}
+
+.bench-row:disabled,
+.bench-row-desktop:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .player-time {
   font-variant-numeric: tabular-nums;
   font-size: 0.8rem;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.stat-actions {
-  display: flex;
-  gap: var(--space-xs);
-  flex-wrap: wrap;
-}
-
-// Sideline-sized touch targets (44px, not the 32px this used to be) —
-// these get tapped quickly, standing up, mid-match, and a mis-tap here
-// costs a real stat correction later.
-.stat-btn {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 4px 10px;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 10px;
-  background: transparent;
-  line-height: 1;
-  cursor: pointer;
-  color: var(--mat-sys-on-surface-variant);
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
-
-  mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-  }
-}
-
-.stat-btn:active {
-  background: var(--mat-sys-surface-container-highest);
-}
-
-.stat-btn-goal,
-.stat-btn-assist {
-  color: var(--mat-sys-primary);
-}
-
-.stat-btn-yellow {
-  color: var(--mat-sys-tertiary);
-}
-
-.stat-btn-red {
-  color: var(--mat-sys-error);
-}
-
-.stat-btn-yellow:active {
-  border-color: var(--mat-sys-tertiary);
-  background: color-mix(in srgb, var(--mat-sys-tertiary) 18%, transparent);
-}
-
-.stat-btn-red:active {
-  border-color: var(--mat-sys-error);
-  background: var(--mat-sys-error-container);
-}
-
-.stat-count {
-  font-size: 0.7rem;
-  font-weight: 700;
-  margin-left: 3px;
-  font-variant-numeric: tabular-nums;
+  color: oklch(65% 0.02 262);
 }
 
 .hint {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.875rem;
-  margin-top: var(--space-sm);
+  color: oklch(65% 0.02 262);
+  font-size: 0.82rem;
+  margin-top: 4px;
 }
 
-.events-card {
-  max-height: 320px;
-  overflow-y: auto;
+.roster-columns {
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
+.roster-card {
+  padding: 18px 20px;
+  border-radius: 18px;
+}
+
+.roster-card-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.roster-row-desktop,
 .event-row {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: 6px 0;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
-  font-size: 0.9rem;
+  gap: 10px;
 }
 
-.event-row:last-child {
-  border-bottom: none;
+.roster-row-desktop {
+  padding: 9px 4px;
+}
+
+.roster-row-main {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  padding: 0;
+}
+
+.roster-row-main.selectable {
+  outline: 1px dashed color-mix(in srgb, var(--accent-amber) 55%, transparent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.stat-btn-sm {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  gap: 2px;
+  font-size: 0.6rem;
+}
+
+.bench-row-desktop {
+  justify-content: space-between;
+  padding: 11px 10px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+}
+
+.event-teaser {
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: oklch(20% 0.03 262 / 80%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+  text-decoration: none;
+  color: inherit;
+}
+
+.event-teaser-desc {
+  flex: 1 1 auto;
+  font-size: 0.74rem;
+  color: oklch(85% 0.01 90);
+}
+
+.event-teaser-chevron {
+  color: oklch(60% 0.02 262);
+  transform: rotate(180deg);
+}
+
+.events-card {
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: oklch(20% 0.03 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+}
+
+.event-row {
+  padding: 6px 0;
 }
 
 .event-minute {
   min-width: 2.5em;
   font-variant-numeric: tabular-nums;
-  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.76rem;
+  color: oklch(65% 0.02 262);
 }
+
+.event-desc {
+  font-size: 0.8rem;
+  color: oklch(88% 0.01 90);
+}
+
+.member-lineup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.member-lineup-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: oklch(70% 0.02 262);
+}
+
+.member-lineup-sub {
+  font-size: 0.72rem;
+  color: oklch(60% 0.02 262);
+}
+
+.member-lineup {
+  gap: 7px;
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 14px;
+}
+
+.member-row-bench {
+  background: oklch(19% 0.03 262 / 55%);
+  border-color: oklch(45% 0.03 262 / 15%);
+  opacity: 0.65;
+}
+
+.jersey-badge-bench {
+  background: oklch(26% 0.03 262);
+}
+
+.member-row-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.member-row-position {
+  font-size: 0.68rem;
+  color: oklch(65% 0.02 262);
+  margin-top: 1px;
+}
+
+.member-row-time {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  color: oklch(60% 0.02 262);
+  flex-shrink: 0;
+}
+
+.member-row-time-live {
+  font-weight: 700;
+  color: var(--accent-amber);
+}
+

@@ -52,19 +52,19 @@ describe('PlayerListComponent', () => {
     return { afterClosed: () => of(result) } as MatDialogRef<unknown>;
   }
 
-  it('loads the squad on init with includeInactive=false', () => {
+  it('loads the full squad on init (including inactive) so the header can show both counts', () => {
     setup();
-    expect(playersSpy.list).toHaveBeenCalledWith(false);
+    expect(playersSpy.list).toHaveBeenCalledWith(true);
   });
 
-  it('toggleShowInactive() flips the flag and reloads with includeInactive=true', () => {
+  it('toggleShowInactive() flips the flag by filtering client-side, without refetching', () => {
     const fixture = setup();
     const component = fixture.componentInstance;
 
     component.toggleShowInactive();
 
     expect(component.showInactive()).toBe(true);
-    expect(playersSpy.list).toHaveBeenCalledWith(true);
+    expect(playersSpy.list).toHaveBeenCalledTimes(1);
   });
 
   it('toggleActive() flips the player and reloads the list', () => {

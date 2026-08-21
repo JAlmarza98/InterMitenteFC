@@ -36,6 +36,9 @@ describe('MatchListComponent', () => {
     dialogSpy = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
     snackBarSpy = jasmine.createSpyObj<MatSnackBar>('MatSnackBar', ['open']);
     matchesSpy.list.and.returnValue(of({ matches: [MATCH] }));
+    seasonsSpy.list.and.returnValue(
+      of({ seasons: [{ id: 's1', name: '2025/2026', startDate: '2025-09-01', endDate: '2026-06-30', isActive: true }] })
+    );
 
     TestBed.configureTestingModule({
       imports: [MatchListComponent],
@@ -75,7 +78,7 @@ describe('MatchListComponent', () => {
     const fixture = setup();
     const component = fixture.componentInstance;
     expect(component.statusLabel('scheduled')).toBe('Programado');
-    expect(component.statusLabel('live')).toBe('En juego');
+    expect(component.statusLabel('live')).toBe('En vivo');
     expect(component.statusLabel('finished')).toBe('Finalizado');
   });
 
@@ -117,7 +120,10 @@ describe('MatchListComponent', () => {
 
   it('openCreate() loads seasons, then creates the match and reloads on a result', () => {
     const fixture = setup();
-    seasonsSpy.list.and.returnValue(of({ seasons: [] }));
+    // Deliberately keep setup()'s default non-empty seasons stub here (unlike
+    // the "dismissed" test below) — the reload triggered after create() calls
+    // load() again, which needs an active season to know which matches to
+    // re-fetch; an empty list would short-circuit that reload entirely.
     const input = { opponent: 'Nuevo Rival', matchDate: '2026-10-01T18:00:00.000Z', homeAway: 'away' as const };
     dialogSpy.open.and.returnValue(dialogReturning(input));
     matchesSpy.create.and.returnValue(of({ match: { ...MATCH, ...input, id: 'm2' } }));

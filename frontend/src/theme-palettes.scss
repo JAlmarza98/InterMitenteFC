@@ -1,11 +1,12 @@
 // Custom Material 3 tonal palettes for Inter Mitente, generated from the
-// club crest's colors (navy #082970, gold #efc24d) using
-// @material/material-color-utilities (the same algorithm Angular Material's
-// own $blue-palette, $orange-palette, etc. are built from), so the app's
-// theme matches the crest instead of a stock Material hue.
+// club crest's navy (#082970) and the rebrand's vivid amber accent
+// (#ffb869, see $amber-palette below) using @material/material-color-utilities
+// (the same algorithm Angular Material's own $blue-palette, $orange-palette,
+// etc. are built from), so the app's theme matches the brand instead of a
+// stock Material hue.
 //
 // Regenerate with a script calling
-// `CorePalette.of(argbFromHex('#082970'))` / `('#efc24d')` if the crest
+// `CorePalette.of(argbFromHex('#082970'))` / `('#ffb869')` if the brand
 // colors ever change.
 //
 // $navy-palette's neutral/neutral-variant tones (the surfaces the dark
@@ -119,84 +120,92 @@ $navy-palette: (
   ),
 );
 
-$gold-palette: (
+// Rebrand (2026): vivid amber replacing the original softer gold, generated
+// the same way as $navy-palette — CorePalette.of(argbFromHex('#ffb869')).
+// Seed chosen (rather than the mockups' literal oklch(78% 0.19 70) / #ff9d00)
+// because M3's dark-theme tertiary role always resolves to HCT tone 80, and
+// #ffb869's own HCT tone is already ~80 (its hue/chroma is also the most
+// saturated amber the sRGB gamut allows at tone 80) — so, as with the old
+// #efc24d gold seed, the seed IS essentially the rendered color, which keeps
+// this table self-documenting.
+$amber-palette: (
   0: #000000,
-  10: #251a00,
-  20: #3e2e00,
-  25: #4c3900,
-  30: #5a4400,
-  35: #684f00,
-  40: #775a00,
-  50: #957200,
-  60: #b38b0e,
-  70: #d1a52e,
-  80: #efc148,
-  90: #ffdf96,
-  95: #ffefd1,
-  98: #fff8f1,
+  10: #2c1700,
+  20: #492900,
+  25: #583300,
+  30: #683d00,
+  35: #784700,
+  40: #885200,
+  50: #ab6700,
+  60: #c98022,
+  70: #e99a3b,
+  80: #ffb86a,
+  90: #ffdcbc,
+  95: #ffeee0,
+  98: #fff8f4,
   99: #fffbff,
   100: #ffffff,
   secondary: (
     0: #000000,
-    10: #231a04,
-    20: #3a2f15,
-    25: #453a1f,
-    30: #51452a,
-    35: #5e5134,
-    40: #6a5d3f,
-    50: #847656,
-    60: #9f8f6e,
-    70: #baa987,
-    80: #d6c5a0,
-    90: #f3e1bb,
-    95: #ffefd1,
-    98: #fff8f1,
+    10: #281805,
+    20: #402d17,
+    25: #4c3721,
+    30: #58432c,
+    35: #654e36,
+    40: #725a41,
+    50: #8c7258,
+    60: #a78c70,
+    70: #c4a689,
+    80: #e0c1a3,
+    90: #feddbe,
+    95: #ffeee0,
+    98: #fff8f4,
     99: #fffbff,
     100: #ffffff,
   ),
   neutral: (
     0: #000000,
-    4: #100e09,
-    6: #16130e,
-    10: #1e1b16,
-    12: #221f1a,
-    17: #2d2a24,
-    20: #33302a,
-    22: #38342e,
-    24: #3c3933,
-    25: #3f3b35,
-    30: #4a4640,
-    35: #56524b,
-    40: #625e57,
-    50: #7b766f,
-    60: #959088,
-    70: #b0aaa2,
-    80: #ccc5bd,
-    87: #e0d9d0,
-    90: #e9e1d9,
-    92: #eee7de,
-    94: #f4ede4,
-    95: #f7f0e7,
-    96: #faf2e9,
-    98: #fff8f1,
+    4: #120d09,
+    6: #17130e,
+    10: #1f1b16,
+    12: #241f1a,
+    17: #2e2924,
+    20: #352f2b,
+    22: #39342f,
+    24: #3e3833,
+    25: #403a35,
+    30: #4c4640,
+    35: #58514c,
+    40: #645d57,
+    50: #7d7670,
+    60: #988f89,
+    70: #b3aaa3,
+    80: #cfc5be,
+    87: #e2d8d1,
+    90: #ebe1d9,
+    92: #f1e6df,
+    94: #f7ece4,
+    95: #faefe7,
+    96: #fdf2ea,
+    98: #fff8f4,
     99: #fffbff,
     100: #ffffff,
   ),
   neutral-variant: (
     0: #000000,
-    10: #201b10,
-    20: #363024,
-    25: #413b2e,
-    30: #4d4639,
-    35: #595244,
-    40: #655e4f,
-    50: #7e7667,
-    60: #999080,
-    70: #b4aa99,
-    80: #d0c5b4,
-    90: #ece1cf,
-    95: #fbefdd,
-    98: #fff8f1,
+    10: #231a11,
+    20: #392f24,
+    25: #44392f,
+    30: #50453a,
+    35: #5c5045,
+    40: #695c50,
+    50: #827568,
+    60: #9d8e81,
+    70: #b8a89b,
+    80: #d5c4b5,
+    90: #f1dfd0,
+    95: #ffeee0,
+    98: #fff8f4,
     99: #fffbff,
     100: #ffffff,
   ),
@@ -219,3 +228,21 @@ $gold-palette: (
     100: #ffffff,
   ),
 );
+
+// Rebrand (2026): the mockups' literal accent colors, used directly as
+// plain custom properties (see styles.scss --accent-amber/--accent-violet)
+// rather than through M3 role tones. `tertiary: $amber-palette` above still
+// exists for any Material internals that read
+// --mat-sys-tertiary/-container/on-tertiary automatically, but every
+// hand-styled element meant to read as "the mockups' vivid amber" uses
+// --accent-amber instead — M3's dark-theme tertiary role is forced to HCT
+// tone 80, which for this hue is gamut-clamped to a paler #ffb86a than the
+// mockups' saturated oklch(78% 0.19 70)/#ff9d00.
+$accent-amber: #ff9d00;
+
+// The mockups' violet secondary/data accent (oklch(65% 0.19 300)). NOT
+// wired in as an M3 `secondary` palette — M3's dark-theme secondary role
+// also resolves to tone 80, and at this cooler hue tone 80 is gamut-clamped
+// to a washed-out pastel lavender (~chroma 38 vs this hue's ~65 at
+// mid-tones), nothing like the mockups' saturated violet.
+$accent-violet: #ab75f8;
