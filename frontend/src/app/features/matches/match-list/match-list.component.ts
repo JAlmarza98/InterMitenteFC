@@ -11,6 +11,7 @@ import { Match, MatchesService } from '../../../core/services/matches.service';
 import { Season, SeasonsService } from '../../../core/services/seasons.service';
 import { MatchFormDialogComponent } from '../match-form-dialog/match-form-dialog.component';
 import { IconComponent } from '../../../shared/icon/icon.component';
+import { FlashOnChangeDirective } from '../../../shared/directives/flash-on-change.directive';
 
 const STATUS_LABELS: Record<Match['status'], string> = {
   scheduled: 'Programado',
@@ -21,7 +22,15 @@ const STATUS_LABELS: Record<Match['status'], string> = {
 @Component({
   selector: 'app-match-list',
   standalone: true,
-  imports: [DatePipe, MatButtonModule, MatDialogModule, MatSnackBarModule, MatProgressSpinnerModule, IconComponent],
+  imports: [
+    DatePipe,
+    MatButtonModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatProgressSpinnerModule,
+    IconComponent,
+    FlashOnChangeDirective,
+  ],
   templateUrl: './match-list.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './match-list.component.scss',

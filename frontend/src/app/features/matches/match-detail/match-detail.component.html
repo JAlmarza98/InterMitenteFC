@@ -32,6 +32,7 @@
               type="number"
               min="0"
               [value]="m.status !== 'scheduled' ? (m.teamScore ?? 0) : ''"
+              [appFlashOnChange]="m.teamScore"
               #teamScoreInput
               (change)="updateScore(teamScoreInput.value, opponentScoreInput.value)"
             />
@@ -44,12 +45,15 @@
               type="number"
               min="0"
               [value]="m.status !== 'scheduled' ? (m.opponentScore ?? 0) : ''"
+              [appFlashOnChange]="m.opponentScore"
               #opponentScoreInput
               (change)="updateScore(teamScoreInput.value, opponentScoreInput.value)"
             />
           </div>
         } @else if (m.status !== "scheduled") {
-          <p class="score-display">{{ m.teamScore ?? 0 }} - {{ m.opponentScore ?? 0 }}</p>
+          <p class="score-display" [appFlashOnChange]="m.teamScore + '-' + m.opponentScore">
+            {{ m.teamScore ?? 0 }} - {{ m.opponentScore ?? 0 }}
+          </p>
         } @else {
           <p class="score-pending">Resultado pendiente</p>
         }

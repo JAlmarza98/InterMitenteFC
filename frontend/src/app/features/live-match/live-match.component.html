@@ -42,12 +42,24 @@
       <div class="clock-score-row mobile-only">
         <div class="clock-team">
           <div class="clock-team-label">{{ isHome ? 'Inter Mitente' : m.opponent }}</div>
-          <div class="clock-team-score" [class.clock-score-them]="!isHome">{{ isHome ? (m.teamScore ?? 0) : (m.opponentScore ?? 0) }}</div>
+          <div
+            class="clock-team-score"
+            [class.clock-score-them]="!isHome"
+            [appFlashOnChange]="isHome ? m.teamScore : m.opponentScore"
+          >
+            {{ isHome ? (m.teamScore ?? 0) : (m.opponentScore ?? 0) }}
+          </div>
         </div>
         <span class="clock-sep">—</span>
         <div class="clock-team">
           <div class="clock-team-label">{{ isHome ? m.opponent : 'Inter Mitente' }}</div>
-          <div class="clock-team-score" [class.clock-score-them]="isHome">{{ isHome ? (m.opponentScore ?? 0) : (m.teamScore ?? 0) }}</div>
+          <div
+            class="clock-team-score"
+            [class.clock-score-them]="isHome"
+            [appFlashOnChange]="isHome ? m.opponentScore : m.teamScore"
+          >
+            {{ isHome ? (m.opponentScore ?? 0) : (m.teamScore ?? 0) }}
+          </div>
         </div>
       </div>
 
@@ -56,12 +68,24 @@
         <div class="clock-score-group">
           <div class="clock-team">
             <div class="clock-team-label">{{ isHome ? 'Inter Mitente' : m.opponent }}</div>
-            <div class="clock-team-score" [class.clock-score-them]="!isHome">{{ isHome ? (m.teamScore ?? 0) : (m.opponentScore ?? 0) }}</div>
+            <div
+              class="clock-team-score"
+              [class.clock-score-them]="!isHome"
+              [appFlashOnChange]="isHome ? m.teamScore : m.opponentScore"
+            >
+              {{ isHome ? (m.teamScore ?? 0) : (m.opponentScore ?? 0) }}
+            </div>
           </div>
           <span class="clock-sep">—</span>
           <div class="clock-team">
             <div class="clock-team-label">{{ isHome ? m.opponent : 'Inter Mitente' }}</div>
-            <div class="clock-team-score" [class.clock-score-them]="isHome">{{ isHome ? (m.opponentScore ?? 0) : (m.teamScore ?? 0) }}</div>
+            <div
+              class="clock-team-score"
+              [class.clock-score-them]="isHome"
+              [appFlashOnChange]="isHome ? m.opponentScore : m.teamScore"
+            >
+              {{ isHome ? (m.opponentScore ?? 0) : (m.teamScore ?? 0) }}
+            </div>
           </div>
           @if (period) {
             <span class="period-badge">
@@ -289,7 +313,11 @@
       @if (events().length > 0) {
         <!-- mobile: compact last-event teaser, links to the full history on Match Detail -->
         @let lastEvent = recentEvents()[0];
-        <a [routerLink]="['/matches', matchId]" class="event-teaser mobile-only">
+        <a
+          [routerLink]="['/matches', matchId]"
+          class="event-teaser mobile-only"
+          [appFlashOnChange]="lastEvent.id"
+        >
           <app-icon [name]="eventIconName(lastEvent.type)" [size]="15" [strokeWidth]="2" [class]="'event-icon event-icon-' + lastEvent.type" />
           <span class="event-teaser-desc">{{ formatEventTime(lastEvent) }}' {{ eventDescription(lastEvent) }}</span>
           <app-icon name="chevron-left" [size]="14" [strokeWidth]="2" class="event-teaser-chevron" />

@@ -72,7 +72,7 @@
                 <span class="status-pill status-pill-finished">Finalizado</span>
               }
             </span>
-            <span class="score-cell">
+            <span class="score-cell" [appFlashOnChange]="match.status === 'live' ? match.teamScore + '-' + match.opponentScore : null">
               @if (match.status !== "scheduled") {
                 {{ match.teamScore ?? 0 }}-{{ match.opponentScore ?? 0 }}
               } @else {
@@ -128,7 +128,9 @@
             </div>
             <div class="match-card-side">
               @if (match.status === "live") {
-                <div class="match-card-score">{{ match.teamScore ?? 0 }}-{{ match.opponentScore ?? 0 }}</div>
+                <div class="match-card-score" [appFlashOnChange]="match.teamScore + '-' + match.opponentScore">
+                  {{ match.teamScore ?? 0 }}-{{ match.opponentScore ?? 0 }}
+                </div>
                 <span class="status-pill status-pill-live">
                   <span class="live-dot"></span>
                   En vivo

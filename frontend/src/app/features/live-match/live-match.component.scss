@@ -620,6 +620,21 @@ button {
 
 .event-row {
   padding: 6px 0;
+  // Same reasoning as match-detail's own .event-row: only a genuinely new
+  // DOM node (a new event pushed in live) triggers @starting-style, so
+  // history already on screen at load never animates.
+  transition:
+    opacity 0.35s ease-out,
+    transform 0.35s ease-out;
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }
 
 .event-minute {

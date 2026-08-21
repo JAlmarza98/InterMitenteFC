@@ -17,14 +17,20 @@
         <div class="hero-score-row">
           <div class="hero-team">
             <span class="hero-team-name">Inter Mitente</span>
-            <span class="hero-team-score">{{ match.homeAway === 'home' ? (match.teamScore ?? 0) : (match.opponentScore ?? 0) }}</span>
+            <span
+              class="hero-team-score"
+              [appFlashOnChange]="match.homeAway === 'home' ? match.teamScore : match.opponentScore"
+              >{{ match.homeAway === 'home' ? (match.teamScore ?? 0) : (match.opponentScore ?? 0) }}</span
+            >
           </div>
           <span class="hero-score-sep">—</span>
           <div class="hero-team">
             <span class="hero-team-name">{{ match.opponent }}</span>
-            <span class="hero-team-score hero-team-score-them">{{
-              match.homeAway === 'home' ? (match.opponentScore ?? 0) : (match.teamScore ?? 0)
-            }}</span>
+            <span
+              class="hero-team-score hero-team-score-them"
+              [appFlashOnChange]="match.homeAway === 'home' ? match.opponentScore : match.teamScore"
+              >{{ match.homeAway === 'home' ? (match.opponentScore ?? 0) : (match.teamScore ?? 0) }}</span
+            >
           </div>
         </div>
         <a mat-flat-button class="hero-cta" [routerLink]="['/matches', match.id, 'live']">

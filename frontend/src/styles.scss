@@ -572,6 +572,27 @@ mat-card {
   --mat-chip-label-text-color: var(--accent-violet);
 }
 
+// Shared with FlashOnChangeDirective (shared/directives) — a value that
+// just changed (a score, a stat) gets the same amber "something happened"
+// wash used everywhere else in the app, not a silent DOM update.
+@keyframes flash-pulse {
+  0% {
+    background-color: color-mix(in srgb, var(--accent-amber) 42%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.flash-pulse {
+  animation: flash-pulse 0.9s ease-out;
+  border-radius: 6px;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
 // Match-event glyphs (goal/assist/card/substitution), shared between the
 // live-match tracker and the match-detail history — one definition, two
 // call sites, per MATCH_EVENT_ICONS in match-events.service.ts. Color

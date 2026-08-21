@@ -8,6 +8,7 @@ import { LiveUpdatesService } from '../../core/services/live-updates.service';
 import { MatchesService, MatchWithSquad } from '../../core/services/matches.service';
 import { StatsService } from '../../core/services/stats.service';
 import { IconComponent, IconName } from '../../shared/icon/icon.component';
+import { FlashOnChangeDirective } from '../../shared/directives/flash-on-change.directive';
 import {
   MATCH_EVENT_LABELS,
   LoggableEventType,
@@ -72,7 +73,7 @@ const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
 @Component({
   selector: 'app-live-match',
   standalone: true,
-  imports: [RouterLink, MatSnackBarModule, MatProgressSpinnerModule, IconComponent],
+  imports: [RouterLink, MatSnackBarModule, MatProgressSpinnerModule, IconComponent, FlashOnChangeDirective],
   templateUrl: './live-match.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './live-match.component.scss',

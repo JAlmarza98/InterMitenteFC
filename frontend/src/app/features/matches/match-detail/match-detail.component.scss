@@ -494,6 +494,23 @@
   display: flex;
   align-items: center;
   gap: 9px;
+  // A new event pushed in live (a goal just logged elsewhere) eases in
+  // instead of silently appearing — `@starting-style` only fires for a
+  // genuinely new DOM node, which is exactly what `@for track event.id`
+  // creates for a new event and never reuses for an existing one, so
+  // history already on screen when the page loaded never animates.
+  transition:
+    opacity 0.35s ease-out,
+    transform 0.35s ease-out;
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }
 
 .event-minute {

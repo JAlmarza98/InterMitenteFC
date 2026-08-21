@@ -7,6 +7,7 @@ import { LiveUpdatesService } from '../../core/services/live-updates.service';
 import { Match, MatchesService } from '../../core/services/matches.service';
 import { SeasonsService } from '../../core/services/seasons.service';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { FlashOnChangeDirective } from '../../shared/directives/flash-on-change.directive';
 import {
   ClockState,
   MatchClockService,
@@ -25,7 +26,7 @@ interface SeasonSummary {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, DatePipe, MatButtonModule, IconComponent],
+  imports: [RouterLink, DatePipe, MatButtonModule, IconComponent, FlashOnChangeDirective],
   templateUrl: './home.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './home.component.scss',

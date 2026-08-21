@@ -9,6 +9,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
 import { LiveUpdatesService } from '../../../core/services/live-updates.service';
+import { FlashOnChangeDirective } from '../../../shared/directives/flash-on-change.directive';
 import { MatchesService, MatchStatus, MatchWithSquad } from '../../../core/services/matches.service';
 import { SeasonsService } from '../../../core/services/seasons.service';
 import { Player, PlayersService } from '../../../core/services/players.service';
@@ -56,6 +57,7 @@ const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
     MatSnackBarModule,
     MatProgressSpinnerModule,
     IconComponent,
+    FlashOnChangeDirective,
   ],
   templateUrl: './match-detail.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
