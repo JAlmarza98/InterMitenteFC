@@ -1,4 +1,4 @@
-import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed, effect, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';
@@ -6,6 +6,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { AuthService } from './core/services/auth.service';
+import { LiveUpdatesService } from './core/services/live-updates.service';
 import { IconComponent } from './shared/icon/icon.component';
 
 // The auth screens (login/register/pending-approval) are full-screen,
@@ -33,6 +34,7 @@ const AUTH_ROUTES = new Set(['/login', '/register', '/pending-approval']);
 export class AppComponent {
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly liveUpdates = inject(LiveUpdatesService);
 
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -46,6 +48,17 @@ export class AppComponent {
 
   constructor() {
     this.auth.fetchMe().subscribe();
+
+    // One connection for the whole app, open exactly while someone's
+    // logged in — every screen showing live match state subscribes to
+    // LiveUpdatesService.updates$ rather than opening its own connection.
+    effect(() => {
+      if (this.auth.isApproved()) {
+        this.liveUpdates.connect();
+      } else {
+        this.liveUpdates.disconnect();
+      }
+    });
   }
 
   logout() {

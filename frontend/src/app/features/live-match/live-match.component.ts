@@ -1,8 +1,10 @@
 import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/services/auth.service';
+import { LiveUpdatesService } from '../../core/services/live-updates.service';
 import { MatchesService, MatchWithSquad } from '../../core/services/matches.service';
 import { StatsService } from '../../core/services/stats.service';
 import { IconComponent, IconName } from '../../shared/icon/icon.component';
@@ -85,6 +87,7 @@ export class LiveMatchComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(AuthService);
+  private readonly liveUpdates = inject(LiveUpdatesService);
 
   readonly matchId = this.route.snapshot.paramMap.get('id')!;
   readonly periodLabels = PERIOD_LABELS;
@@ -252,16 +255,30 @@ export class LiveMatchComponent {
     this.loadAll();
 
     const tickHandle = setInterval(() => this.nowTick.set(Date.now()), 1000);
-    const resyncHandle = setInterval(() => this.loadClock(), 25000);
+    // Backstop, not the primary channel — real-time updates arrive over
+    // liveUpdates below; this just covers a missed push during a brief SSE
+    // reconnect window.
+    const resyncHandle = setInterval(() => {
+      this.loadMatch();
+      this.loadClock();
+    }, 25000);
     const onVisible = () => {
-      if (document.visibilityState === 'visible') this.loadClock();
+      if (document.visibilityState === 'visible') {
+        this.loadMatch();
+        this.loadClock();
+      }
     };
     document.addEventListener('visibilitychange', onVisible);
+
+    const liveUpdatesSub = this.liveUpdates.updates$
+      .pipe(filter((update) => update.matchId === this.matchId))
+      .subscribe(() => this.resync());
 
     this.destroyRef.onDestroy(() => {
       clearInterval(tickHandle);
       clearInterval(resyncHandle);
       document.removeEventListener('visibilitychange', onVisible);
+      liveUpdatesSub.unsubscribe();
     });
   }
 
@@ -335,9 +352,27 @@ export class LiveMatchComponent {
     });
   }
 
+  /** Re-fetches the match itself — its score in particular. `loadAll()`
+   * fetches this once on entry; after that, the only other place `match`
+   * ever changed was the local optimistic patch inside `incrementStat`/
+   * `logOpponentGoal`, which only covers the goal *you* just logged. A
+   * second viewer (another admin/coach tab, or the same tab reacting to a
+   * live-update ping for a goal logged elsewhere) never had this called,
+   * so their score just sat stale. */
+  private loadMatch() {
+    this.matchesService.get(this.matchId).subscribe({
+      next: (res) => {
+        this.match.set(res.match);
+        this.syncError.set(false);
+      },
+      error: () => this.syncError.set(true),
+    });
+  }
+
   /** Manual retry for the persistent sync-error banner — resyncs
    * everything the 25s poll would, on demand. */
   resync() {
+    this.loadMatch();
     this.loadClock();
     this.loadSegments();
     this.loadStats();

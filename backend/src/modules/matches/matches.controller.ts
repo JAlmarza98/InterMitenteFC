@@ -9,6 +9,7 @@ import {
   getEventStamp,
   segmentDurationSeconds,
 } from "../matchClock/matchClock.service";
+import { broadcastMatchUpdate } from "../liveUpdates/liveUpdates.service";
 import { computeMatchRating } from "../stats/playerRating";
 import { paginationSchema, toSkipTake } from "../../utils/pagination";
 
@@ -154,12 +155,17 @@ export async function updateMatch(req: Request, res: Response) {
         await closeOpenClockState(tx, matchId, new Date());
         return tx.match.update({ where: { id: matchId }, data });
       });
+      broadcastMatchUpdate(matchId);
       res.json({ match });
       return;
     }
   }
 
   const match = await prisma.match.update({ where: { id: matchId }, data });
+  // Status/score are the fields a live viewer cares about; skip the
+  // broadcast for edits to e.g. opponent/notes so an unrelated correction
+  // doesn't trigger every connected client to refetch for nothing.
+  if (touchesAdminOnlyField) broadcastMatchUpdate(matchId);
   res.json({ match });
 }
 
@@ -269,6 +275,7 @@ export async function logMatchEvent(req: Request, res: Response) {
       return [updatedMatch, createdEvent] as const;
     });
 
+    broadcastMatchUpdate(matchId);
     res.status(201).json({ match, event });
     return;
   }
@@ -305,6 +312,7 @@ export async function logMatchEvent(req: Request, res: Response) {
     return [updatedMatch, upsertedStat, createdEvent] as const;
   });
 
+  broadcastMatchUpdate(matchId);
   res.status(201).json({ match, stat, event });
 }
 

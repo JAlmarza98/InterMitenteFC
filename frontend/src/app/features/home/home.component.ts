@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { AuthService } from '../../core/services/auth.service';
+import { LiveUpdatesService } from '../../core/services/live-updates.service';
 import { Match, MatchesService } from '../../core/services/matches.service';
 import { SeasonsService } from '../../core/services/seasons.service';
 import { IconComponent } from '../../shared/icon/icon.component';
@@ -34,6 +35,7 @@ export class HomeComponent {
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
   private readonly clockService = inject(MatchClockService);
+  private readonly liveUpdates = inject(LiveUpdatesService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly matches = signal<Match[]>([]);
@@ -100,17 +102,12 @@ export class HomeComponent {
   });
 
   constructor() {
-    this.seasonsService.list().subscribe((res) => {
-      const active = res.seasons.find((s) => s.isActive) ?? res.seasons[0];
-      if (!active) return;
-      this.matchesService.list(active.id).subscribe((matchesRes) => {
-        this.matches.set(matchesRes.matches);
-      });
-    });
+    this.loadMatches();
 
     let tickHandle: ReturnType<typeof setInterval> | null = null;
     let resyncHandle: ReturnType<typeof setInterval> | null = null;
     let lastLiveMatchId: string | null = null;
+    let loadClock: (() => void) | null = null;
 
     effect(() => {
       const match = this.liveMatch();
@@ -121,11 +118,12 @@ export class HomeComponent {
       if (resyncHandle) clearInterval(resyncHandle);
       tickHandle = null;
       resyncHandle = null;
+      loadClock = null;
       this.clockState.set(null);
 
       if (!match) return;
 
-      const loadClock = () => {
+      loadClock = () => {
         this.clockService.getClock(match.id).subscribe((state) => {
           this.offsetMs = new Date(state.serverNow).getTime() - Date.now();
           this.clockState.set(state);
@@ -136,9 +134,31 @@ export class HomeComponent {
       resyncHandle = setInterval(loadClock, 25000);
     });
 
+    // Any match changing (a new one going live, a score, a period change)
+    // means the whole matches list is worth refetching — cheap given how
+    // few matches a season has, and it's what lets the hero card notice a
+    // match it doesn't already know about. If the ping is for the live
+    // match already on screen, also nudge its clock immediately instead of
+    // waiting for the 25s clock resync above.
+    const liveUpdatesSub = this.liveUpdates.updates$.subscribe((update) => {
+      this.loadMatches();
+      if (update.matchId === this.liveMatch()?.id) loadClock?.();
+    });
+
     this.destroyRef.onDestroy(() => {
       if (tickHandle) clearInterval(tickHandle);
       if (resyncHandle) clearInterval(resyncHandle);
+      liveUpdatesSub.unsubscribe();
+    });
+  }
+
+  private loadMatches() {
+    this.seasonsService.list().subscribe((res) => {
+      const active = res.seasons.find((s) => s.isActive) ?? res.seasons[0];
+      if (!active) return;
+      this.matchesService.list(active.id).subscribe((matchesRes) => {
+        this.matches.set(matchesRes.matches);
+      });
     });
   }
 }

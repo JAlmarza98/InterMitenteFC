@@ -1,6 +1,7 @@
 import { MatchClockPause, MatchPeriod, PeriodType, Prisma } from "@prisma/client";
 import { prisma } from "../../db/prisma";
 import { HttpError } from "../../middleware/errorHandler";
+import { broadcastMatchUpdate } from "../liveUpdates/liveUpdates.service";
 
 type Db = typeof prisma | Prisma.TransactionClient;
 
@@ -201,6 +202,7 @@ export async function startPeriod(matchId: string, type: PeriodType) {
     }
   });
 
+  broadcastMatchUpdate(matchId);
   return getClockState(matchId);
 }
 
@@ -215,6 +217,7 @@ export async function pauseClock(matchId: string) {
       data: { periodId: active.id, pausedAt: new Date() },
     });
   });
+  broadcastMatchUpdate(matchId);
   return getClockState(matchId);
 }
 
@@ -232,6 +235,7 @@ export async function resumeClock(matchId: string) {
       data: { resumedAt: new Date() },
     });
   });
+  broadcastMatchUpdate(matchId);
   return getClockState(matchId);
 }
 
@@ -253,6 +257,7 @@ export async function endPeriod(matchId: string) {
 
     await tx.matchPeriod.update({ where: { id: active.id }, data: { endedAt: now } });
   });
+  broadcastMatchUpdate(matchId);
   return getClockState(matchId);
 }
 
@@ -322,6 +327,7 @@ export async function substitute(matchId: string, playerOutId: string, playerInI
     });
   });
 
+  broadcastMatchUpdate(matchId);
   return getClockState(matchId);
 }
 
@@ -375,6 +381,7 @@ export async function finishMatch(matchId: string) {
     await tx.match.update({ where: { id: matchId }, data: { status: "finished" } });
   });
 
+  broadcastMatchUpdate(matchId);
   return getClockState(matchId);
 }
 
@@ -406,10 +413,12 @@ export async function createManualSegment(matchId: string, data: ManualSegmentIn
       );
     }
   }
-  return prisma.playingTimeSegment.create({
+  const segment = await prisma.playingTimeSegment.create({
     data: { matchId, ...data, source: "manual", createdByUserId: userId },
     include: { player: true },
   });
+  broadcastMatchUpdate(matchId);
+  return segment;
 }
 
 export async function updateManualSegment(
@@ -436,15 +445,18 @@ export async function updateManualSegment(
       );
     }
   }
-  return prisma.playingTimeSegment.update({
+  const segment = await prisma.playingTimeSegment.update({
     where: { id: segmentId, matchId },
     data,
     include: { player: true },
   });
+  broadcastMatchUpdate(matchId);
+  return segment;
 }
 
 export async function deleteSegment(matchId: string, segmentId: string) {
   await prisma.playingTimeSegment.delete({ where: { id: segmentId, matchId } });
+  broadcastMatchUpdate(matchId);
 }
 
 /**

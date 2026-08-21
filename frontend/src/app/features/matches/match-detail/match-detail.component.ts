@@ -1,12 +1,14 @@
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
+import { LiveUpdatesService } from '../../../core/services/live-updates.service';
 import { MatchesService, MatchStatus, MatchWithSquad } from '../../../core/services/matches.service';
 import { SeasonsService } from '../../../core/services/seasons.service';
 import { Player, PlayersService } from '../../../core/services/players.service';
@@ -70,6 +72,8 @@ export class MatchDetailComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
+  private readonly liveUpdates = inject(LiveUpdatesService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly canManage = this.auth.canManage;
   readonly isAdmin = this.auth.isAdmin;
@@ -162,6 +166,12 @@ export class MatchDetailComponent {
 
   constructor() {
     this.load();
+
+    const liveUpdatesSub = this.liveUpdates.updates$
+      .pipe(filter((update) => update.matchId === this.matchId))
+      .subscribe(() => this.refresh());
+
+    this.destroyRef.onDestroy(() => liveUpdatesSub.unsubscribe());
   }
 
   load() {
@@ -179,6 +189,22 @@ export class MatchDetailComponent {
         this.showError(err, 'No se pudo cargar el partido');
       },
     });
+    this.refreshEventsAndStats();
+  }
+
+  /** Live-update ping handler: re-fetches the match (for its score/status)
+   * plus events/stats, without touching `loading` or reloading the squad —
+   * unlike `load()`, this shouldn't flash the whole page back to a spinner
+   * every time a goal is logged mid-match. */
+  private refresh() {
+    this.matchesService.get(this.matchId).subscribe({
+      next: (res) => this.match.set(res.match),
+      error: (err) => this.showError(err, 'No se pudo actualizar el partido'),
+    });
+    this.refreshEventsAndStats();
+  }
+
+  private refreshEventsAndStats() {
     this.matchEventsService.list(this.matchId).subscribe({
       next: (res) => this.events.set(res.events),
       error: (err) => this.showError(err, 'No se pudieron cargar los eventos del partido'),

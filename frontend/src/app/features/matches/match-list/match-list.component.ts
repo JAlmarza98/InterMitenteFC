@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,6 +6,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
+import { LiveUpdatesService } from '../../../core/services/live-updates.service';
 import { Match, MatchesService } from '../../../core/services/matches.service';
 import { Season, SeasonsService } from '../../../core/services/seasons.service';
 import { MatchFormDialogComponent } from '../match-form-dialog/match-form-dialog.component';
@@ -32,6 +33,8 @@ export class MatchListComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly liveUpdates = inject(LiveUpdatesService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly canManage = this.auth.canManage;
   readonly isAdmin = this.auth.isAdmin;
@@ -56,6 +59,12 @@ export class MatchListComponent {
 
   constructor() {
     this.load();
+
+    // No filtering by matchId — any match changing (going live, a new
+    // score, finishing) is worth refetching the list for, and there's no
+    // per-row loading state to flicker here, unlike load()'s own spinner.
+    const liveUpdatesSub = this.liveUpdates.updates$.subscribe(() => this.refresh());
+    this.destroyRef.onDestroy(() => liveUpdatesSub.unsubscribe());
   }
 
   load() {
@@ -87,6 +96,18 @@ export class MatchListComponent {
         this.loadError.set(true);
         this.showError(err, 'No se pudieron cargar los partidos');
       },
+    });
+  }
+
+  /** Live-update ping handler: re-fetches the list without touching
+   * `loading`, so a goal being scored elsewhere doesn't flash this whole
+   * page back to a spinner. */
+  private refresh() {
+    const active = this.season();
+    if (!active) return;
+    this.matchesService.list(active.id).subscribe({
+      next: (res) => this.matches.set(res.matches),
+      error: (err) => this.showError(err, 'No se pudieron actualizar los partidos'),
     });
   }
 

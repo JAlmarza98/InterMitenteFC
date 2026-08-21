@@ -497,7 +497,11 @@
 }
 
 .event-minute {
-  width: 26px;
+  // Not a fixed width: the rendered text is "M:SS'" or "MM:SS'" depending
+  // on the minute count, and a fixed width sized for the shorter case let
+  // the wider one overflow into the icon's gap instead of reserving room
+  // for it.
+  min-width: 2.6em;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
   font-size: 0.76rem;
