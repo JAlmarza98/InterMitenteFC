@@ -66,6 +66,16 @@ model User {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
+  /// Set when the user asks for a password reset from the login screen.
+  /// There is no mailer in this deployment, so recovery is admin-mediated:
+  /// the request shows up in the admin panel and the admin hands the
+  /// generated link to the user out of band.
+  passwordResetRequestedAt DateTime?
+  /// SHA-256 of the one-use reset token; the plaintext only ever exists in
+  /// the response that hands the link to the admin.
+  passwordResetTokenHash   String?   @unique
+  passwordResetExpiresAt   DateTime?
+
   createdMatches  Match[]              @relation("MatchCreatedBy")
   createdSegments PlayingTimeSegment[] @relation("SegmentCreatedBy")
   createdEvents   MatchEvent[]         @relation("EventCreatedBy")

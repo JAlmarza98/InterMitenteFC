@@ -23,10 +23,10 @@
             <a mat-button routerLink="/admin/seasons" routerLinkActive="active-link">Temporadas</a>
             <a mat-button routerLink="/admin/users" routerLinkActive="active-link">Usuarios</a>
           </span>
-          <button mat-icon-button class="nav-more-button" [matMenuTriggerFor]="moreMenu" aria-label="Más opciones">
-            <app-icon name="more" [size]="18" />
-          </button>
         }
+        <button mat-icon-button class="nav-more-button" [matMenuTriggerFor]="moreMenu" aria-label="Más opciones">
+          <app-icon name="more" [size]="18" />
+        </button>
       </nav>
 
       <span class="spacer"></span>
@@ -63,22 +63,26 @@
       <app-icon name="stats" [size]="21" />
       <span>Stats</span>
     </a>
-    @if (auth.role() === 'admin') {
-      <button class="bottom-nav-more" [matMenuTriggerFor]="moreMenu">
-        <app-icon name="more" [size]="21" />
-        <span>Más</span>
-      </button>
-    }
+    <button class="bottom-nav-more" [matMenuTriggerFor]="moreMenu">
+      <app-icon name="more" [size]="21" />
+      <span>Más</span>
+    </button>
   </nav>
 }
 
 <mat-menu #moreMenu="matMenu">
-  <a mat-menu-item routerLink="/admin/seasons">
-    <app-icon name="calendar" [size]="20" />
-    Temporadas
-  </a>
-  <a mat-menu-item routerLink="/admin/users">
-    <app-icon name="user-add" [size]="20" />
-    Usuarios
+  @if (auth.role() === 'admin') {
+    <a mat-menu-item routerLink="/admin/seasons">
+      <app-icon name="calendar" [size]="20" />
+      Temporadas
+    </a>
+    <a mat-menu-item routerLink="/admin/users">
+      <app-icon name="user-add" [size]="20" />
+      Usuarios
+    </a>
+  }
+  <a mat-menu-item routerLink="/change-password">
+    <app-icon name="lock" [size]="20" />
+    Cambiar contraseña
   </a>
 </mat-menu>

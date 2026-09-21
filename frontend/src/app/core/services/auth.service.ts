@@ -11,6 +11,9 @@ export interface CurrentUser {
   name: string;
   role: UserRole;
   status: UserStatus;
+  /** Admin-only signal: the user asked to recover their password from the
+   * login screen and is waiting for an admin to hand them a reset link. */
+  passwordResetRequested?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -76,6 +79,18 @@ export class AuthService {
     return this.http
       .post<{ user: CurrentUser }>('/api/auth/login', { email, password })
       .pipe(tap((res) => this._user.set(res.user)));
+  }
+
+  requestPasswordReset(email: string) {
+    return this.http.post<{ message: string }>('/api/auth/password-reset-request', { email });
+  }
+
+  resetPassword(token: string, password: string) {
+    return this.http.post<{ message: string }>('/api/auth/password-reset', { token, password });
+  }
+
+  changePassword(currentPassword: string, newPassword: string) {
+    return this.http.post<{ message: string }>('/api/auth/password', { currentPassword, newPassword });
   }
 
   logout() {

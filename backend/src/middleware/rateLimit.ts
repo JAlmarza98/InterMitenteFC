@@ -33,6 +33,19 @@ export const registerRateLimit = isTest
       message: { error: "Demasiados registros desde esta dirección. Inténtalo más tarde." },
     });
 
+// Guessing a 64-hex-char reset token is hopeless, but the request endpoint
+// can still be used to spam the admin queue (or probe emails), so both
+// password-reset endpoints share the login limiter's shape.
+export const passwordResetRateLimit = isTest
+  ? passthrough
+  : rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: "Demasiados intentos. Inténtalo de nuevo en unos minutos." },
+    });
+
 // Applied to the whole API (see app.ts): not a brute-force guard like the
 // two above, just a backstop against a runaway client (buggy poll loop,
 // scraping, a compromised session) hammering the DB. Generous enough that

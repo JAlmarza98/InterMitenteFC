@@ -10,12 +10,12 @@ test("a non-admin is bounced away from an admin-only route", async ({ page }) =>
   await page.goto("/register");
   await page.getByLabel("Nombre").fill("Plain Member");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Contraseña").fill(password);
+  await page.getByRole("textbox", { name: "Contraseña" }).fill(password);
   await page.getByRole("button", { name: "Registrarme" }).click();
 
   await page.goto("/login");
   await page.getByLabel("Email").fill(ADMIN_EMAIL);
-  await page.getByLabel("Contraseña").fill(ADMIN_PASSWORD);
+  await page.getByRole("textbox", { name: "Contraseña" }).fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL("/");
 
@@ -28,7 +28,7 @@ test("a non-admin is bounced away from an admin-only route", async ({ page }) =>
   // directly — roleGuard should bounce them home, not just hide the link.
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Contraseña").fill(password);
+  await page.getByRole("textbox", { name: "Contraseña" }).fill(password);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL("/");
 

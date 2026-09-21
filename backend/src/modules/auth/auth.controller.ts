@@ -2,7 +2,14 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../db/prisma";
 import { HttpError } from "../../middleware/errorHandler";
-import { registerUser, verifyCredentials, toPublicUser } from "./auth.service";
+import {
+  registerUser,
+  verifyCredentials,
+  toPublicUser,
+  requestPasswordReset,
+  resetPasswordWithToken,
+  changePassword,
+} from "./auth.service";
 
 const registerSchema = z.object({
   email: z.string().email().max(255),
@@ -56,4 +63,41 @@ export async function me(req: Request, res: Response) {
     return res.status(401).json({ user: null });
   }
   res.json({ user: toPublicUser(user) });
+}
+
+const passwordResetRequestSchema = z.object({
+  email: z.string().email().max(255),
+});
+
+const passwordResetSchema = z.object({
+  token: z.string().min(1).max(200),
+  password: z.string().min(8).max(128),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: z.string().min(8).max(128),
+});
+
+export async function requestPasswordResetHandler(req: Request, res: Response) {
+  const { email } = passwordResetRequestSchema.parse(req.body);
+  await requestPasswordReset(email);
+  // Always the same answer, whether or not the email exists — otherwise
+  // this endpoint becomes a way to enumerate accounts.
+  res.json({
+    message:
+      "Si el email está registrado, un administrador recibirá tu solicitud y te hará llegar un enlace para restablecer la contraseña.",
+  });
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  const { token, password } = passwordResetSchema.parse(req.body);
+  await resetPasswordWithToken(token, password);
+  res.json({ message: "Contraseña actualizada. Ya puedes iniciar sesión." });
+}
+
+export async function changeOwnPassword(req: Request, res: Response) {
+  const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+  await changePassword(req.user!.id, currentPassword, newPassword);
+  res.json({ message: "Contraseña actualizada." });
 }

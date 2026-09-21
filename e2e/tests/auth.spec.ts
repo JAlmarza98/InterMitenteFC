@@ -8,7 +8,7 @@ test("register, admin approval, then login as the approved user", async ({ page 
   await page.goto("/register");
   await page.getByLabel("Nombre").fill("E2E User");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Contraseña").fill(password);
+  await page.getByRole("textbox", { name: "Contraseña" }).fill(password);
   await page.getByRole("button", { name: "Registrarme" }).click();
 
   // Registration succeeded but the account is pending — trying to log in
@@ -16,7 +16,7 @@ test("register, admin approval, then login as the approved user", async ({ page 
   // real signal is that we never leave /login).
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Contraseña").fill(password);
+  await page.getByRole("textbox", { name: "Contraseña" }).fill(password);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page.getByText("Email o contraseña incorrectos.")).toBeVisible();
   await expect(page).toHaveURL(/\/login$/);
@@ -24,7 +24,7 @@ test("register, admin approval, then login as the approved user", async ({ page 
   // Log in as the admin and approve the new user.
   await page.goto("/login");
   await page.getByLabel("Email").fill(ADMIN_EMAIL);
-  await page.getByLabel("Contraseña").fill(ADMIN_PASSWORD);
+  await page.getByRole("textbox", { name: "Contraseña" }).fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL("/");
 
@@ -40,7 +40,7 @@ test("register, admin approval, then login as the approved user", async ({ page 
   // Log back in as the newly approved user.
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Contraseña").fill(password);
+  await page.getByRole("textbox", { name: "Contraseña" }).fill(password);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL("/");
 });

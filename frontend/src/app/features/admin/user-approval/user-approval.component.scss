@@ -104,9 +104,10 @@
   }
 }
 
-// ---- shared approve/reject buttons ----
+// ---- shared approve/reject/reset buttons ----
 .approve-button,
-.reject-button {
+.reject-button,
+.reset-link-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,6 +128,30 @@
   background: transparent;
   border: 1px solid oklch(60% 0.15 25 / 45%);
   color: oklch(70% 0.15 25);
+}
+
+// Neutral, unlike approve/reject: handing over a recovery link isn't a
+// verdict on the account, it's a routine favour.
+.reset-link-button {
+  background: transparent;
+  border: 1px solid oklch(55% 0.03 262 / 45%);
+  color: oklch(78% 0.02 262);
+  white-space: nowrap;
+}
+
+// The user asked for it from the login screen and is waiting on an admin —
+// same "needs your attention" amber as every other live signal in the app.
+.reset-flag {
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: color-mix(in srgb, var(--accent-amber) 16%, transparent);
+  color: var(--accent-amber);
+  white-space: nowrap;
 }
 
 // ---- desktop/tablet table ----
@@ -172,12 +197,14 @@
 
 .row-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .users-table-row {
   .approve-button,
-  .reject-button {
+  .reject-button,
+  .reset-link-button {
     height: 34px;
     padding: 0 14px;
     font-size: 0.76rem;
@@ -216,11 +243,13 @@
 
 .user-card-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
 
   .approve-button,
-  .reject-button {
+  .reject-button,
+  .reset-link-button {
     flex: 1 1 0;
     height: 38px;
     font-size: 0.78rem;

@@ -24,18 +24,26 @@
     <p class="empty-state">No hay usuarios en este estado.</p>
   } @else {
     <div class="users-table-wrap desktop-only">
-      <div class="users-table">
-        <div class="users-table-row users-table-head">
-          <span>Nombre</span>
-          <span>Email</span>
-          <span>Rol</span>
-          <span></span>
+      <!-- Same ARIA-table treatment as the Plantilla grid (see
+           player-list.component.html): the desktop grid carries the roles,
+           the mobile card list below stays plain cards. -->
+      <div class="users-table" role="table" aria-label="Usuarios">
+        <div class="users-table-row users-table-head" role="row">
+          <span role="columnheader">Nombre</span>
+          <span role="columnheader">Email</span>
+          <span role="columnheader">Rol</span>
+          <span role="columnheader"></span>
         </div>
         @for (user of users(); track user.id) {
-          <div class="users-table-row">
-            <span class="user-name-cell">{{ user.name }}</span>
-            <span class="user-email-cell">{{ user.email }}</span>
-            <span>
+          <div class="users-table-row" role="row">
+            <span class="user-name-cell" role="cell">
+              {{ user.name }}
+              @if (user.passwordResetRequested) {
+                <span class="reset-flag">contraseña olvidada</span>
+              }
+            </span>
+            <span class="user-email-cell" role="cell">{{ user.email }}</span>
+            <span role="cell">
               @if (user.status === "approved") {
                 <button class="role-pill role-pill-editable" [matMenuTriggerFor]="roleMenu">
                   {{ user.role }}
@@ -50,7 +58,7 @@
                 <span class="role-pill">{{ user.role }}</span>
               }
             </span>
-            <div class="row-actions">
+            <div class="row-actions" role="cell">
               @if (user.status !== "approved") {
                 <button class="approve-button" (click)="approve(user)">
                   <app-icon name="check" [size]="13" [strokeWidth]="2.3" />
@@ -63,6 +71,12 @@
                   Rechazar
                 </button>
               }
+              @if (user.status === "approved") {
+                <button class="reset-link-button" (click)="resetLink(user)">
+                  <app-icon name="link" [size]="13" [strokeWidth]="2.3" />
+                  Enlace contraseña
+                </button>
+              }
             </div>
           </div>
         }
@@ -72,7 +86,12 @@
     <div class="user-cards mobile-only">
       @for (user of users(); track user.id) {
         <div class="user-card">
-          <div class="user-card-name">{{ user.name }}</div>
+          <div class="user-card-name">
+            {{ user.name }}
+            @if (user.passwordResetRequested) {
+              <span class="reset-flag">contraseña olvidada</span>
+            }
+          </div>
           <div class="user-card-email">{{ user.email }}</div>
           @if (user.status === "approved") {
             <button class="role-pill role-pill-editable" [matMenuTriggerFor]="roleMenuMobile">
@@ -98,6 +117,12 @@
               <button class="reject-button" (click)="reject(user)">
                 <app-icon name="close" [size]="14" [strokeWidth]="2.2" />
                 Rechazar
+              </button>
+            }
+            @if (user.status === "approved") {
+              <button class="reset-link-button" (click)="resetLink(user)">
+                <app-icon name="link" [size]="14" [strokeWidth]="2.2" />
+                Enlace contraseña
               </button>
             }
           </div>

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../db/prisma";
-import { toPublicUser } from "../auth/auth.service";
+import { toPublicUser, createPasswordResetToken } from "../auth/auth.service";
 import { HttpError } from "../../middleware/errorHandler";
 import { paginationSchema, toSkipTake } from "../../utils/pagination";
 
@@ -62,4 +62,17 @@ export async function updateUserRole(req: Request, res: Response) {
     data: { role },
   });
   res.json({ user: toPublicUser(user) });
+}
+
+/** Mints the one-use reset link for a user who lost their password. With no
+ * mailer in this deployment the admin delivers it out of band (WhatsApp,
+ * in person), so the plaintext token is returned here — to an admin-only,
+ * authenticated endpoint — and nowhere else. */
+export async function createUserResetLink(req: Request, res: Response) {
+  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!user) {
+    throw new HttpError(404, "Usuario no encontrado");
+  }
+  const { token, expiresInMinutes } = await createPasswordResetToken(user.id);
+  res.json({ token, expiresInMinutes });
 }

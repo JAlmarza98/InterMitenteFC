@@ -13,7 +13,13 @@ import { IconComponent } from './shared/icon/icon.component';
 // self-contained mockups with no nav of their own — the app shell's
 // toolbar above them doesn't match the design and eats into the vertical
 // space they need to fit without scrolling on mobile.
-const AUTH_ROUTES = new Set(['/login', '/register', '/pending-approval']);
+const AUTH_ROUTES = new Set([
+  '/login',
+  '/register',
+  '/pending-approval',
+  '/forgot-password',
+  '/reset-password',
+]);
 
 @Component({
   selector: 'app-root',

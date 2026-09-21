@@ -4,7 +4,7 @@ import { ADMIN_EMAIL, ADMIN_PASSWORD } from "../helpers/env";
 test.beforeEach(async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill(ADMIN_EMAIL);
-  await page.getByLabel("Contraseña").fill(ADMIN_PASSWORD);
+  await page.getByRole("textbox", { name: "Contraseña" }).fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL("/");
 });

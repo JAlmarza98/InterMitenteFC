@@ -10,7 +10,7 @@ Aplicación web para gestionar el equipo: registro de usuarios con aprobación m
 
 ## Roles
 
-- **admin**: aprueba/rechaza usuarios, gestiona roles y temporadas, corrige estadísticas de partido a posteriori, borra partidos, cambia el estado de un partido y su marcador manualmente, y todo lo que puede hacer `coach`.
+- **admin**: aprueba/rechaza usuarios, genera enlaces de recuperación de contraseña, gestiona roles y temporadas, corrige estadísticas de partido a posteriori, borra partidos, cambia el estado de un partido y su marcador manualmente, y todo lo que puede hacer `coach`.
 - **coach**: gestiona jugadores, crea y edita partidos (rival, fecha, competición, convocatoria) y dirige el partido en vivo (cronómetro, cambios, goles/asistencias/tarjetas). No puede borrar partidos, corregir estadísticas a posteriori, ni cambiar el estado o el marcador del partido fuera del propio cronómetro en vivo.
 - **member**: usuario aprobado con acceso de solo lectura a plantilla, partidos y estadísticas.
 
@@ -26,6 +26,19 @@ Cualquiera puede registrarse, pero el usuario queda en estado `pending` hasta qu
 - **Estadísticas de temporada**: totales y medias por jugador (partidos jugados, minutos, goles, tarjetas...) agregando solo los partidos finalizados.
 - **Temporadas** (admin): alta de temporadas con fecha de inicio/fin y cuál está activa.
 - **Aprobación de usuarios** (admin): pendientes/aprobados/rechazados, cambio de rol.
+- **Contraseñas**: cualquier usuario puede cambiar la suya desde el menú "Más → Cambiar contraseña" (pidiendo la actual). Si la ha olvidado, la pide desde el login y la recuperación la completa un admin (ver más abajo).
+
+## Recuperación de contraseña
+
+No hay servidor de correo en el despliegue, así que la recuperación es **mediada por un admin** en lugar de por email:
+
+1. El usuario pulsa "¿Olvidaste tu contraseña?" en el login e introduce su email. La respuesta es siempre la misma exista o no la cuenta, para no revelar quién está registrado.
+2. En **Usuarios**, el admin ve la etiqueta "contraseña olvidada" junto a esa persona y pulsa "Enlace contraseña". Se copia al portapapeles una URL `/reset-password?token=…` que le hace llegar por el canal que quiera (WhatsApp, en persona).
+3. El usuario abre el enlace y elige contraseña nueva. El enlace **caduca en 1 hora y solo sirve una vez**; en la base de datos únicamente se guarda el SHA-256 del token, nunca el token en claro.
+
+Un admin puede generar ese enlace para cualquier usuario aprobado aunque no lo haya pedido, que es lo que resuelve el caso de "no puedo entrar y tampoco recuerdo con qué email me registré".
+
+Si algún día se añade un servidor de correo, el único punto que cambia es la entrega del token (`createPasswordResetToken` en `backend/src/modules/auth/auth.service.ts`); el resto del flujo sigue igual.
 
 ## Diseño del cronómetro y tiempo de juego
 

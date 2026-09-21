@@ -517,6 +517,20 @@ mat-card {
   color: oklch(70% 0.15 25);
 }
 
+// Used by the password recovery/change screens: the muted lead-in line and
+// the green confirmation that replaces the form once it succeeds.
+.auth-note {
+  margin: 0 0 16px;
+  font-size: 0.82rem;
+  color: oklch(65% 0.02 262);
+}
+
+.auth-success {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: oklch(78% 0.14 150);
+}
+
 .auth-switch {
   text-align: center;
   margin-top: 18px;

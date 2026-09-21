@@ -19,6 +19,15 @@ export class AdminUsersService {
     return this.http.patch<{ user: CurrentUser }>(`/api/admin/users/${id}/reject`, {});
   }
 
+  /** Returns the plaintext one-use token; the caller builds the link the
+   * admin passes on to the user (there is no mailer). */
+  createResetLink(id: string) {
+    return this.http.post<{ token: string; expiresInMinutes: number }>(
+      `/api/admin/users/${id}/reset-link`,
+      {}
+    );
+  }
+
   updateRole(id: string, role: UserRole) {
     return this.http.patch<{ user: CurrentUser }>(`/api/admin/users/${id}/role`, { role });
   }
