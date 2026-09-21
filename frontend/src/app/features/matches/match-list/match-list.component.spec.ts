@@ -4,7 +4,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
-import { MatchListComponent } from './match-list.component';
+import { MatchListComponent, sortByKickoff } from './match-list.component';
 import { Match, MatchesService } from '../../../core/services/matches.service';
 import { SeasonsService } from '../../../core/services/seasons.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -144,5 +144,29 @@ describe('MatchListComponent', () => {
     fixture.componentInstance.openCreate();
 
     expect(matchesSpy.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('sortByKickoff', () => {
+  function match(id: string, offsetDays: number, status: Match['status'] = 'scheduled'): Match {
+    return { ...MATCH, id, status, matchDate: new Date(Date.now() + offsetDays * 86400000).toISOString() };
+  }
+
+  it('puts the live match first, then the nearest kick-off, then the most recent played', () => {
+    const order = sortByKickoff([
+      match('past-old', -30, 'finished'),
+      match('far', 30),
+      match('past-recent', -2, 'finished'),
+      match('soon', 2),
+      match('live', -0.02, 'live'),
+    ]).map((m) => m.id);
+
+    expect(order).toEqual(['live', 'soon', 'far', 'past-recent', 'past-old']);
+  });
+
+  it('does not mutate the array it was given', () => {
+    const input = [match('far', 30), match('soon', 2)];
+    sortByKickoff(input);
+    expect(input.map((m) => m.id)).toEqual(['far', 'soon']);
   });
 });

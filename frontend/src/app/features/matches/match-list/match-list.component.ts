@@ -19,6 +19,31 @@ const STATUS_LABELS: Record<Match['status'], string> = {
   finished: 'Finalizado',
 };
 
+/**
+ * Fixtures order, not chronological order: whatever is being played right
+ * now on top, then the upcoming matches with the nearest kick-off first,
+ * then the played ones most-recent first. The API returns plain
+ * `matchDate desc`, which buried the next match in the middle of the list
+ * — the further away a fixture was, the higher it sat.
+ *
+ * A live match is ranked by status rather than by its date: it kicked off
+ * minutes ago, so by date alone it would sort as a past match and drop
+ * below every upcoming one.
+ */
+export function sortByKickoff(matches: Match[]): Match[] {
+  const now = Date.now();
+  const rank = (m: Match) => (m.status === 'live' ? 0 : new Date(m.matchDate).getTime() >= now ? 1 : 2);
+
+  return [...matches].sort((a, b) => {
+    const rankDiff = rank(a) - rank(b);
+    if (rankDiff !== 0) return rankDiff;
+    const timeA = new Date(a.matchDate).getTime();
+    const timeB = new Date(b.matchDate).getTime();
+    // Past matches read backwards from today; everything else forwards.
+    return rank(a) === 2 ? timeB - timeA : timeA - timeB;
+  });
+}
+
 @Component({
   selector: 'app-match-list',
   standalone: true,
@@ -90,7 +115,7 @@ export class MatchListComponent {
         }
         this.matchesService.list(active.id).subscribe({
           next: (matchesRes) => {
-            this.matches.set(matchesRes.matches);
+            this.matches.set(sortByKickoff(matchesRes.matches));
             this.loading.set(false);
           },
           error: (err) => {
@@ -115,7 +140,7 @@ export class MatchListComponent {
     const active = this.season();
     if (!active) return;
     this.matchesService.list(active.id).subscribe({
-      next: (res) => this.matches.set(res.matches),
+      next: (res) => this.matches.set(sortByKickoff(res.matches)),
       error: (err) => this.showError(err, 'No se pudieron actualizar los partidos'),
     });
   }
