@@ -620,7 +620,9 @@ mat-card {
 }
 
 .event-icon-goal,
-.event-icon-assist {
+.event-icon-assist,
+.event-icon-penalty_goal,
+.event-icon-penalty_won {
   color: var(--accent-amber);
 }
 

@@ -49,7 +49,7 @@ describe("season stats", () => {
       },
     });
     await prisma.matchPlayerStat.create({
-      data: { matchId: match.id, playerId: player.id, goals: 1 },
+      data: { matchId: match.id, playerId: player.id, goals: 1, penaltyGoals: 1, penaltiesWon: 2 },
     });
 
     const res = await agent.get(`/api/stats/season/${season.id}`);
@@ -61,6 +61,8 @@ describe("season stats", () => {
     expect(row.appearances).toBe(1);
     expect(row.secondsPlayed).toBe(2400);
     expect(row.goals).toBe(1);
+    expect(row.penaltyGoals).toBe(1);
+    expect(row.penaltiesWon).toBe(2);
     expect(row.avgRating).toBe(
       computeMatchRating({
         goals: 1,

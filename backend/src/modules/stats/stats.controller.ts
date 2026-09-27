@@ -11,6 +11,20 @@ function playerMatchKey(playerId: string, matchId: string): string {
   return `${playerId}::${matchId}`;
 }
 
+interface Counters {
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+  ownGoals: number;
+  penaltyGoals: number;
+  penaltiesWon: number;
+}
+
+function emptyCounters(): Counters {
+  return { goals: 0, assists: 0, yellowCards: 0, redCards: 0, ownGoals: 0, penaltyGoals: 0, penaltiesWon: 0 };
+}
+
 export async function getSeasonStats(req: Request, res: Response) {
   const seasonId = req.params.seasonId;
 
@@ -54,29 +68,19 @@ export async function getSeasonStats(req: Request, res: Response) {
     );
   }
 
-  const countersByPlayer = new Map<
-    string,
-    { goals: number; assists: number; yellowCards: number; redCards: number; ownGoals: number }
-  >();
+  const countersByPlayer = new Map<string, Counters>();
   // `MatchPlayerStat` is already unique per (matchId, playerId), so this is
   // a direct lookup, not an aggregation like `countersByPlayer` above.
-  const statsByPlayerMatch = new Map<
-    string,
-    { goals: number; assists: number; yellowCards: number; redCards: number; ownGoals: number }
-  >();
+  const statsByPlayerMatch = new Map<string, Counters>();
   for (const stat of playerStats) {
-    const existing = countersByPlayer.get(stat.playerId) ?? {
-      goals: 0,
-      assists: 0,
-      yellowCards: 0,
-      redCards: 0,
-      ownGoals: 0,
-    };
+    const existing = countersByPlayer.get(stat.playerId) ?? emptyCounters();
     existing.goals += stat.goals;
     existing.assists += stat.assists;
     existing.yellowCards += stat.yellowCards;
     existing.redCards += stat.redCards;
     existing.ownGoals += stat.ownGoals;
+    existing.penaltyGoals += stat.penaltyGoals;
+    existing.penaltiesWon += stat.penaltiesWon;
     countersByPlayer.set(stat.playerId, existing);
 
     statsByPlayerMatch.set(playerMatchKey(stat.playerId, stat.matchId), stat);
@@ -87,13 +91,7 @@ export async function getSeasonStats(req: Request, res: Response) {
       const secondsPlayed = secondsByPlayer.get(player.id) ?? 0;
       const appearedMatchIds = appearancesByPlayer.get(player.id) ?? new Set<string>();
       const appearances = appearedMatchIds.size;
-      const counters = countersByPlayer.get(player.id) ?? {
-        goals: 0,
-        assists: 0,
-        yellowCards: 0,
-        redCards: 0,
-        ownGoals: 0,
-      };
+      const counters = countersByPlayer.get(player.id) ?? emptyCounters();
 
       // Season "promedio" is the mean of this player's per-match ratings
       // (not the formula re-applied to season totals) — a good early

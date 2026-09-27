@@ -39,6 +39,12 @@ const ICONS = {
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
   lock: '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
   link: '<path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/>',
+  // Netted goal with the ball waiting on the spot below it — a penalty kick.
+  // The net is drawn fainter so the frame still reads as the outline.
+  penalty:
+    '<path d="M2 14V4h20v10"/><path d="M2 9h20M9 4v10M15 4v10" stroke-opacity=".45"/><circle cx="12" cy="19.5" r="2.5"/>',
+  // Referee's whistle — the penalty being given (penalti provocado).
+  whistle: '<circle cx="8" cy="15" r="6"/><path d="M8 9h14v4h-8.3"/><circle cx="8" cy="15" r="1.5"/>',
 } as const;
 
 export type IconName = keyof typeof ICONS;

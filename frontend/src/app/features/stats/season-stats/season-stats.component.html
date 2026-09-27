@@ -50,7 +50,11 @@
             <button class="sort-header" (click)="toggleSort('timePlayed')">Tiempo</button>
             <button class="sort-header" (click)="toggleSort('avgTime')">Media/p.</button>
             <button class="sort-header" (click)="toggleSort('goals')">Goles</button>
+            <button class="sort-header" title="Goles de penalti" (click)="toggleSort('penaltyGoals')">G. pen.</button>
             <button class="sort-header" (click)="toggleSort('assists')">Asist.</button>
+            <button class="sort-header" title="Penaltis provocados" (click)="toggleSort('penaltiesWon')">
+              P. prov.
+            </button>
             <button class="sort-header" (click)="toggleSort('yellowCards')">TA</button>
             <button class="sort-header" (click)="toggleSort('redCards')">TR</button>
             <button class="sort-header" (click)="toggleSort('ownGoals')">G. propia</button>
@@ -80,6 +84,7 @@
                   {{ row.goals }}
                 }
               </span>
+              <span class="num-cell" [class.stat-zero]="row.penaltyGoals === 0">{{ row.penaltyGoals }}</span>
               <span class="num-cell">
                 @if (topAssistsIds().has(row.playerId)) {
                   <app-icon name="assist" [size]="13" [strokeWidth]="2" class="leader-icon-assists" />
@@ -88,6 +93,7 @@
                   {{ row.assists }}
                 }
               </span>
+              <span class="num-cell" [class.stat-zero]="row.penaltiesWon === 0">{{ row.penaltiesWon }}</span>
               <span class="num-cell" [class.stat-zero]="row.yellowCards === 0">{{ row.yellowCards }}</span>
               <span class="num-cell" [class.stat-zero]="row.redCards === 0">{{ row.redCards }}</span>
               <span class="num-cell" [class.stat-zero]="row.ownGoals === 0">{{ row.ownGoals }}</span>
@@ -133,6 +139,22 @@
                 <span>{{ formatTime(row.secondsPlayed) }}</span>
               }
             </div>
+            @if (row.penaltyGoals > 0 || row.penaltiesWon > 0) {
+              <div class="player-card-line player-card-line-sub">
+                @if (row.penaltyGoals > 0) {
+                  <span class="player-stat-chip">
+                    <app-icon name="penalty" [size]="12" [strokeWidth]="2" class="event-icon-penalty_goal" />
+                    Goles de penalti <b>{{ row.penaltyGoals }}</b>
+                  </span>
+                }
+                @if (row.penaltiesWon > 0) {
+                  <span class="player-stat-chip">
+                    <app-icon name="whistle" [size]="12" [strokeWidth]="2" class="event-icon-penalty_won" />
+                    Pen. provocados <b>{{ row.penaltiesWon }}</b>
+                  </span>
+                }
+              </div>
+            }
             @if (row.yellowCards > 0 || row.redCards > 0 || row.ownGoals > 0) {
               <div class="player-card-line player-card-line-bad">
                 @if (row.yellowCards > 0) {

@@ -43,6 +43,8 @@ const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
   own_goal: 'ball',
   assist: 'check',
   substitution: 'swap',
+  penalty_goal: 'penalty',
+  penalty_won: 'whistle',
 };
 
 @Component({
@@ -88,7 +90,8 @@ export class MatchDetailComponent {
   readonly playerStats = signal<MatchPlayerStatRow[]>([]);
 
   /** Only players who actually stepped on the pitch or racked up a stat —
-   * `playerStats` also includes called-up players who never left the bench. */
+   * `playerStats` also includes called-up players who never left the bench.
+   * (`penaltyGoals` needs no check of its own: it's a subset of `goals`.) */
   readonly playedPlayerStats = computed(() =>
     this.playerStats().filter(
       (row) =>
@@ -97,7 +100,8 @@ export class MatchDetailComponent {
         row.assists > 0 ||
         row.yellowCards > 0 ||
         row.redCards > 0 ||
-        row.ownGoals > 0
+        row.ownGoals > 0 ||
+        row.penaltiesWon > 0
     )
   );
 
@@ -132,6 +136,10 @@ export class MatchDetailComponent {
         return `Roja a ${name}`;
       case 'own_goal':
         return `Gol en propia de ${name}`;
+      case 'penalty_goal':
+        return `Gol de penalti de ${name}`;
+      case 'penalty_won':
+        return `Penalti provocado por ${name}`;
       case 'opponent_goal':
         return MATCH_EVENT_LABELS.opponent_goal;
       case 'substitution': {

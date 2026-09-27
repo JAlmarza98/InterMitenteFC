@@ -12,7 +12,19 @@ import { Season, SeasonsService } from '../../../core/services/seasons.service';
 import { formatMinuteSeconds } from '../../../core/services/match-clock.service';
 import { IconComponent } from '../../../shared/icon/icon.component';
 
-type SortColumn = 'name' | 'avgRating' | 'appearances' | 'timePlayed' | 'avgTime' | 'goals' | 'assists' | 'yellowCards' | 'redCards' | 'ownGoals';
+type SortColumn =
+  | 'name'
+  | 'avgRating'
+  | 'appearances'
+  | 'timePlayed'
+  | 'avgTime'
+  | 'goals'
+  | 'penaltyGoals'
+  | 'assists'
+  | 'penaltiesWon'
+  | 'yellowCards'
+  | 'redCards'
+  | 'ownGoals';
 
 @Component({
   selector: 'app-season-stats',
@@ -139,8 +151,12 @@ export class SeasonStatsComponent {
         return row.avgRating ?? -1;
       case 'goals':
         return row.goals;
+      case 'penaltyGoals':
+        return row.penaltyGoals;
       case 'assists':
         return row.assists;
+      case 'penaltiesWon':
+        return row.penaltiesWon;
       case 'yellowCards':
         return row.yellowCards;
       case 'redCards':

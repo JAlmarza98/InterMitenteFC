@@ -169,6 +169,19 @@
                   </button>
                   <button
                     type="button"
+                    class="stat-btn stat-btn-goal"
+                    [class.stat-btn-active]="row.stats.penaltyGoals > 0"
+                    (click)="incrementStat($event, row, 'penaltyGoals')"
+                    aria-label="Añadir gol de penalti"
+                    title="Gol de penalti"
+                  >
+                    <app-icon name="penalty" [size]="14" [strokeWidth]="2" />
+                    @if (row.stats.penaltyGoals) {
+                      {{ row.stats.penaltyGoals }}
+                    }
+                  </button>
+                  <button
+                    type="button"
                     class="stat-btn stat-btn-assist"
                     [class.stat-btn-active]="row.stats.assists > 0"
                     (click)="incrementStat($event, row, 'assists')"
@@ -177,6 +190,19 @@
                     <app-icon name="assist" [size]="14" [strokeWidth]="2" />
                     @if (row.stats.assists) {
                       {{ row.stats.assists }}
+                    }
+                  </button>
+                  <button
+                    type="button"
+                    class="stat-btn stat-btn-assist"
+                    [class.stat-btn-active]="row.stats.penaltiesWon > 0"
+                    (click)="incrementStat($event, row, 'penaltiesWon')"
+                    aria-label="Añadir penalti provocado"
+                    title="Penalti provocado"
+                  >
+                    <app-icon name="whistle" [size]="14" [strokeWidth]="2" />
+                    @if (row.stats.penaltiesWon) {
+                      {{ row.stats.penaltiesWon }}
                     }
                   </button>
                   <button
@@ -211,22 +237,50 @@
           }
           <div class="bench-cards">
             @for (row of bench(); track row.playerId) {
-              <button
-                class="bench-row"
+              <div
+                class="bench-card"
                 [class.selected]="selectedIncomingId() === row.playerId"
-                [disabled]="row.isRedCarded"
-                [attr.aria-label]="row.isRedCarded ? row.name + ' (expulsado)' : row.name"
-                (click)="selectIncoming(row.playerId)"
+                [class.bench-sent-off]="row.isRedCarded"
               >
-                <span class="jersey-badge">{{ row.jerseyNumber ?? '–' }}</span>
-                <span class="on-pitch-name">{{ row.name }}</span>
-                <span class="player-time">{{ row.playedDisplay }}</span>
-                @if (row.isRedCarded) {
-                  <svg width="10" height="13" viewBox="0 0 16 20" class="event-card-icon event-card-red"><rect width="16" height="20" rx="2.5" /></svg>
-                } @else if (selectedIncomingId() === row.playerId) {
-                  <app-icon name="check" [size]="16" [strokeWidth]="2" />
+                <button
+                  class="bench-row"
+                  [disabled]="row.isRedCarded"
+                  [attr.aria-label]="row.isRedCarded ? row.name + ' (expulsado)' : row.name"
+                  (click)="selectIncoming(row.playerId)"
+                >
+                  <span class="jersey-badge">{{ row.jerseyNumber ?? '–' }}</span>
+                  <span class="on-pitch-name">{{ row.name }}</span>
+                  <span class="player-time">{{ row.playedDisplay }}</span>
+                  @if (row.isRedCarded) {
+                    <svg width="10" height="13" viewBox="0 0 16 20" class="event-card-icon event-card-red"><rect width="16" height="20" rx="2.5" /></svg>
+                  } @else if (selectedIncomingId() === row.playerId) {
+                    <app-icon name="check" [size]="16" [strokeWidth]="2" />
+                  }
+                </button>
+                @if (!row.isRedCarded) {
+                  <div class="bench-card-actions">
+                    <button
+                      type="button"
+                      class="stat-btn stat-btn-card"
+                      (click)="incrementStat($event, row, 'yellowCards')"
+                      [attr.aria-label]="'Añadir tarjeta amarilla a ' + row.name"
+                    >
+                      <svg width="10" height="13" viewBox="0 0 16 20" class="event-card-icon event-card-yellow"><rect width="16" height="20" rx="2.5" /></svg>
+                      @if (row.stats.yellowCards) {
+                        {{ row.stats.yellowCards }}
+                      }
+                    </button>
+                    <button
+                      type="button"
+                      class="stat-btn stat-btn-card"
+                      (click)="incrementStat($event, row, 'redCards')"
+                      [attr.aria-label]="'Añadir tarjeta roja a ' + row.name"
+                    >
+                      <svg width="10" height="13" viewBox="0 0 16 20" class="event-card-icon event-card-red"><rect width="16" height="20" rx="2.5" /></svg>
+                    </button>
+                  </div>
                 }
-              </button>
+              </div>
             }
           </div>
           @if (selectedIncomingId()) {
@@ -266,6 +320,19 @@
                 </button>
                 <button
                   type="button"
+                  class="stat-btn-sm stat-btn-goal"
+                  [class.stat-btn-active]="row.stats.penaltyGoals > 0"
+                  (click)="incrementStat($event, row, 'penaltyGoals')"
+                  aria-label="Añadir gol de penalti"
+                  title="Gol de penalti"
+                >
+                  <app-icon name="penalty" [size]="13" [strokeWidth]="2" />
+                  @if (row.stats.penaltyGoals) {
+                    {{ row.stats.penaltyGoals }}
+                  }
+                </button>
+                <button
+                  type="button"
                   class="stat-btn-sm stat-btn-assist"
                   [class.stat-btn-active]="row.stats.assists > 0"
                   (click)="incrementStat($event, row, 'assists')"
@@ -274,6 +341,19 @@
                   <app-icon name="assist" [size]="13" [strokeWidth]="2" />
                   @if (row.stats.assists) {
                     {{ row.stats.assists }}
+                  }
+                </button>
+                <button
+                  type="button"
+                  class="stat-btn-sm stat-btn-assist"
+                  [class.stat-btn-active]="row.stats.penaltiesWon > 0"
+                  (click)="incrementStat($event, row, 'penaltiesWon')"
+                  aria-label="Añadir penalti provocado"
+                  title="Penalti provocado"
+                >
+                  <app-icon name="whistle" [size]="13" [strokeWidth]="2" />
+                  @if (row.stats.penaltiesWon) {
+                    {{ row.stats.penaltiesWon }}
                   }
                 </button>
                 <button type="button" class="stat-btn-sm" (click)="incrementStat($event, row, 'yellowCards')" aria-label="Añadir tarjeta amarilla">
@@ -293,16 +373,43 @@
             <p class="empty-state">No hay suplentes convocados.</p>
           }
           @for (row of bench(); track row.playerId) {
-            <button
+            <div
               class="bench-row-desktop"
               [class.selected]="selectedIncomingId() === row.playerId"
-              [disabled]="row.isRedCarded"
-              [attr.aria-label]="row.isRedCarded ? row.name + ' (expulsado)' : row.name"
-              (click)="selectIncoming(row.playerId)"
+              [class.bench-sent-off]="row.isRedCarded"
             >
-              <span>{{ row.name }}</span>
-              <span class="player-time">{{ row.playedDisplay }}</span>
-            </button>
+              <button
+                class="bench-row-desktop-main"
+                [disabled]="row.isRedCarded"
+                [attr.aria-label]="row.isRedCarded ? row.name + ' (expulsado)' : row.name"
+                (click)="selectIncoming(row.playerId)"
+              >
+                <span>{{ row.name }}</span>
+                <span class="player-time">{{ row.playedDisplay }}</span>
+              </button>
+              @if (row.isRedCarded) {
+                <svg width="9" height="12" viewBox="0 0 16 20" class="event-card-icon event-card-red"><rect width="16" height="20" rx="2.5" /></svg>
+              } @else {
+                <div class="stat-actions">
+                  <button
+                    type="button"
+                    class="stat-btn-sm"
+                    (click)="incrementStat($event, row, 'yellowCards')"
+                    [attr.aria-label]="'Añadir tarjeta amarilla a ' + row.name"
+                  >
+                    <svg width="9" height="12" viewBox="0 0 16 20" class="event-card-icon event-card-yellow"><rect width="16" height="20" rx="2.5" /></svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="stat-btn-sm"
+                    (click)="incrementStat($event, row, 'redCards')"
+                    [attr.aria-label]="'Añadir tarjeta roja a ' + row.name"
+                  >
+                    <svg width="9" height="12" viewBox="0 0 16 20" class="event-card-icon event-card-red"><rect width="16" height="20" rx="2.5" /></svg>
+                  </button>
+                </div>
+              }
+            </div>
           }
           @if (selectedIncomingId()) {
             <p class="hint">Toca un suplente y luego al jugador del campo que sale.</p>

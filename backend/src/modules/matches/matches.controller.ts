@@ -53,9 +53,20 @@ const playerStatSchema = z.object({
   yellowCards: z.number().int().min(0).max(2).optional(),
   redCards: z.number().int().min(0).max(1).optional(),
   ownGoals: z.number().int().nonnegative().optional(),
+  penaltyGoals: z.number().int().nonnegative().optional(),
+  penaltiesWon: z.number().int().nonnegative().optional(),
 });
 
-const STAT_EVENT_TYPES = ["goal", "assist", "yellow_card", "red_card", "own_goal"] as const;
+const STAT_EVENT_TYPES = [
+  "goal",
+  "assist",
+  "yellow_card",
+  "red_card",
+  "own_goal",
+  "penalty_goal",
+  "penalty_won",
+] as const;
+type StatEventType = (typeof STAT_EVENT_TYPES)[number];
 const LOGGABLE_EVENT_TYPES = [...STAT_EVENT_TYPES, "opponent_goal"] as const;
 
 const matchEventSchema = z
@@ -68,20 +79,26 @@ const matchEventSchema = z
     path: ["playerId"],
   });
 
-const STAT_FIELD_BY_EVENT_TYPE: Record<(typeof STAT_EVENT_TYPES)[number], string> = {
-  goal: "goals",
-  assist: "assists",
-  yellow_card: "yellowCards",
-  red_card: "redCards",
-  own_goal: "ownGoals",
+type StatField = keyof z.infer<typeof playerStatSchema>;
+
+// A penalty goal is still a goal: it bumps the scorer's `goals` too, so
+// top-scorer totals and the rating keep counting it, and `penaltyGoals`
+// only records how it was scored.
+const STAT_FIELDS_BY_EVENT_TYPE: Record<StatEventType, StatField[]> = {
+  goal: ["goals"],
+  assist: ["assists"],
+  yellow_card: ["yellowCards"],
+  red_card: ["redCards"],
+  own_goal: ["ownGoals"],
+  penalty_goal: ["goals", "penaltyGoals"],
+  penalty_won: ["penaltiesWon"],
 };
 
 // A "goal" adds to our score; an "own_goal" (autogol) is put into our own
 // net by one of our players, so it counts for the opponent instead.
-const SCORE_FIELD_BY_EVENT_TYPE: Partial<
-  Record<(typeof STAT_EVENT_TYPES)[number], "teamScore" | "opponentScore">
-> = {
+const SCORE_FIELD_BY_EVENT_TYPE: Partial<Record<StatEventType, "teamScore" | "opponentScore">> = {
   goal: "teamScore",
+  penalty_goal: "teamScore",
   own_goal: "opponentScore",
 };
 
@@ -197,17 +214,63 @@ export async function putSquad(req: Request, res: Response) {
   res.json({ squad });
 }
 
+// Deliberately not limited to the match's squad: this is the admin's
+// after-the-fact correction tool, and a player who ended up playing without
+// having been called up (a late addition nobody entered in the convocatoria)
+// still needs their numbers recorded somewhere.
 export async function upsertPlayerStat(req: Request, res: Response) {
   const data = playerStatSchema.parse(req.body);
   const matchId = req.params.id;
   const playerId = req.params.playerId;
 
-  const stat = await prisma.matchPlayerStat.upsert({
-    where: { matchId_playerId: { matchId, playerId } },
-    create: { matchId, playerId, ...data },
-    update: data,
+  const stat = await prisma.$transaction(async (tx) => {
+    const [match, player, existing] = await Promise.all([
+      tx.match.findUnique({ where: { id: matchId }, select: { id: true } }),
+      tx.player.findUnique({ where: { id: playerId }, select: { id: true } }),
+      tx.matchPlayerStat.findUnique({
+        where: { matchId_playerId: { matchId, playerId } },
+        select: { goals: true, penaltyGoals: true },
+      }),
+    ]);
+    if (!match) throw new HttpError(404, "Partido no encontrado");
+    if (!player) throw new HttpError(404, "Jugador no encontrado");
+
+    // Penalty goals are a subset of goals, so the two have to stay
+    // consistent whichever of them this (partial) update touches.
+    const goals = data.goals ?? existing?.goals ?? 0;
+    const penaltyGoals = data.penaltyGoals ?? existing?.penaltyGoals ?? 0;
+    if (penaltyGoals > goals) {
+      throw new HttpError(400, "Los goles de penalti no pueden superar a los goles totales del jugador");
+    }
+
+    return tx.matchPlayerStat.upsert({
+      where: { matchId_playerId: { matchId, playerId } },
+      create: { matchId, playerId, ...data },
+      update: data,
+    });
   });
+  broadcastMatchUpdate(matchId);
   res.json({ stat });
+}
+
+function hasAnyStat(stat: {
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+  ownGoals: number;
+  penaltyGoals: number;
+  penaltiesWon: number;
+}): boolean {
+  return (
+    stat.goals > 0 ||
+    stat.assists > 0 ||
+    stat.yellowCards > 0 ||
+    stat.redCards > 0 ||
+    stat.ownGoals > 0 ||
+    stat.penaltyGoals > 0 ||
+    stat.penaltiesWon > 0
+  );
 }
 
 export async function getMatchStats(req: Request, res: Response) {
@@ -220,6 +283,36 @@ export async function getMatchStats(req: Request, res: Response) {
     prisma.playingTimeSegment.findMany({ where: { matchId } }),
   ]);
 
+  // An admin can record stats/playing time for a player who wasn't called
+  // up (see upsertPlayerStat), so the squad alone no longer covers everyone
+  // with numbers in this match. Anyone outside it who has playing time or a
+  // non-zero stat is listed too, after the squad; an all-zero stat line
+  // (e.g. a correction set back to 0) doesn't keep them on the list.
+  const squadPlayerIds = new Set(squad.map((entry) => entry.playerId));
+  const extraPlayerIds = new Set<string>();
+  for (const segment of segments) {
+    if (!squadPlayerIds.has(segment.playerId)) extraPlayerIds.add(segment.playerId);
+  }
+  for (const stat of playerStats) {
+    if (!squadPlayerIds.has(stat.playerId) && hasAnyStat(stat)) extraPlayerIds.add(stat.playerId);
+  }
+  const extraPlayers =
+    extraPlayerIds.size > 0
+      ? await prisma.player.findMany({
+          where: { id: { in: [...extraPlayerIds] } },
+          orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        })
+      : [];
+  const entries = [
+    ...squad.map((entry) => ({
+      playerId: entry.playerId,
+      player: entry.player,
+      isStarter: entry.isStarter,
+      inSquad: true,
+    })),
+    ...extraPlayers.map((player) => ({ playerId: player.id, player, isStarter: false, inSquad: false })),
+  ];
+
   const liveCurrentSecond = match.status === "live" ? await computeLiveElapsedSeconds(matchId) : null;
 
   const secondsByPlayer = new Map<string, number>();
@@ -230,7 +323,7 @@ export async function getMatchStats(req: Request, res: Response) {
   }
   const statsByPlayer = new Map(playerStats.map((s) => [s.playerId, s]));
 
-  const players = squad.map((entry) => {
+  const players = entries.map((entry) => {
     const stat = statsByPlayer.get(entry.playerId);
     const secondsPlayed = secondsByPlayer.get(entry.playerId) ?? 0;
     const goals = stat?.goals ?? 0;
@@ -239,15 +332,15 @@ export async function getMatchStats(req: Request, res: Response) {
     const redCards = stat?.redCards ?? 0;
     const ownGoals = stat?.ownGoals ?? 0;
     return {
-      playerId: entry.playerId,
-      player: entry.player,
-      isStarter: entry.isStarter,
+      ...entry,
       secondsPlayed,
       goals,
       assists,
       yellowCards,
       redCards,
       ownGoals,
+      penaltyGoals: stat?.penaltyGoals ?? 0,
+      penaltiesWon: stat?.penaltiesWon ?? 0,
       rating: computeMatchRating({ goals, assists, yellowCards, redCards, ownGoals, secondsPlayed }),
     };
   });
@@ -280,8 +373,8 @@ export async function logMatchEvent(req: Request, res: Response) {
     return;
   }
 
-  const field = STAT_FIELD_BY_EVENT_TYPE[type as (typeof STAT_EVENT_TYPES)[number]];
-  const scoreField = SCORE_FIELD_BY_EVENT_TYPE[type as (typeof STAT_EVENT_TYPES)[number]];
+  const fields = STAT_FIELDS_BY_EVENT_TYPE[type as StatEventType];
+  const scoreField = SCORE_FIELD_BY_EVENT_TYPE[type as StatEventType];
 
   const [match, stat, event] = await prisma.$transaction(async (tx) => {
     if (scoreField) {
@@ -291,8 +384,8 @@ export async function logMatchEvent(req: Request, res: Response) {
     const updatedMatch = scoreField ? await tx.match.findUniqueOrThrow({ where: { id: matchId } }) : null;
     const upsertedStat = await tx.matchPlayerStat.upsert({
       where: { matchId_playerId: { matchId, playerId: playerId! } },
-      create: { matchId, playerId: playerId!, [field]: 1 },
-      update: { [field]: { increment: 1 } },
+      create: { matchId, playerId: playerId!, ...Object.fromEntries(fields.map((f) => [f, 1])) },
+      update: Object.fromEntries(fields.map((f) => [f, { increment: 1 }])),
     });
     const createdEvent = await tx.matchEvent.create({
       data: { matchId, playerId, type, periodType, second, createdByUserId: req.user!.id },

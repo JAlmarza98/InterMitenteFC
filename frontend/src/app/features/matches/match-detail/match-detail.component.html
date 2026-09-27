@@ -231,7 +231,9 @@
             <span>Minutos</span>
             <span>Nota</span>
             <span>Goles</span>
+            <span title="Goles de penalti">G. pen.</span>
             <span>Asist.</span>
+            <span title="Penaltis provocados">P. prov.</span>
             <span>TA</span>
             <span>TR</span>
             <span>En propia</span>
@@ -244,7 +246,9 @@
                 <span [class]="'rating-badge rating-' + ratingTier(row.rating)">{{ formatRating(row.rating) }}</span>
               </span>
               <span>{{ row.goals }}</span>
+              <span>{{ row.penaltyGoals }}</span>
               <span>{{ row.assists }}</span>
+              <span>{{ row.penaltiesWon }}</span>
               <span>{{ row.yellowCards }}</span>
               <span>{{ row.redCards }}</span>
               <span>{{ row.ownGoals }}</span>
@@ -268,7 +272,16 @@
                   <app-icon name="ball" [size]="12" [strokeWidth]="2" class="event-icon-goal" />
                   {{ row.goals }}
                 </span>
+                @if (row.penaltyGoals > 0) {
+                  <span>({{ row.penaltyGoals }} de pen.)</span>
+                }
                 <span>Asist. {{ row.assists }}</span>
+                @if (row.penaltiesWon > 0) {
+                  <span class="player-stat-chip" title="Penaltis provocados">
+                    <app-icon name="whistle" [size]="12" [strokeWidth]="2" class="event-icon-penalty_won" />
+                    {{ row.penaltiesWon }}
+                  </span>
+                }
               </div>
               @if (row.yellowCards > 0 || row.redCards > 0 || row.ownGoals > 0) {
                 <div class="player-stat-card-line">
