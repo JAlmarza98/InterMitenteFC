@@ -331,6 +331,8 @@ export async function getMatchStats(req: Request, res: Response) {
     const yellowCards = stat?.yellowCards ?? 0;
     const redCards = stat?.redCards ?? 0;
     const ownGoals = stat?.ownGoals ?? 0;
+    const penaltyGoals = stat?.penaltyGoals ?? 0;
+    const penaltiesWon = stat?.penaltiesWon ?? 0;
     return {
       ...entry,
       secondsPlayed,
@@ -339,9 +341,18 @@ export async function getMatchStats(req: Request, res: Response) {
       yellowCards,
       redCards,
       ownGoals,
-      penaltyGoals: stat?.penaltyGoals ?? 0,
-      penaltiesWon: stat?.penaltiesWon ?? 0,
-      rating: computeMatchRating({ goals, assists, yellowCards, redCards, ownGoals, secondsPlayed }),
+      penaltyGoals,
+      penaltiesWon,
+      rating: computeMatchRating({
+        goals,
+        penaltyGoals,
+        penaltiesWon,
+        assists,
+        yellowCards,
+        redCards,
+        ownGoals,
+        secondsPlayed,
+      }),
     };
   });
 

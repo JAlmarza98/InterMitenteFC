@@ -1,12 +1,16 @@
 /**
  * A single match's performance rating: a 0.0-10.0 figure blending goals,
- * assists, cards and own goals, weighted by how little time it took to
- * produce them. Two players with identical goals/assists but different
+ * assists, penalties won, cards and own goals, weighted by how little time
+ * it took to produce them. Two players with identical goals/assists but different
  * minutes played shouldn't score the same — the one who did it in less
  * time gets the higher rating.
  */
 export interface RatingInput {
+  /** All goals, penalties included. */
   goals: number;
+  /** How many of `goals` were penalties — a subset, not extra goals. */
+  penaltyGoals: number;
+  penaltiesWon: number;
   assists: number;
   yellowCards: number;
   redCards: number;
@@ -24,6 +28,13 @@ const REFERENCE_SECONDS = 3600; // 60 min
 const MIN_SECONDS_FLOOR = 600; // 10 min
 const WEIGHTS = {
   goal: 1.2,
+  // A penalty is an easier goal than one from open play, so it's worth
+  // less — but still clearly positive, and still a full goal everywhere
+  // else (scoreline, top scorers).
+  penaltyGoal: 0.9,
+  // Drawing the foul earns the chance but still leaves it to be scored,
+  // so a bit less than an assist.
+  penaltyWon: 0.5,
   assist: 0.7,
   yellowCard: -0.6,
   redCard: -2.0,
@@ -37,8 +48,13 @@ const WEIGHTS = {
 export function computeMatchRating(input: RatingInput): number | null {
   if (input.secondsPlayed <= 0) return null;
 
+  // `goals` already includes the penalties, so they're taken out before
+  // the open-play weight applies and then counted at their own weight.
+  const penaltyGoals = Math.min(input.penaltyGoals, input.goals);
   const weighted =
-    input.goals * WEIGHTS.goal +
+    (input.goals - penaltyGoals) * WEIGHTS.goal +
+    penaltyGoals * WEIGHTS.penaltyGoal +
+    input.penaltiesWon * WEIGHTS.penaltyWon +
     input.assists * WEIGHTS.assist +
     input.yellowCards * WEIGHTS.yellowCard +
     input.redCards * WEIGHTS.redCard +

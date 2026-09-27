@@ -66,6 +66,8 @@ describe("season stats", () => {
     expect(row.avgRating).toBe(
       computeMatchRating({
         goals: 1,
+        penaltyGoals: 1,
+        penaltiesWon: 2,
         assists: 0,
         yellowCards: 0,
         redCards: 0,

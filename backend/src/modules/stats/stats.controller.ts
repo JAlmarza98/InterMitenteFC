@@ -103,6 +103,8 @@ export async function getSeasonStats(req: Request, res: Response) {
         const matchStat = statsByPlayerMatch.get(key);
         return computeMatchRating({
           goals: matchStat?.goals ?? 0,
+          penaltyGoals: matchStat?.penaltyGoals ?? 0,
+          penaltiesWon: matchStat?.penaltiesWon ?? 0,
           assists: matchStat?.assists ?? 0,
           yellowCards: matchStat?.yellowCards ?? 0,
           redCards: matchStat?.redCards ?? 0,
