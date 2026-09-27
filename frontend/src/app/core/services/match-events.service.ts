@@ -5,7 +5,15 @@ import { PeriodType } from './match-clock.service';
 import { Match } from './matches.service';
 
 export type MatchEventType =
-  'goal' | 'assist' | 'yellow_card' | 'red_card' | 'own_goal' | 'substitution' | 'opponent_goal';
+  | 'goal'
+  | 'assist'
+  | 'yellow_card'
+  | 'red_card'
+  | 'own_goal'
+  | 'substitution'
+  | 'opponent_goal'
+  | 'penalty_goal'
+  | 'penalty_won';
 export type LoggableEventType = Exclude<MatchEventType, 'substitution'>;
 
 export interface MatchEvent {
@@ -27,6 +35,8 @@ export const MATCH_EVENT_LABELS: Record<MatchEventType, string> = {
   own_goal: 'Gol en propia',
   substitution: 'Cambio',
   opponent_goal: 'Gol rival',
+  penalty_goal: 'Gol de penalti',
+  penalty_won: 'Penalti provocado',
 };
 
 // Material icon ligature names (not emoji — see craft-floor's ban on
@@ -41,6 +51,8 @@ export const MATCH_EVENT_ICONS: Record<MatchEventType, string> = {
   own_goal: 'sports_soccer',
   substitution: 'swap_horiz',
   opponent_goal: 'sports_soccer',
+  penalty_goal: 'sports_soccer',
+  penalty_won: 'sports',
 };
 
 @Injectable({ providedIn: 'root' })

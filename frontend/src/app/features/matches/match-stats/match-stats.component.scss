@@ -152,7 +152,7 @@
 
 .stat-input-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   margin-top: 10px;
 }
@@ -187,7 +187,8 @@
 }
 
 .mst-box {
-  width: 52px;
+  width: 100%;
+  max-width: 52px;
   height: 34px;
   font-size: 0.82rem;
 }
@@ -238,7 +239,8 @@
 
 .mst-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 0.9fr 0.9fr 0.7fr 0.7fr 0.9fr;
+  grid-template-columns: 2fr 1fr 1fr 0.9fr 0.9fr 0.9fr 0.9fr 0.7fr 0.7fr 0.9fr;
+  column-gap: 6px;
   align-items: center;
   padding: 11px 20px;
   border-bottom: 1px solid oklch(45% 0.03 262 / 15%);
@@ -272,6 +274,19 @@
 .player-name-cell {
   font-size: 0.86rem;
   font-weight: 600;
+}
+
+.not-called-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: oklch(30% 0.04 262);
+  color: oklch(78% 0.02 262);
+  font-size: 0.62rem;
+  font-weight: 700;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .mst-time {
@@ -357,7 +372,7 @@
   color: var(--mat-sys-error);
 }
 
-.add-segment-btn {
+.add-row-btn {
   margin-top: 10px;
   width: 100%;
   height: 42px;
@@ -376,7 +391,7 @@
 }
 
 @media (min-width: 768px) {
-  .add-segment-btn {
+  .add-row-btn {
     width: fit-content;
     padding: 0 18px;
   }

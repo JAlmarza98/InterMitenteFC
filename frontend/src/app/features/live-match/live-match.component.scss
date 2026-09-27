@@ -486,38 +486,67 @@ button {
   fill: oklch(65% 0.2 25);
 }
 
-.bench-row,
+// A bench entry is the "select as incoming player" button plus, beside it,
+// its own booking buttons (a substitute can be shown a card too) — so the
+// card chrome lives on the wrapper, not on the button, since the booking
+// buttons can't be nested inside another <button>.
+.bench-card,
 .bench-row-desktop {
   display: flex;
   align-items: center;
-  width: 100%;
+}
+
+.bench-card {
+  gap: 6px;
+  padding: 4px 6px 4px 0;
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+  border-radius: 14px;
+  background: oklch(22% 0.035 262 / 70%);
+}
+
+.bench-row,
+.bench-row-desktop-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
   font: inherit;
   text-align: left;
 }
 
 .bench-row {
   gap: 10px;
-  min-height: 48px;
-  padding: 10px 12px;
-  border: 1px solid oklch(45% 0.03 262 / 25%);
-  border-radius: 14px;
-  background: oklch(22% 0.035 262 / 70%);
+  min-height: 44px;
+  padding: 6px 4px 6px 12px;
 }
 
-.bench-row.selected,
+.bench-card.selected,
 .bench-row-desktop.selected {
   background: color-mix(in srgb, var(--accent-amber) 20%, transparent);
   color: var(--accent-amber);
 }
 
-.bench-row.selected {
+.bench-card.selected {
   border-color: color-mix(in srgb, var(--accent-amber) 45%, transparent);
 }
 
-.bench-row:disabled,
-.bench-row-desktop:disabled {
+.bench-sent-off {
   opacity: 0.55;
+}
+
+.bench-row:disabled,
+.bench-row-desktop-main:disabled {
   cursor: not-allowed;
+}
+
+.bench-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.stat-btn-card {
+  flex: 0 0 44px;
 }
 
 .player-time {
@@ -557,6 +586,14 @@ button {
 
 .roster-row-desktop {
   padding: 9px 4px;
+  // Six stat buttons don't fit beside the name and time in a half-width
+  // column, so they get their own line under them.
+  flex-wrap: wrap;
+  row-gap: 0;
+
+  .stat-actions {
+    flex-basis: 100%;
+  }
 }
 
 .roster-row-main {
@@ -583,10 +620,20 @@ button {
 }
 
 .bench-row-desktop {
-  justify-content: space-between;
-  padding: 11px 10px;
+  gap: 10px;
+  padding: 5px 10px;
   border-radius: 10px;
   font-size: 0.84rem;
+
+  .stat-actions {
+    margin-top: 0;
+  }
+}
+
+.bench-row-desktop-main {
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
 }
 
 .event-teaser {

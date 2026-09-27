@@ -7,22 +7,25 @@ export interface MatchPlayerStatRow {
   playerId: string;
   player: Player;
   isStarter: boolean;
+  /** False for a player an admin recorded stats or playing time for
+   * without them having been called up for the match. */
+  inSquad: boolean;
   secondsPlayed: number;
   goals: number;
   assists: number;
   yellowCards: number;
   redCards: number;
   ownGoals: number;
+  /** Subset of `goals`, not in addition to it. */
+  penaltyGoals: number;
+  penaltiesWon: number;
   rating: number | null;
 }
 
-export interface PlayerStatInput {
-  goals?: number;
-  assists?: number;
-  yellowCards?: number;
-  redCards?: number;
-  ownGoals?: number;
-}
+export type PlayerStatField =
+  'goals' | 'assists' | 'yellowCards' | 'redCards' | 'ownGoals' | 'penaltyGoals' | 'penaltiesWon';
+
+export type PlayerStatInput = Partial<Record<PlayerStatField, number>>;
 
 export interface SeasonStatRow {
   playerId: string;
@@ -36,6 +39,8 @@ export interface SeasonStatRow {
   yellowCards: number;
   redCards: number;
   ownGoals: number;
+  penaltyGoals: number;
+  penaltiesWon: number;
 }
 
 export interface SeasonStats {

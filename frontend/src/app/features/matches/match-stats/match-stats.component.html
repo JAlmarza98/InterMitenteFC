@@ -22,92 +22,43 @@
     <div class="stats-section">
       <div class="section-title">Estadísticas de jugadores</div>
 
-      @if (players().length === 0) {
+      @if (rows().length === 0) {
         <p class="empty-state">No hay jugadores convocados para este partido.</p>
       } @else {
         <div class="player-stat-cards mobile-only">
-          @for (row of players(); track row.playerId) {
+          @for (row of rows(); track row.playerId) {
             <div class="player-stat-edit-card">
               <div class="player-stat-edit-top">
-                <span class="player-stat-name">{{ row.player.firstName }} {{ row.player.lastName }}</span>
+                <span class="player-stat-name">
+                  {{ row.player.firstName }} {{ row.player.lastName }}
+                  @if (!row.inSquad) {
+                    <span class="not-called-tag">No convocado</span>
+                  }
+                </span>
                 <div class="player-stat-edit-meta">
                   <span class="player-stat-time">{{ formatTime(row.secondsPlayed) }}</span>
                   <span [class]="'rating-badge rating-' + ratingTier(row.rating)">{{ formatRating(row.rating) }}</span>
                 </div>
               </div>
               <div class="stat-input-grid">
-                <div>
-                  <div class="stat-input-label">Goles</div>
-                  @if (canManage()) {
-                    <input
-                      class="ms-box"
-                      type="number"
-                      min="0"
-                      [value]="row.goals"
-                      (change)="updateStat(row, 'goals', $any($event.target).value)"
-                    />
-                  } @else {
-                    <span class="ms-box ms-box-readonly">{{ row.goals }}</span>
-                  }
-                </div>
-                <div>
-                  <div class="stat-input-label">Asist.</div>
-                  @if (canManage()) {
-                    <input
-                      class="ms-box"
-                      type="number"
-                      min="0"
-                      [value]="row.assists"
-                      (change)="updateStat(row, 'assists', $any($event.target).value)"
-                    />
-                  } @else {
-                    <span class="ms-box ms-box-readonly">{{ row.assists }}</span>
-                  }
-                </div>
-                <div>
-                  <div class="stat-input-label">TA</div>
-                  @if (canManage()) {
-                    <input
-                      class="ms-box"
-                      type="number"
-                      min="0"
-                      max="2"
-                      [value]="row.yellowCards"
-                      (change)="updateStat(row, 'yellowCards', $any($event.target).value)"
-                    />
-                  } @else {
-                    <span class="ms-box ms-box-readonly">{{ row.yellowCards }}</span>
-                  }
-                </div>
-                <div>
-                  <div class="stat-input-label">TR</div>
-                  @if (canManage()) {
-                    <input
-                      class="ms-box"
-                      type="number"
-                      min="0"
-                      max="1"
-                      [value]="row.redCards"
-                      (change)="updateStat(row, 'redCards', $any($event.target).value)"
-                    />
-                  } @else {
-                    <span class="ms-box ms-box-readonly">{{ row.redCards }}</span>
-                  }
-                </div>
-                <div>
-                  <div class="stat-input-label">G.p.</div>
-                  @if (canManage()) {
-                    <input
-                      class="ms-box"
-                      type="number"
-                      min="0"
-                      [value]="row.ownGoals"
-                      (change)="updateStat(row, 'ownGoals', $any($event.target).value)"
-                    />
-                  } @else {
-                    <span class="ms-box ms-box-readonly">{{ row.ownGoals }}</span>
-                  }
-                </div>
+                @for (col of statColumns; track col.field) {
+                  <div>
+                    <div class="stat-input-label">{{ col.shortLabel }}</div>
+                    @if (canManage()) {
+                      <input
+                        class="ms-box"
+                        type="number"
+                        min="0"
+                        [attr.max]="col.max ?? null"
+                        [attr.aria-label]="col.label"
+                        [value]="row[col.field]"
+                        (change)="updateStat(row, col.field, $any($event.target).value)"
+                      />
+                    } @else {
+                      <span class="ms-box ms-box-readonly">{{ row[col.field] }}</span>
+                    }
+                  </div>
+                }
               </div>
             </div>
           }
@@ -115,62 +66,53 @@
 
         <div class="stats-table-wrap desktop-only">
           <div class="mst-row mst-head">
-            <span>Jugador</span><span>Tiempo</span><span>Nota</span><span>Goles</span><span>Asist.</span
-            ><span>TA</span><span>TR</span><span>G. propia</span>
+            <span>Jugador</span><span>Tiempo</span><span>Nota</span>
+            @for (col of statColumns; track col.field) {
+              <span [attr.title]="col.label">{{ col.header }}</span>
+            }
           </div>
-          @for (row of players(); track row.playerId) {
+          @for (row of rows(); track row.playerId) {
             <div class="mst-row">
-              <span class="player-name-cell">{{ row.player.firstName }} {{ row.player.lastName }}</span>
+              <span class="player-name-cell">
+                {{ row.player.firstName }} {{ row.player.lastName }}
+                @if (!row.inSquad) {
+                  <span class="not-called-tag">No convocado</span>
+                }
+              </span>
               <span class="mst-time">{{ formatTime(row.secondsPlayed) }}</span>
               <span><span [class]="'rating-badge rating-' + ratingTier(row.rating)">{{ formatRating(row.rating) }}</span></span>
-              @if (canManage()) {
-                <input
-                  class="mst-box"
-                  type="number"
-                  min="0"
-                  [value]="row.goals"
-                  (change)="updateStat(row, 'goals', $any($event.target).value)"
-                />
-                <input
-                  class="mst-box"
-                  type="number"
-                  min="0"
-                  [value]="row.assists"
-                  (change)="updateStat(row, 'assists', $any($event.target).value)"
-                />
-                <input
-                  class="mst-box"
-                  type="number"
-                  min="0"
-                  max="2"
-                  [value]="row.yellowCards"
-                  (change)="updateStat(row, 'yellowCards', $any($event.target).value)"
-                />
-                <input
-                  class="mst-box"
-                  type="number"
-                  min="0"
-                  max="1"
-                  [value]="row.redCards"
-                  (change)="updateStat(row, 'redCards', $any($event.target).value)"
-                />
-                <input
-                  class="mst-box"
-                  type="number"
-                  min="0"
-                  [value]="row.ownGoals"
-                  (change)="updateStat(row, 'ownGoals', $any($event.target).value)"
-                />
-              } @else {
-                <span class="mst-box mst-box-readonly">{{ row.goals }}</span>
-                <span class="mst-box mst-box-readonly">{{ row.assists }}</span>
-                <span class="mst-box mst-box-readonly">{{ row.yellowCards }}</span>
-                <span class="mst-box mst-box-readonly">{{ row.redCards }}</span>
-                <span class="mst-box mst-box-readonly">{{ row.ownGoals }}</span>
+              @for (col of statColumns; track col.field) {
+                @if (canManage()) {
+                  <input
+                    class="mst-box"
+                    type="number"
+                    min="0"
+                    [attr.max]="col.max ?? null"
+                    [attr.aria-label]="col.label"
+                    [value]="row[col.field]"
+                    (change)="updateStat(row, col.field, $any($event.target).value)"
+                  />
+                } @else {
+                  <span class="mst-box mst-box-readonly">{{ row[col.field] }}</span>
+                }
               }
             </div>
           }
         </div>
+      }
+
+      @if (canManage() && addablePlayers().length > 0) {
+        <button class="add-row-btn" [matMenuTriggerFor]="addPlayerMenu">
+          <app-icon name="user-add" [size]="15" [strokeWidth]="2" />
+          Añadir jugador no convocado
+        </button>
+        <mat-menu #addPlayerMenu="matMenu">
+          @for (player of addablePlayers(); track player.id) {
+            <button mat-menu-item (click)="addPlayer(player)">
+              {{ player.firstName }} {{ player.lastName }}{{ player.active ? '' : ' (inactivo)' }}
+            </button>
+          }
+        </mat-menu>
       }
     </div>
 
@@ -230,7 +172,7 @@
       }
 
       @if (canManage()) {
-        <button class="add-segment-btn" (click)="openCreateSegment()">
+        <button class="add-row-btn" (click)="openCreateSegment()">
           <app-icon name="add" [size]="15" [strokeWidth]="2.1" />
           Añadir tiempo de juego
         </button>

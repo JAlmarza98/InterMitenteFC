@@ -4,6 +4,8 @@ import { computeMatchRating, averageRating, RatingInput } from "../../src/module
 function input(overrides: Partial<RatingInput> = {}): RatingInput {
   return {
     goals: 0,
+    penaltyGoals: 0,
+    penaltiesWon: 0,
     assists: 0,
     yellowCards: 0,
     redCards: 0,
@@ -26,6 +28,26 @@ describe("computeMatchRating", () => {
     const rating = computeMatchRating(input({ goals: 1 }));
     expect(rating).not.toBeNull();
     expect(rating!).toBeGreaterThan(5.0);
+  });
+
+  it("values a penalty goal above nothing but below an open-play goal", () => {
+    const openPlay = computeMatchRating(input({ goals: 1 }))!;
+    const penalty = computeMatchRating(input({ goals: 1, penaltyGoals: 1 }))!;
+    expect(penalty).toBeGreaterThan(5.0);
+    expect(penalty).toBeLessThan(openPlay);
+    expect(penalty).toBe(5.9);
+  });
+
+  it("only discounts the penalties, not the player's other goals", () => {
+    // 2 open-play goals (2 × 1.2) + 1 penalty (0.9) over a full match.
+    expect(computeMatchRating(input({ goals: 3, penaltyGoals: 1 }))).toBe(8.3);
+  });
+
+  it("rewards winning a penalty, a bit less than an assist", () => {
+    const penaltyWon = computeMatchRating(input({ penaltiesWon: 1 }))!;
+    const assist = computeMatchRating(input({ assists: 1 }))!;
+    expect(penaltyWon).toBe(5.5);
+    expect(penaltyWon).toBeLessThan(assist);
   });
 
   it("weighs the same output more heavily for less time played", () => {

@@ -50,6 +50,8 @@ enum MatchEventType {
   own_goal
   substitution
   opponent_goal
+  penalty_goal
+  penalty_won
 }
 
 model User {
@@ -154,16 +156,23 @@ model MatchSquad {
 }
 
 model MatchPlayerStat {
-  id          String @id @default(uuid())
-  matchId     String
-  match       Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  playerId    String
-  player      Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  goals       Int    @default(0)
-  assists     Int    @default(0)
-  yellowCards Int    @default(0)
-  redCards    Int    @default(0)
-  ownGoals    Int    @default(0)
+  id           String @id @default(uuid())
+  matchId      String
+  match        Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  playerId     String
+  player       Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  goals        Int    @default(0)
+  assists      Int    @default(0)
+  yellowCards  Int    @default(0)
+  redCards     Int    @default(0)
+  ownGoals     Int    @default(0)
+  /// Goals scored from the penalty spot. A subset of `goals`, not an extra
+  /// tally on top of it: a penalty goal is still a goal for the scorer and
+  /// the scoreline, this only records how it was scored.
+  penaltyGoals Int    @default(0)
+  /// Penalties won ("penalti provocado"): fouls drawn inside the box that
+  /// earned the team a penalty, whoever then took it.
+  penaltiesWon Int    @default(0)
 
   @@unique([matchId, playerId])
 }

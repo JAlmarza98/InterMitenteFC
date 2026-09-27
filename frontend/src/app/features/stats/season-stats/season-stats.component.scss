@@ -136,7 +136,9 @@
 
 .stats-table-row {
   display: grid;
-  grid-template-columns: 2.2fr 0.8fr 0.5fr 0.9fr 0.9fr 0.6fr 0.6fr 0.5fr 0.5fr 0.7fr;
+  // Twelve columns at tablet width: the name column gives up some room so
+  // the header labels (PROMEDIO, P. PROV., G. PROPIA) still fit on one line.
+  grid-template-columns: 1.8fr 0.9fr 0.5fr 0.8fr 0.8fr 0.6fr 0.6fr 0.6fr 0.7fr 0.4fr 0.4fr 0.8fr;
   align-items: center;
   padding: 11px 18px;
   border-bottom: 1px solid oklch(45% 0.03 262 / 15%);
@@ -232,6 +234,7 @@
   }
 }
 
+.player-card-line-sub,
 .player-card-line-bad {
   gap: 12px;
   margin-top: 6px;

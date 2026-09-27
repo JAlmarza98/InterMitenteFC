@@ -28,13 +28,15 @@ import {
   periodOffsetSeconds,
 } from '../../core/services/match-clock.service';
 
-type StatField = 'goals' | 'assists' | 'yellowCards' | 'redCards';
+type StatField = 'goals' | 'assists' | 'yellowCards' | 'redCards' | 'penaltyGoals' | 'penaltiesWon';
 
 const STAT_EVENT_TYPE_BY_FIELD: Record<StatField, Exclude<LoggableEventType, 'opponent_goal'>> = {
   goals: 'goal',
   assists: 'assist',
   yellowCards: 'yellow_card',
   redCards: 'red_card',
+  penaltyGoals: 'penalty_goal',
+  penaltiesWon: 'penalty_won',
 };
 
 interface LiveStatCounts {
@@ -42,6 +44,8 @@ interface LiveStatCounts {
   assists: number;
   yellowCards: number;
   redCards: number;
+  penaltyGoals: number;
+  penaltiesWon: number;
 }
 
 interface RosterRow {
@@ -56,7 +60,14 @@ interface RosterRow {
   playedDisplay: string;
 }
 
-const EMPTY_STATS: LiveStatCounts = { goals: 0, assists: 0, yellowCards: 0, redCards: 0 };
+const EMPTY_STATS: LiveStatCounts = {
+  goals: 0,
+  assists: 0,
+  yellowCards: 0,
+  redCards: 0,
+  penaltyGoals: 0,
+  penaltiesWon: 0,
+};
 
 // Same mapping/reasoning as match-detail's EVENT_ICON_NAMES — a stroked
 // ball for goals, a stroked swap arrow for substitutions. Cards render as
@@ -68,6 +79,8 @@ const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
   own_goal: 'ball',
   assist: 'assist',
   substitution: 'swap',
+  penalty_goal: 'penalty',
+  penalty_won: 'whistle',
 };
 
 @Component({
@@ -344,6 +357,8 @@ export class LiveMatchComponent {
             assists: row.assists,
             yellowCards: row.yellowCards,
             redCards: row.redCards,
+            penaltyGoals: row.penaltyGoals,
+            penaltiesWon: row.penaltiesWon,
           });
         }
         this.statsByPlayer.set(map);
@@ -461,12 +476,18 @@ export class LiveMatchComponent {
     });
   }
 
+  /** Also used for bench players, who can only be booked (yellow/red) —
+   * a substitute or a player already taken off can still be shown a card
+   * from the bench, which is the only stat that applies to them. */
   incrementStat(event: Event, row: RosterRow, field: StatField) {
     event.stopPropagation();
-    const newValue = row.stats[field] + 1;
+    // The backend counts a penalty goal as a goal too — mirror that
+    // optimistically so the goal badge doesn't lag behind until a resync.
+    const optimistic: LiveStatCounts = { ...row.stats, [field]: row.stats[field] + 1 };
+    if (field === 'penaltyGoals') optimistic.goals += 1;
 
     const updated = new Map(this.statsByPlayer());
-    updated.set(row.playerId, { ...row.stats, [field]: newValue });
+    updated.set(row.playerId, optimistic);
     this.statsByPlayer.set(updated);
 
     this.matchEventsService.log(this.matchId, row.playerId, STAT_EVENT_TYPE_BY_FIELD[field]).subscribe({
