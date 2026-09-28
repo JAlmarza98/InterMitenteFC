@@ -169,7 +169,7 @@ export async function updateMatch(req: Request, res: Response) {
     });
     if (current.status !== "finished") {
       const match = await prisma.$transaction(async (tx) => {
-        await closeOpenClockState(tx, matchId, new Date());
+        await closeOpenClockState(tx, matchId, new Date(), req.user!.id);
         return tx.match.update({ where: { id: matchId }, data });
       });
       broadcastMatchUpdate(matchId);

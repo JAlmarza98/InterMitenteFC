@@ -293,7 +293,8 @@ describe("matches", () => {
 
       const eventsRes = await coach.get(`/api/matches/${matchId}/events`);
       expect(eventsRes.status).toBe(200);
-      expect(eventsRes.body.events).toHaveLength(4);
+      // The four logged above, plus the first half's kick-off.
+      expect(eventsRes.body.events).toHaveLength(5);
 
       // The scorer's playing-time segment is still open (live match) — let
       // just over a second of real time pass so secondsPlayed, and with it
@@ -341,6 +342,7 @@ describe("matches", () => {
 
       const eventsRes = await coach.get(`/api/matches/${matchId}/events`);
       expect(eventsRes.body.events.map((e: { type: string }) => e.type)).toEqual([
+        "period_start",
         "penalty_won",
         "penalty_goal",
       ]);

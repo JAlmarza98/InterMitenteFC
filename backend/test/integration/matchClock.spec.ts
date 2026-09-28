@@ -61,6 +61,50 @@ describe("match clock", () => {
     expect(closedPeriod.endedAt).not.toBeNull();
   });
 
+  it("logs the start and end of every period in the match history", async () => {
+    const { user, password } = await createApprovedUser("coach");
+    const agent = await loginAs(app, user.email, password);
+    const matchId = await createMatch(agent);
+
+    await agent.post(`/api/matches/${matchId}/clock/start-period`).send({ type: "first_half" });
+    await sleep(1100);
+    await agent.post(`/api/matches/${matchId}/clock/end-period`).send();
+    await agent.post(`/api/matches/${matchId}/clock/start-period`).send({ type: "second_half" });
+    await sleep(1100);
+    // Finishing with the second half still running ends it too.
+    await agent.post(`/api/matches/${matchId}/clock/finish`).send();
+
+    const res = await agent.get(`/api/matches/${matchId}/events`);
+    const periodEvents = res.body.events.map((e: { type: string; periodType: string; second: number }) => [
+      e.type,
+      e.periodType,
+      e.second,
+    ]);
+    const firstHalfEnd = periodEvents[1][2] as number;
+    expect(firstHalfEnd).toBeGreaterThanOrEqual(1);
+    expect(periodEvents).toEqual([
+      ["period_start", "first_half", 0],
+      ["period_end", "first_half", firstHalfEnd],
+      // The second half starts where the first one actually ended.
+      ["period_start", "second_half", firstHalfEnd],
+      ["period_end", "second_half", expect.any(Number)],
+    ]);
+    expect(periodEvents[3][2]).toBeGreaterThan(firstHalfEnd);
+    expect(res.body.events.every((e: { player: unknown }) => e.player === null)).toBe(true);
+  });
+
+  it("logs the end of the running period when an admin marks the match finished by hand", async () => {
+    const { user, password } = await createApprovedUser("admin");
+    const agent = await loginAs(app, user.email, password);
+    const matchId = await createMatch(agent);
+    await agent.post(`/api/matches/${matchId}/clock/start-period`).send({ type: "first_half" });
+
+    await agent.patch(`/api/matches/${matchId}`).send({ status: "finished" });
+
+    const res = await agent.get(`/api/matches/${matchId}/events`);
+    expect(res.body.events.map((e: { type: string }) => e.type)).toEqual(["period_start", "period_end"]);
+  });
+
   it("refuses to start the same period twice", async () => {
     const { user, password } = await createApprovedUser("coach");
     const agent = await loginAs(app, user.email, password);

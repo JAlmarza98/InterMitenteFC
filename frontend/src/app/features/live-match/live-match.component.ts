@@ -15,6 +15,7 @@ import {
   MatchEvent,
   MatchEventsService,
   MatchEventType,
+  periodEventDescription,
 } from '../../core/services/match-events.service';
 import {
   ClockState,
@@ -81,6 +82,8 @@ const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
   substitution: 'swap',
   penalty_goal: 'penalty',
   penalty_won: 'whistle',
+  period_start: 'clock',
+  period_end: 'clock',
 };
 
 @Component({
@@ -149,6 +152,8 @@ export class LiveMatchComponent {
   }
 
   eventDescription(event: MatchEvent): string {
+    const periodDescription = periodEventDescription(event);
+    if (periodDescription) return periodDescription;
     if (event.type === 'substitution') {
       const inName = this.eventPlayerName(event);
       const outName = event.relatedPlayer ? `${event.relatedPlayer.firstName} ${event.relatedPlayer.lastName}` : '';

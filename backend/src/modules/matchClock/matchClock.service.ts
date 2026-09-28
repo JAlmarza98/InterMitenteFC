@@ -155,7 +155,7 @@ export async function getClockState(matchId: string) {
   };
 }
 
-export async function startPeriod(matchId: string, type: PeriodType) {
+export async function startPeriod(matchId: string, type: PeriodType, userId: string) {
   const isFirstPeriodOfMatch = type === PERIOD_ORDER[0];
 
   await runIsolated(async (tx) => {
@@ -181,6 +181,10 @@ export async function startPeriod(matchId: string, type: PeriodType) {
     });
 
     await tx.match.update({ where: { id: matchId }, data: { status: "live" } });
+
+    await tx.matchEvent.create({
+      data: { matchId, type: "period_start", periodType: type, second: offset, createdByUserId: userId },
+    });
 
     if (isFirstPeriodOfMatch) {
       const starters = await tx.matchSquad.findMany({ where: { matchId, isStarter: true } });
@@ -239,23 +243,47 @@ export async function resumeClock(matchId: string) {
   return getClockState(matchId);
 }
 
-export async function endPeriod(matchId: string) {
+/**
+ * Ends `active` at `now` (auto-closing a dangling pause first) and logs its
+ * `period_end` event. Shared by `endPeriod` and `closeOpenClockState`, so
+ * a period cut short by finishing the match still gets its end in the
+ * match history.
+ */
+async function closePeriod(
+  tx: Prisma.TransactionClient,
+  matchId: string,
+  active: PeriodWithPauses,
+  periodsByType: Map<PeriodType, PeriodWithPauses>,
+  now: Date,
+  userId: string
+) {
+  // Close any dangling open pause first: elapsedSecondsInPeriod treats an
+  // unresumed pause as still running (subtracting up to "now" on every
+  // future read), so leaving one open past endedAt would make the frozen
+  // elapsed time for this period keep shrinking during e.g. half-time.
+  const openPause = active.pauses.find((p) => p.resumedAt === null);
+  if (openPause) {
+    await tx.matchClockPause.update({ where: { id: openPause.id }, data: { resumedAt: now } });
+  }
+
+  await tx.matchPeriod.update({ where: { id: active.id }, data: { endedAt: now } });
+
+  // `active` and its pauses are the pre-update rows, but with endedAt and
+  // the open pause's resumedAt both unset they resolve to `now` anyway.
+  const second =
+    offsetSecondsFor(active.type, periodsByType, now) + elapsedSecondsInPeriod(active, active.pauses, now);
+  await tx.matchEvent.create({
+    data: { matchId, type: "period_end", periodType: active.type, second, createdByUserId: userId },
+  });
+}
+
+export async function endPeriod(matchId: string, userId: string) {
   await runIsolated(async (tx) => {
     const periodsByType = await getPeriodsByType(matchId, tx);
     const active = getActiveFrom(periodsByType);
     if (!active) throw new HttpError(400, "No hay ningún período en curso");
 
-    const now = new Date();
-    // Close any dangling open pause first: elapsedSecondsInPeriod treats an
-    // unresumed pause as still running (subtracting up to "now" on every
-    // future read), so leaving one open past endedAt would make the frozen
-    // elapsed time for this period keep shrinking during e.g. half-time.
-    const openPause = active.pauses.find((p) => p.resumedAt === null);
-    if (openPause) {
-      await tx.matchClockPause.update({ where: { id: openPause.id }, data: { resumedAt: now } });
-    }
-
-    await tx.matchPeriod.update({ where: { id: active.id }, data: { endedAt: now } });
+    await closePeriod(tx, matchId, active, periodsByType, new Date(), userId);
   });
   broadcastMatchUpdate(matchId);
   return getClockState(matchId);
@@ -339,16 +367,17 @@ export async function substitute(matchId: string, playerOutId: string, playerInI
  * consistent, fully-closed state instead of the manual path silently
  * leaving periods/segments open forever.
  */
-export async function closeOpenClockState(tx: Prisma.TransactionClient, matchId: string, now: Date) {
+export async function closeOpenClockState(
+  tx: Prisma.TransactionClient,
+  matchId: string,
+  now: Date,
+  userId: string
+) {
   const periodsByType = await getPeriodsByType(matchId, tx);
   const active = getActiveFrom(periodsByType);
 
   if (active) {
-    const openPause = active.pauses.find((p) => p.resumedAt === null);
-    if (openPause) {
-      await tx.matchClockPause.update({ where: { id: openPause.id }, data: { resumedAt: now } });
-    }
-    await tx.matchPeriod.update({ where: { id: active.id }, data: { endedAt: now } });
+    await closePeriod(tx, matchId, active, periodsByType, now, userId);
   }
 
   // Re-read the furthest-along period rather than relying on "active": if
@@ -375,9 +404,9 @@ export async function closeOpenClockState(tx: Prisma.TransactionClient, matchId:
   }
 }
 
-export async function finishMatch(matchId: string) {
+export async function finishMatch(matchId: string, userId: string) {
   await prisma.$transaction(async (tx) => {
-    await closeOpenClockState(tx, matchId, new Date());
+    await closeOpenClockState(tx, matchId, new Date(), userId);
     await tx.match.update({ where: { id: matchId }, data: { status: "finished" } });
   });
 
