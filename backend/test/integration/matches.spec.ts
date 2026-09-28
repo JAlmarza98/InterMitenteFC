@@ -293,7 +293,8 @@ describe("matches", () => {
 
       const eventsRes = await coach.get(`/api/matches/${matchId}/events`);
       expect(eventsRes.status).toBe(200);
-      expect(eventsRes.body.events).toHaveLength(4);
+      // The four logged above, plus the first half's kick-off.
+      expect(eventsRes.body.events).toHaveLength(5);
 
       // The scorer's playing-time segment is still open (live match) — let
       // just over a second of real time pass so secondsPlayed, and with it
@@ -341,6 +342,7 @@ describe("matches", () => {
 
       const eventsRes = await coach.get(`/api/matches/${matchId}/events`);
       expect(eventsRes.body.events.map((e: { type: string }) => e.type)).toEqual([
+        "period_start",
         "penalty_won",
         "penalty_goal",
       ]);
@@ -364,6 +366,12 @@ describe("matches", () => {
         .send({ playerId: sub.id, type: "yellow_card" });
       expect(yellowRes.status).toBe(201);
       expect(yellowRes.body.stat.yellowCards).toBe(1);
+
+      // Booked without playing still earns a (harsh) rating, on the same
+      // 10-minute minimum scale as a cameo.
+      const statsRes = await coach.get(`/api/matches/${matchId}/stats`);
+      const subRow = statsRes.body.players.find((p: { playerId: string }) => p.playerId === sub.id);
+      expect(subRow).toMatchObject({ secondsPlayed: 0, yellowCards: 1, rating: 1.4 });
 
       const redRes = await coach
         .post(`/api/matches/${matchId}/events`)

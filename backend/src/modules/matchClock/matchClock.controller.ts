@@ -27,7 +27,7 @@ export async function getClock(req: Request, res: Response) {
 
 export async function startPeriod(req: Request, res: Response) {
   const { type } = startPeriodSchema.parse(req.body);
-  const state = await clockService.startPeriod(req.params.matchId, type);
+  const state = await clockService.startPeriod(req.params.matchId, type, req.user!.id);
   res.json(state);
 }
 
@@ -42,12 +42,12 @@ export async function resume(req: Request, res: Response) {
 }
 
 export async function endPeriod(req: Request, res: Response) {
-  const state = await clockService.endPeriod(req.params.matchId);
+  const state = await clockService.endPeriod(req.params.matchId, req.user!.id);
   res.json(state);
 }
 
 export async function finish(req: Request, res: Response) {
-  const state = await clockService.finishMatch(req.params.matchId);
+  const state = await clockService.finishMatch(req.params.matchId, req.user!.id);
   res.json(state);
 }
 

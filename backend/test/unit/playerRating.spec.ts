@@ -20,6 +20,15 @@ describe("computeMatchRating", () => {
     expect(computeMatchRating(input({ secondsPlayed: 0 }))).toBeNull();
   });
 
+  it("rates a player booked without playing on the same minimum-time scale as a cameo", () => {
+    // 5 − 0.6 × (60 min / 10 min floor)
+    expect(computeMatchRating(input({ yellowCards: 1, secondsPlayed: 0 }))).toBe(1.4);
+    expect(computeMatchRating(input({ redCards: 1, secondsPlayed: 0 }))).toBe(0);
+    expect(computeMatchRating(input({ yellowCards: 1, secondsPlayed: 0 }))).toBe(
+      computeMatchRating(input({ yellowCards: 1, secondsPlayed: 60 }))
+    );
+  });
+
   it("returns the neutral baseline for a scoreless full match", () => {
     expect(computeMatchRating(input())).toBe(5.0);
   });

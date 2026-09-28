@@ -638,6 +638,13 @@ mat-card {
   color: oklch(85% 0.01 90);
 }
 
+// Period kick-off/final whistle: structure, not an action by anyone — a
+// quieter tone so the real events around it still stand out.
+.event-icon-period_start,
+.event-icon-period_end {
+  color: oklch(65% 0.02 262);
+}
+
 .event-icon-yellow_card {
   color: var(--accent-amber);
 }

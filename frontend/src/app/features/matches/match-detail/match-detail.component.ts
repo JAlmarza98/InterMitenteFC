@@ -13,7 +13,13 @@ import { FlashOnChangeDirective } from '../../../shared/directives/flash-on-chan
 import { MatchesService, MatchStatus, MatchWithSquad } from '../../../core/services/matches.service';
 import { SeasonsService } from '../../../core/services/seasons.service';
 import { Player, PlayersService } from '../../../core/services/players.service';
-import { MATCH_EVENT_LABELS, MatchEvent, MatchEventsService, MatchEventType } from '../../../core/services/match-events.service';
+import {
+  MATCH_EVENT_LABELS,
+  MatchEvent,
+  MatchEventsService,
+  MatchEventType,
+  periodEventDescription,
+} from '../../../core/services/match-events.service';
 import { formatMinuteSeconds } from '../../../core/services/match-clock.service';
 import { formatRating, ratingTier, MatchPlayerStatRow, StatsService } from '../../../core/services/stats.service';
 import { MatchFormDialogComponent } from '../match-form-dialog/match-form-dialog.component';
@@ -45,6 +51,8 @@ const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
   substitution: 'swap',
   penalty_goal: 'penalty',
   penalty_won: 'whistle',
+  period_start: 'clock',
+  period_end: 'clock',
 };
 
 @Component({
@@ -142,6 +150,9 @@ export class MatchDetailComponent {
         return `Penalti provocado por ${name}`;
       case 'opponent_goal':
         return MATCH_EVENT_LABELS.opponent_goal;
+      case 'period_start':
+      case 'period_end':
+        return periodEventDescription(event)!;
       case 'substitution': {
         const outName = event.relatedPlayer ? `${event.relatedPlayer.firstName} ${event.relatedPlayer.lastName}` : '';
         return `Cambio: sale ${outName}, entra ${name}`;

@@ -41,12 +41,21 @@ const WEIGHTS = {
   ownGoal: -1.5,
 };
 
-/** Rating for one match, or `null` if the player didn't actually play
- * (no seconds recorded) — a player who never took the pitch has no
- * performance to rate, and shouldn't show the neutral baseline as if they
- * had an unremarkable game. */
+/** Rating for one match, or `null` if the player neither played (no
+ * seconds recorded) nor did anything — someone who stayed on the bench
+ * shouldn't show the neutral baseline as if they'd had an unremarkable
+ * game. A player booked without ever coming on (a card shown to the bench)
+ * does get rated, on the same scale as everyone else: they count as the
+ * MIN_SECONDS_FLOOR minimum, so a yellow alone is already a harsh mark. */
 export function computeMatchRating(input: RatingInput): number | null {
-  if (input.secondsPlayed <= 0) return null;
+  const didSomething =
+    input.goals > 0 ||
+    input.penaltiesWon > 0 ||
+    input.assists > 0 ||
+    input.yellowCards > 0 ||
+    input.redCards > 0 ||
+    input.ownGoals > 0;
+  if (input.secondsPlayed <= 0 && !didSomething) return null;
 
   // `goals` already includes the penalties, so they're taken out before
   // the open-play weight applies and then counted at their own weight.

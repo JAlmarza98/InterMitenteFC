@@ -13,8 +13,11 @@ export type MatchEventType =
   | 'substitution'
   | 'opponent_goal'
   | 'penalty_goal'
-  | 'penalty_won';
-export type LoggableEventType = Exclude<MatchEventType, 'substitution'>;
+  | 'penalty_won'
+  | 'period_start'
+  | 'period_end';
+/** Only the clock itself logs substitutions and period start/end. */
+export type LoggableEventType = Exclude<MatchEventType, 'substitution' | 'period_start' | 'period_end'>;
 
 export interface MatchEvent {
   id: string;
@@ -37,6 +40,8 @@ export const MATCH_EVENT_LABELS: Record<MatchEventType, string> = {
   opponent_goal: 'Gol rival',
   penalty_goal: 'Gol de penalti',
   penalty_won: 'Penalti provocado',
+  period_start: 'Inicio de periodo',
+  period_end: 'Fin de periodo',
 };
 
 // Material icon ligature names (not emoji — see craft-floor's ban on
@@ -53,7 +58,27 @@ export const MATCH_EVENT_ICONS: Record<MatchEventType, string> = {
   opponent_goal: 'sports_soccer',
   penalty_goal: 'sports_soccer',
   penalty_won: 'sports',
+  period_start: 'schedule',
+  period_end: 'schedule',
 };
+
+// Spelled out rather than PERIOD_LABELS' short "Prórroga 1", which reads
+// oddly mid-sentence ("Empieza la Prórroga 1").
+const PERIOD_PHRASES: Record<PeriodType, string> = {
+  first_half: 'la 1ª parte',
+  second_half: 'la 2ª parte',
+  extra_first: 'la 1ª parte de la prórroga',
+  extra_second: 'la 2ª parte de la prórroga',
+};
+
+/** "Empieza la 2ª parte" / "Termina la 1ª parte de la prórroga" for a
+ * period start/end event, `null` for any other event type. Shared by the
+ * live-match and match-detail histories. */
+export function periodEventDescription(event: MatchEvent): string | null {
+  if (event.type === 'period_start') return `Empieza ${PERIOD_PHRASES[event.periodType]}`;
+  if (event.type === 'period_end') return `Termina ${PERIOD_PHRASES[event.periodType]}`;
+  return null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class MatchEventsService {

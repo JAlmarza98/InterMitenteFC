@@ -52,6 +52,10 @@ enum MatchEventType {
   opponent_goal
   penalty_goal
   penalty_won
+  /// Kick-off / final whistle of a period (half or extra-time half). No
+  /// player; `periodType` says which period, `second` is the match clock.
+  period_start
+  period_end
 }
 
 model User {

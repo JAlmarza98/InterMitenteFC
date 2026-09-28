@@ -72,7 +72,13 @@ export async function getSeasonStats(req: Request, res: Response) {
   // `MatchPlayerStat` is already unique per (matchId, playerId), so this is
   // a direct lookup, not an aggregation like `countersByPlayer` above.
   const statsByPlayerMatch = new Map<string, Counters>();
+  // Matches with a stat line, played or not: a player booked from the
+  // bench has a rating for that match despite no playing time.
+  const statMatchIdsByPlayer = new Map<string, Set<string>>();
   for (const stat of playerStats) {
+    if (!statMatchIdsByPlayer.has(stat.playerId)) statMatchIdsByPlayer.set(stat.playerId, new Set());
+    statMatchIdsByPlayer.get(stat.playerId)!.add(stat.matchId);
+
     const existing = countersByPlayer.get(stat.playerId) ?? emptyCounters();
     existing.goals += stat.goals;
     existing.assists += stat.assists;
@@ -98,7 +104,10 @@ export async function getSeasonStats(req: Request, res: Response) {
       // match and a quiet late one should average out the same way two
       // separate performances would, not blend into one combined stat
       // line with a different (and less meaningful) time normalization.
-      const matchRatings = [...appearedMatchIds].map((matchId) => {
+      // A match where they were only booked from the bench is rated (and
+      // averaged in) but isn't an appearance: they didn't play it.
+      const ratedMatchIds = new Set([...appearedMatchIds, ...(statMatchIdsByPlayer.get(player.id) ?? [])]);
+      const matchRatings = [...ratedMatchIds].map((matchId) => {
         const key = playerMatchKey(player.id, matchId);
         const matchStat = statsByPlayerMatch.get(key);
         return computeMatchRating({
