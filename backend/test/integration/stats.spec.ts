@@ -77,6 +77,49 @@ describe("season stats", () => {
     );
   });
 
+  it("averages in a match where the player was only booked from the bench, without counting it as played", async () => {
+    const { user: admin, password } = await createApprovedUser("admin");
+    const agent = await loginAs(app, admin.email, password);
+
+    const season = await prisma.season.create({
+      data: { name: "2026/2027", startDate: new Date("2026-09-01"), endDate: new Date("2027-06-30") },
+    });
+    const player = await prisma.player.create({ data: { firstName: "Sub", lastName: "Booked" } });
+    const [played, benched] = await Promise.all(
+      ["CD Rivas", "UD Getafe"].map((opponent, i) =>
+        prisma.match.create({
+          data: {
+            seasonId: season.id,
+            opponent,
+            matchDate: new Date(`2026-09-0${i + 5}`),
+            homeAway: "home",
+            status: "finished",
+          },
+        })
+      )
+    );
+
+    // A quiet full match (rated 5.0)...
+    await prisma.playingTimeSegment.create({
+      data: {
+        matchId: played.id,
+        playerId: player.id,
+        periodType: "first_half",
+        startSecond: 0,
+        endSecond: 3600,
+        source: "manual",
+      },
+    });
+    // ...and one where they never came on but were shown a yellow (rated 1.4).
+    await prisma.matchPlayerStat.create({
+      data: { matchId: benched.id, playerId: player.id, yellowCards: 1 },
+    });
+
+    const res = await agent.get(`/api/stats/season/${season.id}`);
+    const row = res.body.players.find((p: { playerId: string }) => p.playerId === player.id);
+    expect(row).toMatchObject({ appearances: 1, secondsPlayed: 3600, yellowCards: 1, avgRating: 3.2 });
+  });
+
   it("excludes matches that haven't finished yet", async () => {
     const { user: admin, password } = await createApprovedUser("admin");
     const agent = await loginAs(app, admin.email, password);

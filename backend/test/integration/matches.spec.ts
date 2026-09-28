@@ -365,6 +365,12 @@ describe("matches", () => {
       expect(yellowRes.status).toBe(201);
       expect(yellowRes.body.stat.yellowCards).toBe(1);
 
+      // Booked without playing still earns a (harsh) rating, on the same
+      // 10-minute minimum scale as a cameo.
+      const statsRes = await coach.get(`/api/matches/${matchId}/stats`);
+      const subRow = statsRes.body.players.find((p: { playerId: string }) => p.playerId === sub.id);
+      expect(subRow).toMatchObject({ secondsPlayed: 0, yellowCards: 1, rating: 1.4 });
+
       const redRes = await coach
         .post(`/api/matches/${matchId}/events`)
         .send({ playerId: sub.id, type: "red_card" });
