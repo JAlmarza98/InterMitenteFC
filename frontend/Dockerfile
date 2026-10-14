@@ -1,5 +1,7 @@
 # Angular CLI 22 requires Node >=22.22.3.
-FROM node:22-alpine AS build
+# Build stage runs on the host platform: output is static files, and esbuild
+# segfaults under QEMU when cross-building for amd64 on Apple Silicon.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
