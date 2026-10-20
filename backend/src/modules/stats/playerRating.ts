@@ -16,6 +16,17 @@ export interface RatingInput {
   redCards: number;
   ownGoals: number;
   secondsPlayed: number;
+  /** Team goals scored while this player was on the pitch (own goals they
+   * scored included) — context credit for players who don't score/assist
+   * themselves, independent of their own stat line. */
+  goalsForWhileOnPitch: number;
+  /** Goals conceded while this player was on the pitch. */
+  goalsAgainstWhileOnPitch: number;
+  /** Whether this player is the goalkeeper (by primary or secondary
+   * position) — a clean sheet is specifically their job, so it earns a
+   * bonus the generic goalsAgainstWhileOnPitch penalty alone can't give:
+   * avoiding a penalty never lifts a rating above baseline on its own. */
+  isGoalkeeper: boolean;
 }
 
 const BASE_RATING = 5.0;
@@ -39,6 +50,19 @@ const WEIGHTS = {
   yellowCard: -0.6,
   redCard: -2.0,
   ownGoal: -1.5,
+  // Small plus/minus for match context, same idea as hockey/basketball
+  // plus-minus: being on the pitch for a team goal either way, regardless
+  // of personal involvement. Kept well below the personal weights above so
+  // it nudges rather than dominates.
+  teamGoalFor: 0.2,
+  teamGoalAgainst: -0.2,
+  // The keeper's actual job. Full credit for a full match kept clean;
+  // prorated for a shorter one (coming on as a sub, etc). Weighted high
+  // enough that a full-match clean sheet alone clears a comfortable win
+  // above baseline (0-0 -> 7.0, 5-0 -> 8.0) — otherwise a keeper, who
+  // almost never scores or assists, has no way to post an outstanding
+  // rating the way an outfield player can.
+  goalkeeperCleanSheet: 2.0,
 };
 
 /** Rating for one match, or `null` if the player neither played (no
@@ -70,8 +94,40 @@ export function computeMatchRating(input: RatingInput): number | null {
     input.ownGoals * WEIGHTS.ownGoal;
 
   const normalizer = REFERENCE_SECONDS / Math.max(input.secondsPlayed, MIN_SECONDS_FLOOR);
-  const clamped = Math.min(10, Math.max(0, BASE_RATING + weighted * normalizer));
+
+  // Context adjustment is NOT run through the per-minute normalizer above:
+  // that normalizer rewards packing personal production into less time,
+  // which makes sense for a goal you scored but not for a goal your team
+  // conceded while you happened to be on for only a few minutes — that
+  // shouldn't get amplified into a huge penalty.
+  const cleanSheetBonus =
+    input.isGoalkeeper && input.goalsAgainstWhileOnPitch === 0
+      ? WEIGHTS.goalkeeperCleanSheet * Math.min(1, input.secondsPlayed / REFERENCE_SECONDS)
+      : 0;
+  const contextAdjustment =
+    input.goalsForWhileOnPitch * WEIGHTS.teamGoalFor +
+    input.goalsAgainstWhileOnPitch * WEIGHTS.teamGoalAgainst +
+    cleanSheetBonus;
+
+  const clamped = Math.min(10, Math.max(0, BASE_RATING + weighted * normalizer + contextAdjustment));
   return Math.round(clamped * 10) / 10;
+}
+
+/** Which of `goalSeconds` happened while the player held at least one
+ * matching playing-time segment — i.e. goals scored/conceded while they
+ * were actually on the pitch. `liveCurrentSecond` closes off segments
+ * still open on a live match; pass `null` for finished matches. */
+export function countGoalsWhileOnPitch(
+  goalSeconds: number[],
+  segments: { startSecond: number; endSecond: number | null }[],
+  liveCurrentSecond: number | null
+): number {
+  return goalSeconds.filter((second) =>
+    segments.some((segment) => {
+      const end = segment.endSecond ?? liveCurrentSecond ?? Infinity;
+      return second >= segment.startSecond && second < end;
+    })
+  ).length;
 }
 
 /** Mean of per-match ratings, ignoring matches with no rating (unplayed).

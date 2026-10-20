@@ -73,6 +73,9 @@ describe("season stats", () => {
         redCards: 0,
         ownGoals: 0,
         secondsPlayed: 2400,
+        goalsForWhileOnPitch: 0,
+        goalsAgainstWhileOnPitch: 0,
+        isGoalkeeper: false,
       })
     );
   });

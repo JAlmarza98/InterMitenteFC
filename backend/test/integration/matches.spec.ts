@@ -307,6 +307,14 @@ describe("matches", () => {
       expect(scorerRow.goals).toBe(1);
       expect(scorerRow.secondsPlayed).toBeGreaterThan(0);
       expect(scorerRow.rating).not.toBeNull();
+
+      // A teammate with no personal stats still gets rated on match context:
+      // on the pitch for the team's 1 goal (+0.2) and both goals conceded
+      // (-0.2 each) — net -0.2, independent of exactly how long they played
+      // since the context adjustment isn't run through the time normalizer.
+      const quietRow = statsRes.body.players.find((p: { playerId: string }) => p.playerId === players[3].id);
+      expect(quietRow.goals).toBe(0);
+      expect(quietRow.rating).toBe(4.8);
     });
 
     it("logs penalty_goal as a goal too, and penalty_won as its own counter", async () => {

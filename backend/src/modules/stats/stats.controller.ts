@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../db/prisma";
 import { HttpError } from "../../middleware/errorHandler";
-import { averageRating, computeMatchRating } from "./playerRating";
+import { averageRating, computeMatchRating, countGoalsWhileOnPitch } from "./playerRating";
 
 /** Composite key for per-player-per-match maps below — the season totals
  * (secondsByPlayer, countersByPlayer) aren't enough to rate a single
@@ -35,17 +35,36 @@ export async function getSeasonStats(req: Request, res: Response) {
 
   const finishedMatches = await prisma.match.findMany({
     where: { seasonId, status: "finished" },
-    select: { id: true },
+    select: { id: true, teamScore: true, opponentScore: true },
   });
   const matchIds = finishedMatches.map((m) => m.id);
+  const matchesById = new Map(finishedMatches.map((m) => [m.id, m]));
 
-  const [playerStats, segments, players] = await Promise.all([
+  const [playerStats, segments, players, goalEvents] = await Promise.all([
     prisma.matchPlayerStat.findMany({ where: { matchId: { in: matchIds } } }),
     prisma.playingTimeSegment.findMany({
       where: { matchId: { in: matchIds }, endSecond: { not: null } },
     }),
     prisma.player.findMany({ where: { active: true } }),
+    prisma.matchEvent.findMany({
+      // "goal"/"penalty_goal" count for us, "opponent_goal"/"own_goal"
+      // against — see SCORE_FIELD_BY_EVENT_TYPE in matches.controller.ts.
+      where: { matchId: { in: matchIds }, type: { in: ["goal", "penalty_goal", "opponent_goal", "own_goal"] } },
+      select: { matchId: true, type: true, second: true },
+    }),
   ]);
+
+  // Same live-vs-manual-entry gap as the single-match rating: a goal only
+  // has a timestamp when it was logged live, so matches scored entirely
+  // via direct stat corrections fall back to the whole-match scoreline.
+  const goalForSecondsByMatch = new Map<string, number[]>();
+  const goalAgainstSecondsByMatch = new Map<string, number[]>();
+  for (const event of goalEvents) {
+    const bucket =
+      event.type === "goal" || event.type === "penalty_goal" ? goalForSecondsByMatch : goalAgainstSecondsByMatch;
+    if (!bucket.has(event.matchId)) bucket.set(event.matchId, []);
+    bucket.get(event.matchId)!.push(event.second);
+  }
 
   const secondsByPlayer = new Map<string, number>();
   const appearancesByPlayer = new Map<string, Set<string>>();
@@ -53,6 +72,10 @@ export async function getSeasonStats(req: Request, res: Response) {
   // that match's own seconds played, so this indexes by player+match
   // instead of just by player.
   const secondsByPlayerMatch = new Map<string, number>();
+  // Raw segments per player+match, needed to place a goal's timestamp
+  // against this player's specific on-pitch windows (secondsByPlayerMatch
+  // alone only has the total, not when it happened).
+  const segmentsByPlayerMatch = new Map<string, { startSecond: number; endSecond: number | null }[]>();
   for (const segment of segments) {
     secondsByPlayer.set(
       segment.playerId,
@@ -66,6 +89,8 @@ export async function getSeasonStats(req: Request, res: Response) {
       key,
       (secondsByPlayerMatch.get(key) ?? 0) + (segment.endSecond! - segment.startSecond)
     );
+    if (!segmentsByPlayerMatch.has(key)) segmentsByPlayerMatch.set(key, []);
+    segmentsByPlayerMatch.get(key)!.push(segment);
   }
 
   const countersByPlayer = new Map<string, Counters>();
@@ -107,9 +132,30 @@ export async function getSeasonStats(req: Request, res: Response) {
       // A match where they were only booked from the bench is rated (and
       // averaged in) but isn't an appearance: they didn't play it.
       const ratedMatchIds = new Set([...appearedMatchIds, ...(statMatchIdsByPlayer.get(player.id) ?? [])]);
+      const isGoalkeeper = player.position === "Portero" || player.secondaryPosition === "Portero";
       const matchRatings = [...ratedMatchIds].map((matchId) => {
         const key = playerMatchKey(player.id, matchId);
         const matchStat = statsByPlayerMatch.get(key);
+        const matchSecondsPlayed = secondsByPlayerMatch.get(key) ?? 0;
+        const match = matchesById.get(matchId);
+        const playerSegments = segmentsByPlayerMatch.get(key) ?? [];
+
+        const goalForSeconds = goalForSecondsByMatch.get(matchId) ?? [];
+        const goalsForWhileOnPitch =
+          goalForSeconds.length === 0
+            ? matchSecondsPlayed > 0
+              ? match?.teamScore ?? 0
+              : 0
+            : countGoalsWhileOnPitch(goalForSeconds, playerSegments, null);
+
+        const goalAgainstSeconds = goalAgainstSecondsByMatch.get(matchId) ?? [];
+        const goalsAgainstWhileOnPitch =
+          goalAgainstSeconds.length === 0
+            ? matchSecondsPlayed > 0
+              ? match?.opponentScore ?? 0
+              : 0
+            : countGoalsWhileOnPitch(goalAgainstSeconds, playerSegments, null);
+
         return computeMatchRating({
           goals: matchStat?.goals ?? 0,
           penaltyGoals: matchStat?.penaltyGoals ?? 0,
@@ -118,7 +164,10 @@ export async function getSeasonStats(req: Request, res: Response) {
           yellowCards: matchStat?.yellowCards ?? 0,
           redCards: matchStat?.redCards ?? 0,
           ownGoals: matchStat?.ownGoals ?? 0,
-          secondsPlayed: secondsByPlayerMatch.get(key) ?? 0,
+          secondsPlayed: matchSecondsPlayed,
+          goalsForWhileOnPitch,
+          goalsAgainstWhileOnPitch,
+          isGoalkeeper,
         });
       });
 

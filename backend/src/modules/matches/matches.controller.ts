@@ -10,7 +10,7 @@ import {
   segmentDurationSeconds,
 } from "../matchClock/matchClock.service";
 import { broadcastMatchUpdate } from "../liveUpdates/liveUpdates.service";
-import { computeMatchRating } from "../stats/playerRating";
+import { computeMatchRating, countGoalsWhileOnPitch } from "../stats/playerRating";
 import { paginationSchema, toSkipTake } from "../../utils/pagination";
 
 const matchSchema = z.object({
@@ -276,11 +276,21 @@ function hasAnyStat(stat: {
 export async function getMatchStats(req: Request, res: Response) {
   const matchId = req.params.id;
 
-  const [match, squad, playerStats, segments] = await Promise.all([
-    prisma.match.findUniqueOrThrow({ where: { id: matchId }, select: { status: true } }),
+  const [match, squad, playerStats, segments, goalEvents] = await Promise.all([
+    prisma.match.findUniqueOrThrow({
+      where: { id: matchId },
+      select: { status: true, teamScore: true, opponentScore: true },
+    }),
     prisma.matchSquad.findMany({ where: { matchId }, include: { player: true } }),
     prisma.matchPlayerStat.findMany({ where: { matchId } }),
     prisma.playingTimeSegment.findMany({ where: { matchId } }),
+    prisma.matchEvent.findMany({
+      // "goal" and "penalty_goal" both count for us (teamScore); "opponent_goal"
+      // and "own_goal" both count against us (opponentScore) — see
+      // SCORE_FIELD_BY_EVENT_TYPE above.
+      where: { matchId, type: { in: ["goal", "penalty_goal", "opponent_goal", "own_goal"] } },
+      select: { type: true, second: true },
+    }),
   ]);
 
   // An admin can record stats/playing time for a player who wasn't called
@@ -316,16 +326,48 @@ export async function getMatchStats(req: Request, res: Response) {
   const liveCurrentSecond = match.status === "live" ? await computeLiveElapsedSeconds(matchId) : null;
 
   const secondsByPlayer = new Map<string, number>();
+  const segmentsByPlayer = new Map<string, { startSecond: number; endSecond: number | null }[]>();
   for (const segment of segments) {
     const duration = segmentDurationSeconds(segment, liveCurrentSecond);
-    const prev = secondsByPlayer.get(segment.playerId) ?? 0;
-    secondsByPlayer.set(segment.playerId, prev + duration);
+    secondsByPlayer.set(segment.playerId, (secondsByPlayer.get(segment.playerId) ?? 0) + duration);
+    if (!segmentsByPlayer.has(segment.playerId)) segmentsByPlayer.set(segment.playerId, []);
+    segmentsByPlayer.get(segment.playerId)!.push(segment);
   }
   const statsByPlayer = new Map(playerStats.map((s) => [s.playerId, s]));
+
+  // Goal timestamps only exist for goals logged live (via logMatchEvent);
+  // ones entered/corrected directly through upsertPlayerStat have no
+  // MatchEvent at all. When that leaves us with no timestamps to place a
+  // goal in time, fall back to crediting/charging every player who
+  // featured at all in the match with the match's whole scoreline, rather
+  // than silently giving them no context adjustment.
+  const goalForSeconds = goalEvents
+    .filter((e) => e.type === "goal" || e.type === "penalty_goal")
+    .map((e) => e.second);
+  const goalAgainstSeconds = goalEvents
+    .filter((e) => e.type === "opponent_goal" || e.type === "own_goal")
+    .map((e) => e.second);
+  const goalForFallback = goalForSeconds.length === 0 ? match.teamScore ?? 0 : null;
+  const goalAgainstFallback = goalAgainstSeconds.length === 0 ? match.opponentScore ?? 0 : null;
 
   const players = entries.map((entry) => {
     const stat = statsByPlayer.get(entry.playerId);
     const secondsPlayed = secondsByPlayer.get(entry.playerId) ?? 0;
+    const playerSegments = segmentsByPlayer.get(entry.playerId) ?? [];
+    const goalsForWhileOnPitch =
+      goalForFallback !== null
+        ? secondsPlayed > 0
+          ? goalForFallback
+          : 0
+        : countGoalsWhileOnPitch(goalForSeconds, playerSegments, liveCurrentSecond);
+    const goalsAgainstWhileOnPitch =
+      goalAgainstFallback !== null
+        ? secondsPlayed > 0
+          ? goalAgainstFallback
+          : 0
+        : countGoalsWhileOnPitch(goalAgainstSeconds, playerSegments, liveCurrentSecond);
+    const isGoalkeeper =
+      entry.player.position === "Portero" || entry.player.secondaryPosition === "Portero";
     const goals = stat?.goals ?? 0;
     const assists = stat?.assists ?? 0;
     const yellowCards = stat?.yellowCards ?? 0;
@@ -352,6 +394,9 @@ export async function getMatchStats(req: Request, res: Response) {
         redCards,
         ownGoals,
         secondsPlayed,
+        goalsForWhileOnPitch,
+        goalsAgainstWhileOnPitch,
+        isGoalkeeper,
       }),
     };
   });

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { computeMatchRating, averageRating, RatingInput } from "../../src/modules/stats/playerRating";
+import {
+  computeMatchRating,
+  averageRating,
+  countGoalsWhileOnPitch,
+  RatingInput,
+} from "../../src/modules/stats/playerRating";
 
 function input(overrides: Partial<RatingInput> = {}): RatingInput {
   return {
@@ -11,6 +16,9 @@ function input(overrides: Partial<RatingInput> = {}): RatingInput {
     redCards: 0,
     ownGoals: 0,
     secondsPlayed: 3600,
+    goalsForWhileOnPitch: 0,
+    goalsAgainstWhileOnPitch: 0,
+    isGoalkeeper: false,
     ...overrides,
   };
 }
@@ -76,6 +84,41 @@ describe("computeMatchRating", () => {
     const rating = computeMatchRating(input({ goals: 5, assists: 5, secondsPlayed: 60 }));
     expect(rating).toBe(10);
   });
+
+  it("gives a non-scoring player context credit for team goals while they were on the pitch", () => {
+    expect(computeMatchRating(input({ goalsForWhileOnPitch: 2 }))).toBe(5.4);
+  });
+
+  it("penalizes a non-scoring player for goals conceded while they were on the pitch", () => {
+    expect(computeMatchRating(input({ goalsAgainstWhileOnPitch: 2 }))).toBe(4.6);
+  });
+
+  it("doesn't amplify a brief cameo's conceded-goal penalty the way it would a scored goal", () => {
+    const fullMatch = computeMatchRating(input({ goalsAgainstWhileOnPitch: 1, secondsPlayed: 3600 }));
+    const cameo = computeMatchRating(input({ goalsAgainstWhileOnPitch: 1, secondsPlayed: 60 }));
+    expect(cameo).toBe(fullMatch);
+  });
+
+  it("doesn't reward a non-goalkeeper for a clean sheet beyond the plain plus/minus", () => {
+    expect(computeMatchRating(input({ isGoalkeeper: false, goalsAgainstWhileOnPitch: 0 }))).toBe(5.0);
+  });
+
+  it("rewards the goalkeeper for a full-match clean sheet, not just the absence of a penalty", () => {
+    const rating = computeMatchRating(input({ isGoalkeeper: true, goalsAgainstWhileOnPitch: 0 }));
+    expect(rating).toBe(7.0);
+  });
+
+  it("prorates the goalkeeper's clean sheet bonus for a shorter appearance", () => {
+    const rating = computeMatchRating(
+      input({ isGoalkeeper: true, goalsAgainstWhileOnPitch: 0, secondsPlayed: 1800 })
+    );
+    expect(rating).toBe(6.0);
+  });
+
+  it("gives the goalkeeper no clean sheet bonus once they've conceded", () => {
+    const rating = computeMatchRating(input({ isGoalkeeper: true, goalsAgainstWhileOnPitch: 1 }));
+    expect(rating).toBe(4.8);
+  });
 });
 
 describe("averageRating", () => {
@@ -90,5 +133,22 @@ describe("averageRating", () => {
 
   it("rounds to one decimal place", () => {
     expect(averageRating([6, 7, 7])).toBeCloseTo(6.7, 5);
+  });
+});
+
+describe("countGoalsWhileOnPitch", () => {
+  const segments = [
+    { startSecond: 0, endSecond: 1800 },
+    { startSecond: 2400, endSecond: 3600 },
+  ];
+
+  it("counts a goal inside a segment and excludes one outside all segments", () => {
+    expect(countGoalsWhileOnPitch([900, 2000, 3000], segments, null)).toBe(2);
+  });
+
+  it("treats a still-open segment as extending to the live current second", () => {
+    const openSegment = [{ startSecond: 0, endSecond: null }];
+    expect(countGoalsWhileOnPitch([1000], openSegment, 1500)).toBe(1);
+    expect(countGoalsWhileOnPitch([2000], openSegment, 1500)).toBe(0);
   });
 });
