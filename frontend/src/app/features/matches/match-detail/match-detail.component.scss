@@ -474,7 +474,11 @@
   color: oklch(70% 0.15 25);
 }
 
-.save-squad-button {
+.squad-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
   margin-top: 10px;
 }
 

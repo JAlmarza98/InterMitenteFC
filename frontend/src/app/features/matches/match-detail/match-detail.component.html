@@ -172,19 +172,24 @@
             <p class="starters-count" [class.starters-count-invalid]="startersCount() !== requiredStarters">
               Titulares: {{ startersCount() }}/{{ requiredStarters }}
             </p>
-            <button
-              mat-flat-button
-              color="primary"
-              class="save-squad-button"
-              [disabled]="savingSquad() || startersCount() !== requiredStarters"
-              (click)="saveSquad()"
-            >
-              @if (savingSquad()) {
-                <mat-spinner diameter="18" />
-              } @else {
-                Guardar convocatoria
+            <div class="squad-actions">
+              <button
+                mat-flat-button
+                color="primary"
+                class="save-squad-button"
+                [disabled]="savingSquad() || startersCount() !== requiredStarters"
+                (click)="saveSquad()"
+              >
+                @if (savingSquad()) {
+                  <mat-spinner diameter="18" />
+                } @else {
+                  Guardar convocatoria
+                }
+              </button>
+              @if (canPlanFormation()) {
+                <button class="outline-button" (click)="planFormation()">Planificar convocatoria</button>
               }
-            </button>
+            </div>
           } @else if (canManage()) {
             <p class="empty-state">La convocatoria ya no se puede modificar una vez el partido no está programado.</p>
           }

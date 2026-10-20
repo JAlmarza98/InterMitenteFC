@@ -761,6 +761,17 @@ mat-card {
     border-radius: 0 !important;
     height: 100%;
   }
+
+  // Material's own default caps dialog content at 65vh (max-height: 65vh,
+  // baked into its component stylesheet) — right for a normal floating
+  // dialog that shouldn't crowd the viewport, but on a full-screen mobile
+  // dialog it leaves the bottom ~35% of the screen empty below the content
+  // instead of letting it use the space the surface above already grew
+  // into. The title's own height is the only thing content needs to leave
+  // room for here, not an arbitrary viewport fraction.
+  .mat-mdc-dialog-content {
+    max-height: none !important;
+  }
 }
 
 // Snackbars default to the bottom of the viewport, same as the mobile

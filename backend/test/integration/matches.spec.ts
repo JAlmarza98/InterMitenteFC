@@ -405,4 +405,138 @@ describe("matches", () => {
       expect(res.status).toBe(400);
     });
   });
+
+  describe("formation", () => {
+    // 7 starters (P0-P6) + 1 bench (P7), in a valid 1-2-3-1 layout.
+    async function setUpMatchWithSquad(coach: Awaited<ReturnType<typeof coachAgent>>) {
+      const matchId = await createMatchViaApi(coach);
+      const starters = await createSevenPlayers();
+      const bench = await prisma.player.create({ data: { firstName: "P7", lastName: "Last7" } });
+      await coach.put(`/api/matches/${matchId}/squad`).send({
+        players: [
+          ...starters.map((p) => ({ playerId: p.id, isStarter: true })),
+          { playerId: bench.id, isStarter: false },
+        ],
+      });
+      return { matchId, starters, bench };
+    }
+
+    function validSlots(starters: { id: string }[], subPlayerId?: string) {
+      const keys = ["gk", "d1", "d2", "m1", "m2", "m3", "f1"];
+      return keys.map((slotKey, i) => ({
+        slotKey,
+        playerId: starters[i].id,
+        subPlayerIds: subPlayerId && slotKey === "gk" ? [subPlayerId] : [],
+      }));
+    }
+
+    it("saves a valid formation and returns it on GET", async () => {
+      const coach = await coachAgent();
+      const { matchId, starters, bench } = await setUpMatchWithSquad(coach);
+
+      const putRes = await coach
+        .put(`/api/matches/${matchId}/formation`)
+        .send({ presetId: "1-2-3-1", slots: validSlots(starters, bench.id) });
+      expect(putRes.status).toBe(200);
+      expect(putRes.body.formation.slots).toHaveLength(7);
+      const gkSlot = putRes.body.formation.slots.find((s: { slotKey: string }) => s.slotKey === "gk");
+      expect(gkSlot.substitutes).toHaveLength(1);
+      expect(gkSlot.substitutes[0].playerId).toBe(bench.id);
+
+      const getRes = await coach.get(`/api/matches/${matchId}/formation`);
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.formation.presetId).toBe("1-2-3-1");
+      expect(getRes.body.formation.slots).toHaveLength(7);
+    });
+
+    it("returns formation: null when none has been planned yet", async () => {
+      const coach = await coachAgent();
+      const matchId = await createMatchViaApi(coach);
+      const res = await coach.get(`/api/matches/${matchId}/formation`);
+      expect(res.status).toBe(200);
+      expect(res.body.formation).toBeNull();
+    });
+
+    it("400s on an unknown presetId", async () => {
+      const coach = await coachAgent();
+      const { matchId, starters } = await setUpMatchWithSquad(coach);
+      const res = await coach
+        .put(`/api/matches/${matchId}/formation`)
+        .send({ presetId: "nope", slots: validSlots(starters) });
+      expect(res.status).toBe(400);
+    });
+
+    it("400s when a slot references a player who isn't a starter", async () => {
+      const coach = await coachAgent();
+      const { matchId, starters, bench } = await setUpMatchWithSquad(coach);
+      const slots = validSlots(starters);
+      slots[0].playerId = bench.id; // bench player in a starting slot
+      const res = await coach.put(`/api/matches/${matchId}/formation`).send({ presetId: "1-2-3-1", slots });
+      expect(res.status).toBe(400);
+    });
+
+    it("400s when a substitute isn't a bench player", async () => {
+      const coach = await coachAgent();
+      const { matchId, starters } = await setUpMatchWithSquad(coach);
+      const slots = validSlots(starters);
+      slots[0].subPlayerIds = [starters[1].id]; // another starter, not bench
+      const res = await coach.put(`/api/matches/${matchId}/formation`).send({ presetId: "1-2-3-1", slots });
+      expect(res.status).toBe(400);
+    });
+
+    it("400s when a slot is missing or has an unknown slotKey for the preset", async () => {
+      const coach = await coachAgent();
+      const { matchId, starters } = await setUpMatchWithSquad(coach);
+      const slots = validSlots(starters).slice(0, 6); // missing "f1"
+      const res = await coach.put(`/api/matches/${matchId}/formation`).send({ presetId: "1-2-3-1", slots });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects the same starter assigned to two slots", async () => {
+      const coach = await coachAgent();
+      const { matchId, starters } = await setUpMatchWithSquad(coach);
+      const slots = validSlots(starters);
+      slots[1].playerId = slots[0].playerId; // duplicate within the payload
+      const res = await coach.put(`/api/matches/${matchId}/formation`).send({ presetId: "1-2-3-1", slots });
+      expect(res.status).toBe(400);
+    });
+
+    it("blocks a member and allows coach/admin", async () => {
+      const coach = await coachAgent();
+      const { matchId, starters } = await setUpMatchWithSquad(coach);
+
+      const { user, password } = await createApprovedUser("member");
+      const memberAgent = await loginAs(app, user.email, password);
+      const forbidden = await memberAgent
+        .put(`/api/matches/${matchId}/formation`)
+        .send({ presetId: "1-2-3-1", slots: validSlots(starters) });
+      expect(forbidden.status).toBe(403);
+
+      const allowed = await coach
+        .put(`/api/matches/${matchId}/formation`)
+        .send({ presetId: "1-2-3-1", slots: validSlots(starters) });
+      expect(allowed.status).toBe(200);
+    });
+
+    it("replaces the formation (not append) on a second PUT", async () => {
+      const coach = await coachAgent();
+      const { matchId, starters } = await setUpMatchWithSquad(coach);
+
+      await coach
+        .put(`/api/matches/${matchId}/formation`)
+        .send({ presetId: "1-2-3-1", slots: validSlots(starters) });
+
+      // Different preset the second time around.
+      const keys2 = ["gk", "d1", "d2", "d3", "m1", "m2", "f1"];
+      const slots2 = keys2.map((slotKey, i) => ({ slotKey, playerId: starters[i].id, subPlayerIds: [] }));
+      const res = await coach
+        .put(`/api/matches/${matchId}/formation`)
+        .send({ presetId: "1-3-2-1", slots: slots2 });
+      expect(res.status).toBe(200);
+      expect(res.body.formation.presetId).toBe("1-3-2-1");
+      expect(res.body.formation.slots).toHaveLength(7);
+
+      expect(await prisma.matchFormation.count({ where: { matchId } })).toBe(1);
+    });
+  });
 });

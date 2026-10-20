@@ -1,0 +1,146 @@
+// This dialog's one departure from the other create/edit dialogs: a
+// multi-step flow needs the stepper's own "selected/done" indicator and the
+// formation picker's "selected" state to read as the app's brand accent
+// (amber) instead of Material's stock primary-role blue — same fix already
+// applied app-wide to buttons/chips/focus rings in styles.scss, scoped here
+// to the two components only this dialog introduces.
+.formation-stepper {
+  --mat-stepper-header-selected-state-icon-background-color: var(--accent-amber);
+  --mat-stepper-header-done-state-icon-background-color: var(--accent-amber);
+  --mat-stepper-header-edit-state-icon-background-color: var(--accent-amber);
+  --mat-stepper-header-selected-state-icon-foreground-color: #161c26;
+  --mat-stepper-line-color: color-mix(in srgb, var(--accent-amber) 40%, transparent);
+  // mat-stepper paints its own opaque surface (--mat-stepper-container-color,
+  // falling back to --mat-sys-surface) by default — flattening the dialog's
+  // glass-card gradient underneath it into a flat near-black box. This is
+  // the one token meant for exactly that: let the dialog surface itself
+  // show through instead of being hidden behind a second, opaque layer.
+  --mat-stepper-container-color: transparent;
+}
+
+// Measured on a 390px-wide viewport: mat-dialog-content's own 24px padding
+// + the vertical stepper's fixed 36px connector-line gutter + the step
+// content's own 24px padding ate ~133px of a 427px-wide full-screen dialog
+// — about a third of the screen, just for chrome around the actual form.
+// Shrink all three (proportionally, so the connector line still lines up
+// under the step icon above it) instead of leaving the phone layout at the
+// same padding this dialog uses at 640px wide on desktop.
+@media (max-width: 599px) {
+  .formation-dialog-content {
+    padding-left: var(--space-sm);
+    padding-right: var(--space-sm);
+  }
+
+  .formation-stepper {
+    ::ng-deep .mat-vertical-stepper-header {
+      padding-left: var(--space-sm);
+      padding-right: var(--space-sm);
+    }
+
+    ::ng-deep .mat-vertical-content-container {
+      margin-left: 20px;
+    }
+
+    ::ng-deep .mat-vertical-content {
+      padding-left: var(--space-xs);
+      padding-right: var(--space-xs);
+    }
+  }
+}
+
+// Formation picker: each option is its own small pitch preview (the exact
+// slot x/y/colorGroup the rest of this feature already uses) rather than a
+// plain text toggle — you see the actual shape before picking it instead
+// of having to already know what "1-3-1-2" looks like.
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+@media (min-width: 480px) {
+  .preset-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.preset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--mat-sys-outline) 40%, transparent);
+  background: color-mix(in srgb, white 4%, transparent);
+  font: inherit;
+  color: var(--mat-sys-on-surface);
+  cursor: pointer;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--accent-amber) 50%, transparent);
+  }
+}
+
+.preset-card-selected {
+  border-color: var(--accent-amber);
+  background: color-mix(in srgb, var(--accent-amber) 16%, transparent);
+}
+
+.preset-pitch {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 8px;
+  background: color-mix(in srgb, white 3%, transparent);
+  border: 1px solid color-mix(in srgb, white 12%, transparent);
+}
+
+.preset-pitch-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid color-mix(in srgb, white 12%, transparent);
+}
+
+.preset-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+}
+
+.preset-label {
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.form-error {
+  color: var(--mat-sys-error);
+  font-size: 0.85rem;
+}
+
+.preview-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xl) 0;
+}
+
+.preview-image {
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: var(--surface-card-shadow);
+  margin-bottom: var(--space-sm);
+}
+
+.message-field {
+  width: 100%;
+}
+
+.send-feedback {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}

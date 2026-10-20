@@ -31,6 +31,33 @@ export interface MatchWithSquad extends Match {
   squad: MatchSquadEntry[];
 }
 
+export interface MatchFormationSubEntry {
+  id: string;
+  playerId: string;
+  player: Player;
+}
+
+export interface MatchFormationSlotEntry {
+  id: string;
+  slotKey: string;
+  playerId: string;
+  player: Player;
+  substitutes: MatchFormationSubEntry[];
+}
+
+export interface MatchFormation {
+  id: string;
+  matchId: string;
+  presetId: string;
+  slots: MatchFormationSlotEntry[];
+}
+
+export interface FormationSlotInput {
+  slotKey: string;
+  playerId: string;
+  subPlayerIds: string[];
+}
+
 export interface MatchInput {
   seasonId?: string | null;
   opponent: string;
@@ -77,5 +104,13 @@ export class MatchesService {
 
   setSquad(id: string, players: { playerId: string; isStarter: boolean }[]) {
     return this.http.put<{ squad: MatchSquadEntry[] }>(`/api/matches/${id}/squad`, { players });
+  }
+
+  getFormation(id: string) {
+    return this.http.get<{ formation: MatchFormation | null }>(`/api/matches/${id}/formation`);
+  }
+
+  setFormation(id: string, presetId: string, slots: FormationSlotInput[]) {
+    return this.http.put<{ formation: MatchFormation }>(`/api/matches/${id}/formation`, { presetId, slots });
   }
 }

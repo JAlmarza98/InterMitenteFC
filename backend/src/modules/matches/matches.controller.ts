@@ -12,6 +12,7 @@ import {
 import { broadcastMatchUpdate } from "../liveUpdates/liveUpdates.service";
 import { computeMatchRating, countGoalsWhileOnPitch } from "../stats/playerRating";
 import { paginationSchema, toSkipTake } from "../../utils/pagination";
+import { FORMATION_PRESETS } from "./formationPresets";
 
 const matchSchema = z.object({
   seasonId: z.string().uuid().nullable().optional(),
@@ -43,6 +44,22 @@ const squadSchema = z.object({
     z.object({
       playerId: z.string().uuid(),
       isStarter: z.boolean().default(false),
+    })
+  ),
+});
+
+const formationSchema = z.object({
+  presetId: z.string().refine((id) => id in FORMATION_PRESETS, { message: "Formación no reconocida" }),
+  slots: z.array(
+    z.object({
+      slotKey: z.string(),
+      playerId: z.string().uuid(),
+      subPlayerIds: z
+        .array(z.string().uuid())
+        .default([])
+        .refine((ids) => new Set(ids).size === ids.length, {
+          message: "Suplentes duplicados en la misma posición",
+        }),
     })
   ),
 });
@@ -212,6 +229,77 @@ export async function putSquad(req: Request, res: Response) {
     include: { player: true },
   });
   res.json({ squad });
+}
+
+const formationInclude = {
+  slots: {
+    include: {
+      player: true,
+      substitutes: { include: { player: true } },
+    },
+  },
+} satisfies Prisma.MatchFormationInclude;
+
+export async function getFormation(req: Request, res: Response) {
+  const formation = await prisma.matchFormation.findUnique({
+    where: { matchId: req.params.id },
+    include: formationInclude,
+  });
+  res.json({ formation });
+}
+
+export async function putFormation(req: Request, res: Response) {
+  const data = formationSchema.parse(req.body);
+  const matchId = req.params.id;
+  const preset = FORMATION_PRESETS[data.presetId];
+
+  // Structural check: exactly the preset's slot keys, no gaps/extras/dupes.
+  const sentKeys = [...data.slots.map((s) => s.slotKey)].sort();
+  const expectedKeys = [...preset.slotKeys].sort();
+  if (data.slots.length !== SQUAD_SIZE || sentKeys.join() !== expectedKeys.join()) {
+    throw new HttpError(400, `La formación debe cubrir exactamente las ${SQUAD_SIZE} posiciones de ${preset.id}`);
+  }
+
+  // Every starter used exactly once, no gaps.
+  const playerIds = data.slots.map((s) => s.playerId);
+  if (new Set(playerIds).size !== SQUAD_SIZE) {
+    throw new HttpError(400, "Cada titular debe ocupar exactamente una posición, sin repetirse");
+  }
+
+  const squad = await prisma.matchSquad.findMany({ where: { matchId } });
+  const starterIds = new Set(squad.filter((s) => s.isStarter).map((s) => s.playerId));
+  const benchIds = new Set(squad.filter((s) => !s.isStarter).map((s) => s.playerId));
+
+  if (!playerIds.every((id) => starterIds.has(id))) {
+    throw new HttpError(400, "Todas las posiciones deben asignarse a un titular de la convocatoria");
+  }
+  const allSubIds = data.slots.flatMap((s) => s.subPlayerIds);
+  if (!allSubIds.every((id) => benchIds.has(id))) {
+    throw new HttpError(400, "Los posibles cambios deben ser jugadores convocados en el banquillo");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.matchFormation.deleteMany({ where: { matchId } });
+    await tx.matchFormation.create({
+      data: {
+        matchId,
+        presetId: data.presetId,
+        slots: {
+          create: data.slots.map((s) => ({
+            slotKey: s.slotKey,
+            playerId: s.playerId,
+            substitutes: { create: s.subPlayerIds.map((playerId) => ({ playerId })) },
+          })),
+        },
+      },
+    });
+  });
+
+  const formation = await prisma.matchFormation.findUnique({
+    where: { matchId },
+    include: formationInclude,
+  });
+  res.json({ formation });
 }
 
 // Deliberately not limited to the match's squad: this is the admin's

@@ -1,0 +1,134 @@
+<h2 mat-dialog-title>Planificar convocatoria</h2>
+
+<mat-dialog-content class="formation-dialog-content">
+  <mat-stepper orientation="vertical" linear class="formation-stepper">
+    <mat-step [stepControl]="presetControl" label="Formación">
+      <div class="preset-grid">
+        @for (preset of presets; track preset.id) {
+          <button
+            type="button"
+            class="preset-card"
+            [class.preset-card-selected]="selectedPreset()?.id === preset.id"
+            (click)="selectPreset(preset)"
+          >
+            <span class="preset-pitch">
+              <span class="preset-pitch-line"></span>
+              @for (slot of preset.slots; track slot.key) {
+                <span
+                  class="preset-dot"
+                  [style.left.%]="slot.x * 100"
+                  [style.top.%]="slot.y * 100"
+                  [style.background]="colorGroupHex[slot.colorGroup]"
+                ></span>
+              }
+            </span>
+            <span class="preset-label">{{ preset.label }}</span>
+          </button>
+        }
+      </div>
+
+      <mat-dialog-actions align="end">
+        <button mat-flat-button color="primary" matStepperNext [disabled]="!selectedPreset()">Siguiente</button>
+      </mat-dialog-actions>
+    </mat-step>
+
+    <mat-step [stepControl]="slotAssignmentForm" label="Titulares por posición">
+      @if (selectedPreset(); as preset) {
+        <form [formGroup]="slotAssignmentForm" class="form-content">
+          @for (slot of preset.slots; track slot.key) {
+            <mat-form-field appearance="outline">
+              <mat-label>{{ slot.label }}</mat-label>
+              <mat-select [formControlName]="slot.key">
+                @for (starter of data.starters; track starter.id) {
+                  <mat-option [value]="starter.id">
+                    {{ starter.firstName }} {{ starter.lastName }}
+                    @if (starter.jerseyNumber !== null) {
+                      (#{{ starter.jerseyNumber }})
+                    }
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+        </form>
+        @if (slotAssignmentForm.errors?.['duplicate']) {
+          <p class="form-error">Cada titular solo puede ocupar una posición.</p>
+        }
+      }
+      <mat-dialog-actions align="end">
+        <button mat-button matStepperPrevious>Atrás</button>
+        <button mat-flat-button color="primary" matStepperNext [disabled]="slotAssignmentForm.invalid">
+          Siguiente
+        </button>
+      </mat-dialog-actions>
+    </mat-step>
+
+    <mat-step label="Posibles cambios">
+      @if (selectedPreset(); as preset) {
+        <form [formGroup]="slotSubsForm" class="form-content">
+          @for (slot of preset.slots; track slot.key) {
+            <mat-form-field appearance="outline">
+              <mat-label>Cambios para {{ slot.label }}</mat-label>
+              <mat-select [formControlName]="slot.key" multiple>
+                @for (player of data.bench; track player.id) {
+                  <mat-option [value]="player.id">
+                    {{ player.firstName }} {{ player.lastName }}
+                    @if (player.jerseyNumber !== null) {
+                      (#{{ player.jerseyNumber }})
+                    }
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+        </form>
+      }
+      @if (saveError()) {
+        <p class="form-error">{{ saveError() }}</p>
+      }
+      <mat-dialog-actions align="end">
+        <button mat-button matStepperPrevious [disabled]="saving()">Atrás</button>
+        <button mat-flat-button color="primary" [disabled]="saving()" (click)="confirmAndSave()">
+          @if (saving()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            Ver confirmación
+          }
+        </button>
+      </mat-dialog-actions>
+    </mat-step>
+
+    <mat-step label="Confirmación">
+      @if (rendering()) {
+        <div class="preview-loading"><mat-spinner diameter="28" /></div>
+      } @else if (previewDataUrl()) {
+        <img [src]="previewDataUrl()" alt="Imagen de la convocatoria" class="preview-image" />
+      }
+
+      <mat-form-field appearance="outline" class="message-field">
+        <mat-label>Mensaje</mat-label>
+        <textarea matInput [formControl]="messageControl" rows="14"></textarea>
+      </mat-form-field>
+
+      @if (sendFeedback()) {
+        <p class="send-feedback">{{ sendFeedback() }}</p>
+      }
+
+      <mat-dialog-actions align="end">
+        @if (canShare()) {
+          <button mat-flat-button color="primary" [disabled]="sending()" (click)="share()">
+            @if (sending()) {
+              <mat-spinner diameter="18" />
+            } @else {
+              Compartir
+            }
+          </button>
+        } @else {
+          <button mat-stroked-button (click)="download()">Descargar imagen</button>
+          <button mat-stroked-button (click)="copyText()">Copiar texto</button>
+        }
+        <button mat-button (click)="close()">Cerrar</button>
+      </mat-dialog-actions>
+    </mat-step>
+  </mat-stepper>
+</mat-dialog-content>

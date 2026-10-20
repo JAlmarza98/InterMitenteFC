@@ -9,6 +9,8 @@ import {
   updateMatch,
   deleteMatch,
   putSquad,
+  getFormation,
+  putFormation,
   upsertPlayerStat,
   getMatchStats,
   logMatchEvent,
@@ -23,6 +25,7 @@ matchesRouter.get("/", asyncHandler(listMatches));
 matchesRouter.get("/:id", asyncHandler(getMatch));
 matchesRouter.get("/:id/stats", asyncHandler(getMatchStats));
 matchesRouter.get("/:id/events", asyncHandler(listMatchEvents));
+matchesRouter.get("/:id/formation", asyncHandler(getFormation));
 matchesRouter.post("/", requireRole("coach", "admin"), asyncHandler(createMatch));
 matchesRouter.patch("/:id", requireRole("coach", "admin"), asyncHandler(updateMatch));
 // Deleting a match and correcting its recorded stats are admin-only —
@@ -31,5 +34,6 @@ matchesRouter.patch("/:id", requireRole("coach", "admin"), asyncHandler(updateMa
 // after the fact.
 matchesRouter.delete("/:id", requireRole("admin"), asyncHandler(deleteMatch));
 matchesRouter.put("/:id/squad", requireRole("coach", "admin"), asyncHandler(putSquad));
+matchesRouter.put("/:id/formation", requireRole("coach", "admin"), asyncHandler(putFormation));
 matchesRouter.put("/:id/player-stats/:playerId", requireRole("admin"), asyncHandler(upsertPlayerStat));
 matchesRouter.post("/:id/events", requireRole("coach", "admin"), asyncHandler(logMatchEvent));

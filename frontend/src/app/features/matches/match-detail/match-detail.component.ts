@@ -23,6 +23,7 @@ import {
 import { formatMinuteSeconds } from '../../../core/services/match-clock.service';
 import { formatRating, ratingTier, MatchPlayerStatRow, StatsService } from '../../../core/services/stats.service';
 import { MatchFormDialogComponent } from '../match-form-dialog/match-form-dialog.component';
+import { FormationPlanDialogComponent } from '../formation-plan-dialog/formation-plan-dialog.component';
 import { IconComponent, IconName } from '../../../shared/icon/icon.component';
 
 interface SquadRow {
@@ -185,6 +186,13 @@ export class MatchDetailComponent {
   });
   readonly someCalled = computed(() => this.squadRows().some((r) => r.called));
 
+  /** Based on the persisted squad (not the editable squadRows draft), so
+   * planning a formation always reflects what's actually saved. */
+  readonly canPlanFormation = computed(() => {
+    const match = this.match();
+    return this.canEditSquad() && (match?.squad.filter((s) => s.isStarter).length ?? 0) === this.requiredStarters;
+  });
+
   constructor() {
     this.load();
 
@@ -302,6 +310,23 @@ export class MatchDetailComponent {
         this.savingSquad.set(false);
         this.showError(err, 'No se pudo guardar la convocatoria');
       },
+    });
+  }
+
+  planFormation() {
+    const match = this.match();
+    if (!match) return;
+    const starters = match.squad.filter((s) => s.isStarter).map((s) => s.player);
+    const bench = match.squad.filter((s) => !s.isStarter).map((s) => s.player);
+    this.matchesService.getFormation(this.matchId).subscribe((res) => {
+      const ref = this.dialog.open(FormationPlanDialogComponent, {
+        data: { matchId: this.matchId, match, starters, bench, existingFormation: res.formation },
+        width: '95vw',
+        maxWidth: '640px',
+      });
+      ref.afterClosed().subscribe((result) => {
+        if (result) this.load();
+      });
     });
   }
 

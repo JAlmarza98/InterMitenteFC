@@ -99,11 +99,13 @@ model Player {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
-  squadEntries  MatchSquad[]
-  stats         MatchPlayerStat[]
-  segments      PlayingTimeSegment[]
-  events        MatchEvent[]         @relation("EventPlayer")
-  relatedEvents MatchEvent[]         @relation("EventRelatedPlayer")
+  squadEntries   MatchSquad[]
+  stats          MatchPlayerStat[]
+  segments       PlayingTimeSegment[]
+  events         MatchEvent[]         @relation("EventPlayer")
+  relatedEvents  MatchEvent[]         @relation("EventRelatedPlayer")
+  formationSlots MatchFormationSlot[]
+  formationSubs  MatchFormationSub[]
 }
 
 model Season {
@@ -138,11 +140,12 @@ model Match {
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
-  squad    MatchSquad[]
-  stats    MatchPlayerStat[]
-  periods  MatchPeriod[]
-  segments PlayingTimeSegment[]
-  events   MatchEvent[]
+  squad     MatchSquad[]
+  stats     MatchPlayerStat[]
+  periods   MatchPeriod[]
+  segments  PlayingTimeSegment[]
+  events    MatchEvent[]
+  formation MatchFormation?
 
   @@index([seasonId])
   @@index([status])
@@ -157,6 +160,47 @@ model MatchSquad {
   isStarter Boolean @default(false)
 
   @@unique([matchId, playerId])
+}
+
+model MatchFormation {
+  id        String   @id @default(uuid())
+  matchId   String   @unique
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  /// Preset id, validated against the server's FORMATION_PRESETS registry
+  /// (matches/formationPresets.ts) — not a DB enum, same reasoning as
+  /// Player.position: free to grow without a migration.
+  presetId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  slots MatchFormationSlot[]
+}
+
+model MatchFormationSlot {
+  id          String         @id @default(uuid())
+  formationId String
+  formation   MatchFormation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  /// Preset-defined slot key (e.g. "gk", "d1", "m2"...) — rendering
+  /// coordinates/colors/labels live in frontend config, not here.
+  slotKey     String
+  playerId    String
+  player      Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  substitutes MatchFormationSub[]
+
+  @@unique([formationId, slotKey])
+  // A starter can only occupy one slot in a given formation.
+  @@unique([formationId, playerId])
+}
+
+model MatchFormationSub {
+  id       String             @id @default(uuid())
+  slotId   String
+  slot     MatchFormationSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  playerId String
+  player   Player             @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([slotId, playerId])
 }
 
 model MatchPlayerStat {
