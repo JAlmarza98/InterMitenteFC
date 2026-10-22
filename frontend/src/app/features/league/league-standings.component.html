@@ -1,0 +1,45 @@
+<div class="page">
+  <div class="league-header">
+    <h1 class="league-title">Clasificación</h1>
+    @if (standings(); as s) {
+      <p class="league-meta">{{ s.division }} · actualizada {{ s.fetchedAt | date: 'd/M HH:mm' }}</p>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="spinner-row">
+      <mat-spinner diameter="32" />
+    </div>
+  } @else if (failed()) {
+    <p class="empty-state">No se ha podido cargar la clasificación de la liga. Inténtalo más tarde.</p>
+  } @else if (standings(); as s) {
+    <div class="standings">
+      <div class="standings-row standings-head">
+        <span>#</span>
+        <span class="team-cell">Equipo</span>
+        <span>PJ</span>
+        <span class="wide">G</span>
+        <span class="wide">E</span>
+        <span class="wide">P</span>
+        <span class="wide">GF</span>
+        <span class="wide">GC</span>
+        <span>DG</span>
+        <span>Pts</span>
+      </div>
+      @for (row of s.rows; track row.position) {
+        <div class="standings-row" [class.our-team]="row.isOurTeam">
+          <span class="pos">{{ row.position }}</span>
+          <span class="team-cell">{{ row.team }}</span>
+          <span>{{ row.played }}</span>
+          <span class="wide">{{ row.won }}</span>
+          <span class="wide">{{ row.drawn }}</span>
+          <span class="wide">{{ row.lost }}</span>
+          <span class="wide">{{ row.goalsFor }}</span>
+          <span class="wide">{{ row.goalsAgainst }}</span>
+          <span>{{ row.goalDifference > 0 ? '+' : '' }}{{ row.goalDifference }}</span>
+          <span class="points">{{ row.points }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>

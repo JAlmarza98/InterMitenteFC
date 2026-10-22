@@ -17,6 +17,10 @@ const envSchema = z.object({
     }),
   ADMIN_EMAIL: z.string().email().optional(),
   ADMIN_BOOTSTRAP_PASSWORD: z.string().min(8).optional(),
+  // The league's `dato` id on campeonatosmunicipalesmostoles.org: the
+  // `data` attribute of the division's link in the site's "Liga" menu.
+  // The first number is the competition and changes every season.
+  LEAGUE_DIVISION: z.string().default("27849,T2,2º domingos tarde,,1"),
 });
 
 export const env = envSchema.parse(process.env);

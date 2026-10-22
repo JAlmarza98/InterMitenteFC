@@ -1,0 +1,86 @@
+.league-title {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 1.4rem;
+  letter-spacing: -0.01em;
+}
+
+.league-meta {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: oklch(70% 0.02 262);
+}
+
+.standings {
+  border-radius: 18px;
+  background: oklch(22% 0.035 262 / 70%);
+  border: 1px solid oklch(45% 0.03 262 / 25%);
+  overflow: hidden;
+}
+
+// Mobile keeps what decides the table (played, goal difference, points);
+// the W/D/L and goals breakdown only fits from tablet width up.
+.standings-row {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr 2rem 2.4rem 2.4rem;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 14px;
+  border-bottom: 1px solid oklch(45% 0.03 262 / 15%);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.wide {
+  display: none;
+}
+
+.standings-head {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: oklch(65% 0.02 262);
+}
+
+.team-cell {
+  text-align: left;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos {
+  color: oklch(65% 0.02 262);
+}
+
+.points {
+  font-weight: 800;
+}
+
+.our-team {
+  background: color-mix(in srgb, var(--accent-amber) 14%, transparent);
+  color: var(--accent-amber);
+
+  .pos {
+    color: inherit;
+  }
+}
+
+@media (min-width: 768px) {
+  .standings-row {
+    grid-template-columns: 2rem 1fr repeat(8, 2.6rem);
+    padding: 11px 18px;
+  }
+
+  .wide {
+    display: inline;
+  }
+}

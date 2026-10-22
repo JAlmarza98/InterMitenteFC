@@ -18,6 +18,7 @@
         <a mat-button routerLink="/matches" routerLinkActive="active-link">Partidos</a>
         <a mat-button routerLink="/players" routerLinkActive="active-link">Plantilla</a>
         <a mat-button routerLink="/stats" routerLinkActive="active-link">Estadísticas</a>
+        <a mat-button routerLink="/league" routerLinkActive="active-link">Liga</a>
         @if (auth.role() === 'admin') {
           <span class="admin-nav-links">
             <a mat-button routerLink="/admin/seasons" routerLinkActive="active-link">Temporadas</a>
@@ -62,6 +63,10 @@
     <a routerLink="/stats" routerLinkActive="active">
       <app-icon name="stats" [size]="21" />
       <span>Stats</span>
+    </a>
+    <a routerLink="/league" routerLinkActive="active">
+      <app-icon name="trophy" [size]="21" />
+      <span>Liga</span>
     </a>
     <button class="bottom-nav-more" [matMenuTriggerFor]="moreMenu">
       <app-icon name="more" [size]="21" />

@@ -72,6 +72,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'league',
+    loadComponent: () =>
+      import('./features/league/league-standings.component').then((m) => m.LeagueStandingsComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'admin/users',
     loadComponent: () =>
       import('./features/admin/user-approval/user-approval.component').then((m) => m.UserApprovalComponent),

@@ -14,6 +14,7 @@ import { seasonsRouter } from "./modules/seasons/seasons.routes";
 import { matchesRouter } from "./modules/matches/matches.routes";
 import { matchClockRouter } from "./modules/matchClock/matchClock.routes";
 import { statsRouter } from "./modules/stats/stats.routes";
+import { leagueRouter } from "./modules/league/league.routes";
 import { liveUpdatesRouter } from "./modules/liveUpdates/liveUpdates.routes";
 
 export const app = express();
@@ -50,5 +51,6 @@ app.use("/api/matches", matchesRouter);
 app.use("/api/matches/:matchId", matchClockRouter);
 app.use("/api/stats", statsRouter);
 app.use("/api/live-updates", liveUpdatesRouter);
+app.use("/api/league", leagueRouter);
 
 app.use(errorHandler);
