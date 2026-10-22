@@ -8,6 +8,10 @@ import { HttpError } from "../../middleware/errorHandler";
  * just feeds this to a jqGrid, so we skip the HTML entirely. */
 const SOURCE_URL = "http://www.campeonatosmunicipalesmostoles.org/ser/clasifOptService.php";
 const CACHE_MS = 10 * 60 * 1000;
+/** After a failed fetch, don't try (or wait on) the site again for a while:
+ * every rating needs the standings, so a site that's down mustn't stall
+ * each stats request until the timeout. */
+const RETRY_AFTER_FAILURE_MS = 2 * 60 * 1000;
 const OUR_TEAM = "INTERMITENTE";
 
 // Each row is a positional array: POS, crest, team, PTS, PJ, PG, PE, PP,
@@ -56,11 +60,17 @@ export function parseStandings(body: unknown): StandingRow[] {
 }
 
 let cache: Standings | null = null;
+let lastFailureAt = 0;
 
 /** Cached for CACHE_MS — the league only updates after matchdays, and the
  * source site is slow. If it's down, a stale copy beats an error. */
 export async function getStandings(): Promise<Standings> {
+  if (!env.LEAGUE_DIVISION) throw new HttpError(404, "La liga no está configurada");
   if (cache && Date.now() - Date.parse(cache.fetchedAt) < CACHE_MS) return cache;
+  if (Date.now() - lastFailureAt < RETRY_AFTER_FAILURE_MS) {
+    if (cache) return cache;
+    throw new HttpError(502, "No se ha podido obtener la clasificación de la liga");
+  }
   try {
     const url = `${SOURCE_URL}?${new URLSearchParams({
       dato: env.LEAGUE_DIVISION,
@@ -79,8 +89,19 @@ export async function getStandings(): Promise<Standings> {
     };
     return cache;
   } catch (err) {
+    lastFailureAt = Date.now();
     logger.warn({ err }, "League standings fetch failed");
     if (cache) return cache;
     throw new HttpError(502, "No se ha podido obtener la clasificación de la liga");
+  }
+}
+
+/** The standings for the rating, or `null` when the league isn't configured
+ * or reachable — the rating then assumes a league-average rival. */
+export async function getStandingsOrNull(): Promise<Standings | null> {
+  try {
+    return await getStandings();
+  } catch {
+    return null;
   }
 }

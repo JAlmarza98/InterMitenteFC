@@ -36,6 +36,7 @@ const ICONS = {
   'eye-off':
     '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/>',
   star: '<path d="M12 2l2.6 5.8L21 9l-4.5 4.2L17.6 20 12 16.8 6.4 20l1.1-6.8L3 9l6.4-1.2z"/>',
+  alert: '<path d="M12 3 2 20h20Z"/><path d="M12 10v4M12 17v.01"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/>',
   assist: '<path d="M7 12a5 5 0 0 1 10 0"/><circle cx="12" cy="6" r="2"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',

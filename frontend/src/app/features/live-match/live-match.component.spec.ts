@@ -96,7 +96,7 @@ describe('LiveMatchComponent', () => {
     clockSpy.listSegments.and.returnValue(of({ segments: [OPEN_SEGMENT] }));
     const statsSpy = jasmine.createSpyObj<StatsService>('StatsService', ['getMatchStats']);
     statsSpy.getMatchStats.and.returnValue(of({ players: [] as MatchPlayerStatRow[] }));
-    eventsSpy = jasmine.createSpyObj<MatchEventsService>('MatchEventsService', ['list', 'log']);
+    eventsSpy = jasmine.createSpyObj<MatchEventsService>('MatchEventsService', ['list', 'log', 'delete']);
     eventsSpy.list.and.returnValue(of({ events: [event('red_card', SENT_OFF)] }));
 
     TestBed.configureTestingModule({
@@ -157,5 +157,26 @@ describe('LiveMatchComponent', () => {
     const stats = fixture.componentInstance.statsByPlayer().get('starter')!;
     expect(stats.goals).toBe(1);
     expect(stats.penaltyGoals).toBe(1);
+  });
+
+  it('logs a key action for a player on the pitch', () => {
+    const fixture = setup();
+    fixture.componentInstance.setRosterTab('pitch');
+    fixture.detectChanges();
+    eventsSpy.log.and.returnValue(of({ stat: {}, event: event('key_action', STARTER), match: null }));
+
+    button(fixture, 'Añadir acción clave')!.click();
+
+    expect(eventsSpy.log).toHaveBeenCalledWith('m1', 'starter', 'key_action');
+  });
+
+  it('undoes the last action once confirmed', () => {
+    const fixture = setup();
+    spyOn(window, 'confirm').and.returnValue(true);
+    eventsSpy.delete.and.returnValue(of({ match: null }));
+
+    (fixture.nativeElement.querySelector('.undo-btn') as HTMLButtonElement).click();
+
+    expect(eventsSpy.delete).toHaveBeenCalledWith('m1', 'red_card-sent-off');
   });
 });

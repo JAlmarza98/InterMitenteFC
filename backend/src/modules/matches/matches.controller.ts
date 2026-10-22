@@ -10,7 +10,7 @@ import {
   segmentDurationSeconds,
 } from "../matchClock/matchClock.service";
 import { broadcastMatchUpdate } from "../liveUpdates/liveUpdates.service";
-import { computeMatchRating, countGoalsWhileOnPitch } from "../stats/playerRating";
+import { rateMatches } from "../stats/matchRatings";
 import { paginationSchema, toSkipTake } from "../../utils/pagination";
 import { FORMATION_PRESETS } from "./formationPresets";
 
@@ -72,7 +72,10 @@ const playerStatSchema = z.object({
   ownGoals: z.number().int().nonnegative().optional(),
   penaltyGoals: z.number().int().nonnegative().optional(),
   penaltiesWon: z.number().int().nonnegative().optional(),
+  keyActions: z.number().int().nonnegative().optional(),
+  keyErrors: z.number().int().nonnegative().optional(),
 });
+const STAT_FIELDS = playerStatSchema.keyof().options;
 
 const STAT_EVENT_TYPES = [
   "goal",
@@ -82,6 +85,8 @@ const STAT_EVENT_TYPES = [
   "own_goal",
   "penalty_goal",
   "penalty_won",
+  "key_action",
+  "key_error",
 ] as const;
 type StatEventType = (typeof STAT_EVENT_TYPES)[number];
 const LOGGABLE_EVENT_TYPES = [...STAT_EVENT_TYPES, "opponent_goal"] as const;
@@ -109,6 +114,8 @@ const STAT_FIELDS_BY_EVENT_TYPE: Record<StatEventType, StatField[]> = {
   own_goal: ["ownGoals"],
   penalty_goal: ["goals", "penaltyGoals"],
   penalty_won: ["penaltiesWon"],
+  key_action: ["keyActions"],
+  key_error: ["keyErrors"],
 };
 
 // A "goal" adds to our score; an "own_goal" (autogol) is put into our own
@@ -341,45 +348,21 @@ export async function upsertPlayerStat(req: Request, res: Response) {
   res.json({ stat });
 }
 
-function hasAnyStat(stat: {
-  goals: number;
-  assists: number;
-  yellowCards: number;
-  redCards: number;
-  ownGoals: number;
-  penaltyGoals: number;
-  penaltiesWon: number;
-}): boolean {
-  return (
-    stat.goals > 0 ||
-    stat.assists > 0 ||
-    stat.yellowCards > 0 ||
-    stat.redCards > 0 ||
-    stat.ownGoals > 0 ||
-    stat.penaltyGoals > 0 ||
-    stat.penaltiesWon > 0
-  );
+function hasAnyStat(stat: Record<StatField, number>): boolean {
+  return STAT_FIELDS.some((field) => stat[field] > 0);
 }
 
 export async function getMatchStats(req: Request, res: Response) {
   const matchId = req.params.id;
 
-  const [match, squad, playerStats, segments, goalEvents] = await Promise.all([
-    prisma.match.findUniqueOrThrow({
-      where: { id: matchId },
-      select: { status: true, teamScore: true, opponentScore: true },
-    }),
+  const [match, squad, playerStats, segments, ratingsByMatch] = await Promise.all([
+    prisma.match.findUniqueOrThrow({ where: { id: matchId }, select: { status: true } }),
     prisma.matchSquad.findMany({ where: { matchId }, include: { player: true } }),
     prisma.matchPlayerStat.findMany({ where: { matchId } }),
     prisma.playingTimeSegment.findMany({ where: { matchId } }),
-    prisma.matchEvent.findMany({
-      // "goal" and "penalty_goal" both count for us (teamScore); "opponent_goal"
-      // and "own_goal" both count against us (opponentScore) — see
-      // SCORE_FIELD_BY_EVENT_TYPE above.
-      where: { matchId, type: { in: ["goal", "penalty_goal", "opponent_goal", "own_goal"] } },
-      select: { type: true, second: true },
-    }),
+    rateMatches([matchId]),
   ]);
+  const ratings = ratingsByMatch.get(matchId);
 
   // An admin can record stats/playing time for a player who wasn't called
   // up (see upsertPlayerStat), so the squad alone no longer covers everyone
@@ -414,78 +397,19 @@ export async function getMatchStats(req: Request, res: Response) {
   const liveCurrentSecond = match.status === "live" ? await computeLiveElapsedSeconds(matchId) : null;
 
   const secondsByPlayer = new Map<string, number>();
-  const segmentsByPlayer = new Map<string, { startSecond: number; endSecond: number | null }[]>();
   for (const segment of segments) {
     const duration = segmentDurationSeconds(segment, liveCurrentSecond);
     secondsByPlayer.set(segment.playerId, (secondsByPlayer.get(segment.playerId) ?? 0) + duration);
-    if (!segmentsByPlayer.has(segment.playerId)) segmentsByPlayer.set(segment.playerId, []);
-    segmentsByPlayer.get(segment.playerId)!.push(segment);
   }
   const statsByPlayer = new Map(playerStats.map((s) => [s.playerId, s]));
 
-  // Goal timestamps only exist for goals logged live (via logMatchEvent);
-  // ones entered/corrected directly through upsertPlayerStat have no
-  // MatchEvent at all. When that leaves us with no timestamps to place a
-  // goal in time, fall back to crediting/charging every player who
-  // featured at all in the match with the match's whole scoreline, rather
-  // than silently giving them no context adjustment.
-  const goalForSeconds = goalEvents
-    .filter((e) => e.type === "goal" || e.type === "penalty_goal")
-    .map((e) => e.second);
-  const goalAgainstSeconds = goalEvents
-    .filter((e) => e.type === "opponent_goal" || e.type === "own_goal")
-    .map((e) => e.second);
-  const goalForFallback = goalForSeconds.length === 0 ? match.teamScore ?? 0 : null;
-  const goalAgainstFallback = goalAgainstSeconds.length === 0 ? match.opponentScore ?? 0 : null;
-
   const players = entries.map((entry) => {
     const stat = statsByPlayer.get(entry.playerId);
-    const secondsPlayed = secondsByPlayer.get(entry.playerId) ?? 0;
-    const playerSegments = segmentsByPlayer.get(entry.playerId) ?? [];
-    const goalsForWhileOnPitch =
-      goalForFallback !== null
-        ? secondsPlayed > 0
-          ? goalForFallback
-          : 0
-        : countGoalsWhileOnPitch(goalForSeconds, playerSegments, liveCurrentSecond);
-    const goalsAgainstWhileOnPitch =
-      goalAgainstFallback !== null
-        ? secondsPlayed > 0
-          ? goalAgainstFallback
-          : 0
-        : countGoalsWhileOnPitch(goalAgainstSeconds, playerSegments, liveCurrentSecond);
-    const isGoalkeeper =
-      entry.player.position === "Portero" || entry.player.secondaryPosition === "Portero";
-    const goals = stat?.goals ?? 0;
-    const assists = stat?.assists ?? 0;
-    const yellowCards = stat?.yellowCards ?? 0;
-    const redCards = stat?.redCards ?? 0;
-    const ownGoals = stat?.ownGoals ?? 0;
-    const penaltyGoals = stat?.penaltyGoals ?? 0;
-    const penaltiesWon = stat?.penaltiesWon ?? 0;
     return {
       ...entry,
-      secondsPlayed,
-      goals,
-      assists,
-      yellowCards,
-      redCards,
-      ownGoals,
-      penaltyGoals,
-      penaltiesWon,
-      rating: computeMatchRating({
-        goals,
-        penaltyGoals,
-        penaltiesWon,
-        assists,
-        yellowCards,
-        redCards,
-        ownGoals,
-        secondsPlayed,
-        goalsForWhileOnPitch,
-        goalsAgainstWhileOnPitch,
-        isGoalkeeper,
-      }),
+      secondsPlayed: secondsByPlayer.get(entry.playerId) ?? 0,
+      ...Object.fromEntries(STAT_FIELDS.map((field) => [field, stat?.[field] ?? 0])),
+      rating: ratings?.get(entry.playerId) ?? null,
     };
   });
 
@@ -551,6 +475,119 @@ export async function logMatchEvent(req: Request, res: Response) {
 
   broadcastMatchUpdate(matchId);
   res.status(201).json({ match, stat, event });
+}
+
+// Which events add to each total: the inverse of the two maps above.
+const SCORE_EVENT_TYPES = {
+  teamScore: ["goal", "penalty_goal"],
+  opponentScore: ["opponent_goal", "own_goal"],
+} as const;
+const eventTypesCounting = (field: StatField) =>
+  STAT_EVENT_TYPES.filter((type) => STAT_FIELDS_BY_EVENT_TYPE[type].includes(field));
+
+/** Undoes a mis-tapped action: deletes the event and takes it back off the
+ * totals — but only off the totals that still include it. An action an
+ * admin already corrected by hand (stat or score fixed, event left behind)
+ * only has its stale history entry removed, instead of being subtracted a
+ * second time. Undoing a red card during the match puts the player back on
+ * the pitch: they never actually left it. */
+export async function deleteMatchEvent(req: Request, res: Response) {
+  const { id: matchId, eventId } = req.params;
+  const event = await prisma.matchEvent.findFirst({ where: { id: eventId, matchId } });
+  if (!event) throw new HttpError(404, "Evento no encontrado");
+  const type = event.type as (typeof LOGGABLE_EVENT_TYPES)[number];
+  if (!LOGGABLE_EVENT_TYPES.includes(type)) {
+    throw new HttpError(400, "Los cambios y los inicios o finales de parte no se pueden borrar");
+  }
+  if (req.user!.role !== "admin") {
+    const { status } = await prisma.match.findUniqueOrThrow({ where: { id: matchId }, select: { status: true } });
+    if (status !== "live") {
+      throw new HttpError(403, "Solo un administrador puede borrar acciones de un partido que no está en juego");
+    }
+  }
+
+  const match = await prisma.$transaction(async (tx) => {
+    const scoreField = type === "opponent_goal" ? "opponentScore" : SCORE_FIELD_BY_EVENT_TYPE[type];
+    if (scoreField) {
+      const logged = await tx.matchEvent.count({
+        where: { matchId, type: { in: [...SCORE_EVENT_TYPES[scoreField]] } },
+      });
+      const column = Prisma.raw(`"${scoreField}"`);
+      await tx.$executeRaw`UPDATE "Match" SET ${column} = ${column} - 1 WHERE id = ${matchId} AND ${column} >= ${logged}`;
+    }
+    if (event.playerId && type !== "opponent_goal") {
+      for (const field of STAT_FIELDS_BY_EVENT_TYPE[type]) {
+        const logged = await tx.matchEvent.count({
+          where: { matchId, playerId: event.playerId, type: { in: eventTypesCounting(field) } },
+        });
+        const column = Prisma.raw(`"${field}"`);
+        await tx.$executeRaw`UPDATE "MatchPlayerStat" SET ${column} = ${column} - 1 WHERE "matchId" = ${matchId} AND "playerId" = ${event.playerId} AND ${column} >= ${logged}`;
+      }
+    }
+    if (type === "red_card" && event.playerId) {
+      await reopenSentOffSegment(tx, matchId, event.playerId, event.second);
+    }
+    await tx.matchEvent.delete({ where: { id: eventId } });
+    return scoreField ? tx.match.findUniqueOrThrow({ where: { id: matchId } }) : null;
+  });
+
+  broadcastMatchUpdate(matchId);
+  res.json({ match });
+}
+
+/** Reopens the playing time a red card closed at `second` (see
+ * logMatchEvent), live matches only — once finished, the admin fixes the
+ * minutes by hand, since nobody knows how long they would have played.
+ * Segments stay open across half-time, so the player simply keeps
+ * accruing time from where the card cut it. */
+async function reopenSentOffSegment(tx: Prisma.TransactionClient, matchId: string, playerId: string, second: number) {
+  const { status } = await tx.match.findUniqueOrThrow({ where: { id: matchId }, select: { status: true } });
+  if (status !== "live") return;
+  const [closed, alreadyOn, onPitch] = await Promise.all([
+    tx.playingTimeSegment.findFirst({ where: { matchId, playerId, endSecond: second }, orderBy: { createdAt: "desc" } }),
+    tx.playingTimeSegment.count({ where: { matchId, playerId, endSecond: null } }),
+    tx.playingTimeSegment.count({ where: { matchId, endSecond: null } }),
+  ]);
+  if (!closed || alreadyOn > 0 || onPitch >= SQUAD_SIZE) return;
+  await tx.playingTimeSegment.update({ where: { id: closed.id }, data: { endSecond: null, endedAt: null } });
+}
+
+const topPlayersSchema = z.object({
+  /** Best first; up to three. */
+  playerIds: z
+    .array(z.string().uuid())
+    .max(3)
+    .refine((ids) => new Set(ids).size === ids.length, { message: "Un jugador no puede repetirse en el top 3" }),
+});
+
+export async function getTopPlayers(req: Request, res: Response) {
+  const top = await prisma.matchTopPlayer.findMany({ where: { matchId: req.params.id }, orderBy: { rank: "asc" } });
+  res.json({ playerIds: top.map((t) => t.playerId) });
+}
+
+/** One top 3 per match, shared by every admin: the last one saved stands. */
+export async function putTopPlayers(req: Request, res: Response) {
+  const { playerIds } = topPlayersSchema.parse(req.body);
+  const matchId = req.params.id;
+
+  const match = await prisma.match.findUnique({ where: { id: matchId }, select: { status: true } });
+  if (!match) throw new HttpError(404, "Partido no encontrado");
+  if (match.status !== "finished") throw new HttpError(400, "El top 3 se elige con el partido finalizado");
+  const played = await prisma.playingTimeSegment.findMany({
+    where: { matchId, playerId: { in: playerIds } },
+    distinct: ["playerId"],
+    select: { playerId: true },
+  });
+  if (played.length !== playerIds.length) {
+    throw new HttpError(400, "Solo pueden estar en el top 3 jugadores que jugaron el partido");
+  }
+
+  await prisma.$transaction([
+    prisma.matchTopPlayer.deleteMany({ where: { matchId } }),
+    prisma.matchTopPlayer.createMany({ data: playerIds.map((playerId, i) => ({ matchId, playerId, rank: i + 1 })) }),
+  ]);
+  broadcastMatchUpdate(matchId);
+  res.json({ playerIds });
 }
 
 export async function listMatchEvents(req: Request, res: Response) {

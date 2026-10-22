@@ -19,11 +19,22 @@ export interface MatchPlayerStatRow {
   /** Subset of `goals`, not in addition to it. */
   penaltyGoals: number;
   penaltiesWon: number;
+  /** ⭐ key actions and ⚠️ serious errors. */
+  keyActions: number;
+  keyErrors: number;
   rating: number | null;
 }
 
 export type PlayerStatField =
-  'goals' | 'assists' | 'yellowCards' | 'redCards' | 'ownGoals' | 'penaltyGoals' | 'penaltiesWon';
+  | 'goals'
+  | 'assists'
+  | 'yellowCards'
+  | 'redCards'
+  | 'ownGoals'
+  | 'penaltyGoals'
+  | 'penaltiesWon'
+  | 'keyActions'
+  | 'keyErrors';
 
 export type PlayerStatInput = Partial<Record<PlayerStatField, number>>;
 
@@ -41,6 +52,8 @@ export interface SeasonStatRow {
   ownGoals: number;
   penaltyGoals: number;
   penaltiesWon: number;
+  keyActions: number;
+  keyErrors: number;
 }
 
 export interface SeasonStats {

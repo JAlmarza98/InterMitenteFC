@@ -45,6 +45,8 @@ function emptyRow(player: Player): MatchPlayerStatRow {
     ownGoals: 0,
     penaltyGoals: 0,
     penaltiesWon: 0,
+    keyActions: 0,
+    keyErrors: 0,
     rating: null,
   };
 }
@@ -108,6 +110,8 @@ export class MatchStatsComponent {
     { field: 'yellowCards', label: 'Tarjetas amarillas', shortLabel: 'TA', header: 'TA', max: 2 },
     { field: 'redCards', label: 'Tarjetas rojas', shortLabel: 'TR', header: 'TR', max: 1 },
     { field: 'ownGoals', label: 'Goles en propia', shortLabel: 'G.p.', header: 'G. propia' },
+    { field: 'keyActions', label: 'Acciones clave', shortLabel: '⭐', header: '⭐' },
+    { field: 'keyErrors', label: 'Errores graves', shortLabel: '⚠️', header: '⚠️' },
   ];
 
   readonly players = signal<MatchPlayerStatRow[]>([]);

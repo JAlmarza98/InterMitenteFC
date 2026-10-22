@@ -56,6 +56,13 @@ enum MatchEventType {
   /// player; `periodType` says which period, `second` is the match clock.
   period_start
   period_end
+  /// ⭐ A save, block or clearance that stops a goal, or a recovery that
+  /// ends in a chance.
+  key_action
+  /// ⚠️ An individual mistake that gifts the rival a goal or a very clear
+  /// chance (loss in build-up, goalkeeper blunder, failed clearance,
+  /// penalty given away).
+  key_error
 }
 
 model User {
@@ -88,16 +95,16 @@ model User {
 }
 
 model Player {
-  id                String     @id @default(uuid())
+  id                String    @id @default(uuid())
   firstName         String
   lastName          String
   jerseyNumber      Int?
   position          String?
   secondaryPosition String?
   birthDate         DateTime?
-  active            Boolean    @default(true)
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   squadEntries   MatchSquad[]
   stats          MatchPlayerStat[]
@@ -106,6 +113,7 @@ model Player {
   relatedEvents  MatchEvent[]         @relation("EventRelatedPlayer")
   formationSlots MatchFormationSlot[]
   formationSubs  MatchFormationSub[]
+  topOfMatches   MatchTopPlayer[]
 }
 
 model Season {
@@ -140,12 +148,13 @@ model Match {
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
-  squad     MatchSquad[]
-  stats     MatchPlayerStat[]
-  periods   MatchPeriod[]
-  segments  PlayingTimeSegment[]
-  events    MatchEvent[]
-  formation MatchFormation?
+  squad      MatchSquad[]
+  stats      MatchPlayerStat[]
+  periods    MatchPeriod[]
+  segments   PlayingTimeSegment[]
+  events     MatchEvent[]
+  formation  MatchFormation?
+  topPlayers MatchTopPlayer[]
 
   @@index([seasonId])
   @@index([status])
@@ -221,6 +230,9 @@ model MatchPlayerStat {
   /// Penalties won ("penalti provocado"): fouls drawn inside the box that
   /// earned the team a penalty, whoever then took it.
   penaltiesWon Int    @default(0)
+  /// ⭐ key actions and ⚠️ serious errors (see MatchEventType).
+  keyActions   Int    @default(0)
+  keyErrors    Int    @default(0)
 
   @@unique([matchId, playerId])
 }
@@ -289,4 +301,18 @@ model MatchEvent {
   createdAt       DateTime       @default(now())
 
   @@index([matchId, second])
+}
+
+/// Admin-picked top 3 of a match (rank 1-3). It only feeds the rating and
+/// only admins can read it — kept out of Match so it never reaches the
+/// match payloads every member reads.
+model MatchTopPlayer {
+  matchId  String
+  match    Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  rank     Int
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@id([matchId, rank])
+  @@unique([matchId, playerId])
 }

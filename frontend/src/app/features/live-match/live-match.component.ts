@@ -15,6 +15,7 @@ import {
   MatchEvent,
   MatchEventsService,
   MatchEventType,
+  isUndoableEvent,
   periodEventDescription,
 } from '../../core/services/match-events.service';
 import {
@@ -29,25 +30,19 @@ import {
   periodOffsetSeconds,
 } from '../../core/services/match-clock.service';
 
-type StatField = 'goals' | 'assists' | 'yellowCards' | 'redCards' | 'penaltyGoals' | 'penaltiesWon';
-
-const STAT_EVENT_TYPE_BY_FIELD: Record<StatField, Exclude<LoggableEventType, 'opponent_goal'>> = {
+const STAT_EVENT_TYPE_BY_FIELD = {
   goals: 'goal',
   assists: 'assist',
   yellowCards: 'yellow_card',
   redCards: 'red_card',
   penaltyGoals: 'penalty_goal',
   penaltiesWon: 'penalty_won',
-};
+  keyActions: 'key_action',
+  keyErrors: 'key_error',
+} as const satisfies Record<string, Exclude<LoggableEventType, 'opponent_goal'>>;
 
-interface LiveStatCounts {
-  goals: number;
-  assists: number;
-  yellowCards: number;
-  redCards: number;
-  penaltyGoals: number;
-  penaltiesWon: number;
-}
+type StatField = keyof typeof STAT_EVENT_TYPE_BY_FIELD;
+type LiveStatCounts = Record<StatField, number>;
 
 interface RosterRow {
   playerId: string;
@@ -61,14 +56,8 @@ interface RosterRow {
   playedDisplay: string;
 }
 
-const EMPTY_STATS: LiveStatCounts = {
-  goals: 0,
-  assists: 0,
-  yellowCards: 0,
-  redCards: 0,
-  penaltyGoals: 0,
-  penaltiesWon: 0,
-};
+const STAT_FIELDS = Object.keys(STAT_EVENT_TYPE_BY_FIELD) as StatField[];
+const EMPTY_STATS = Object.fromEntries(STAT_FIELDS.map((field) => [field, 0])) as LiveStatCounts;
 
 // Same mapping/reasoning as match-detail's EVENT_ICON_NAMES — a stroked
 // ball for goals, a stroked swap arrow for substitutions. Cards render as
@@ -84,6 +73,8 @@ const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
   penalty_won: 'whistle',
   period_start: 'clock',
   period_end: 'clock',
+  key_action: 'star',
+  key_error: 'alert',
 };
 
 @Component({
@@ -142,6 +133,16 @@ export class LiveMatchComponent {
   readonly events = signal<MatchEvent[]>([]);
 
   readonly recentEvents = computed(() => [...this.events()].reverse());
+
+  /** The last thing logged, when it's an action that can be undone — the
+   * usual mis-tap is noticed straight away. Older ones are undone from the
+   * full history (desktop card here, or the match page). */
+  readonly undoableLastEvent = computed(() => {
+    const last = this.recentEvents()[0];
+    return last && isUndoableEvent(last) ? last : null;
+  });
+
+  readonly isUndoableEvent = isUndoableEvent;
 
   eventPlayerName(event: MatchEvent): string {
     return event.player ? `${event.player.firstName} ${event.player.lastName}` : '';
@@ -357,14 +358,7 @@ export class LiveMatchComponent {
       next: (res) => {
         const map = new Map<string, LiveStatCounts>();
         for (const row of res.players) {
-          map.set(row.playerId, {
-            goals: row.goals,
-            assists: row.assists,
-            yellowCards: row.yellowCards,
-            redCards: row.redCards,
-            penaltyGoals: row.penaltyGoals,
-            penaltiesWon: row.penaltiesWon,
-          });
+          map.set(row.playerId, Object.fromEntries(STAT_FIELDS.map((field) => [field, row[field]])) as LiveStatCounts);
         }
         this.statsByPlayer.set(map);
         this.syncError.set(false);
@@ -511,6 +505,16 @@ export class LiveMatchComponent {
         this.snackBar.open('No se pudo guardar la estadística', 'Cerrar', { duration: 3000 });
         this.loadStats();
       },
+    });
+  }
+
+  undo(event: MatchEvent) {
+    if (!confirm(`¿Deshacer «${this.eventDescription(event)}»?`)) return;
+    this.matchEventsService.delete(this.matchId, event.id).subscribe({
+      // Undoing a red card also puts the player back on the pitch: the
+      // resync reloads the segments along with the stats and history.
+      next: () => this.resync(),
+      error: (err) => this.showActionError(err, 'No se pudo deshacer la acción'),
     });
   }
 

@@ -7,6 +7,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { AuthService } from '../../../core/services/auth.service';
 import { LiveUpdatesService } from '../../../core/services/live-updates.service';
 import { FlashOnChangeDirective } from '../../../shared/directives/flash-on-change.directive';
@@ -18,6 +20,7 @@ import {
   MatchEvent,
   MatchEventsService,
   MatchEventType,
+  isUndoableEvent,
   periodEventDescription,
 } from '../../../core/services/match-events.service';
 import { formatMinuteSeconds } from '../../../core/services/match-clock.service';
@@ -54,6 +57,8 @@ const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
   penalty_won: 'whistle',
   period_start: 'clock',
   period_end: 'clock',
+  key_action: 'star',
+  key_error: 'alert',
 };
 
 @Component({
@@ -67,6 +72,8 @@ const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
     MatDialogModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
+    MatFormFieldModule,
+    MatSelectModule,
     IconComponent,
     FlashOnChangeDirective,
   ],
@@ -110,9 +117,23 @@ export class MatchDetailComponent {
         row.yellowCards > 0 ||
         row.redCards > 0 ||
         row.ownGoals > 0 ||
-        row.penaltiesWon > 0
+        row.penaltiesWon > 0 ||
+        row.keyActions > 0 ||
+        row.keyErrors > 0
     )
   );
+
+  /** A coach undoes mis-taps during the match; afterwards, cleaning up the
+   * history is an admin correction (the backend enforces the same). */
+  readonly canUndo = computed(() => this.isAdmin() || (this.canManage() && this.match()?.status === 'live'));
+  readonly isUndoableEvent = isUndoableEvent;
+
+  /** Medal per rank of the top 3, best first. */
+  readonly topMedals = ['🥇', '🥈', '🥉'];
+  /** Admin-only top 3 of a finished match, best first (`null`: empty). */
+  readonly topPlayerIds = signal<(string | null)[]>([null, null, null]);
+  readonly savingTop = signal(false);
+  readonly topCandidates = computed(() => this.playerStats().filter((row) => row.secondsPlayed > 0));
 
   formatEventTime(event: MatchEvent): string {
     return formatMinuteSeconds(event.second);
@@ -149,6 +170,10 @@ export class MatchDetailComponent {
         return `Gol de penalti de ${name}`;
       case 'penalty_won':
         return `Penalti provocado por ${name}`;
+      case 'key_action':
+        return `Acción clave de ${name}`;
+      case 'key_error':
+        return `Error grave de ${name}`;
       case 'opponent_goal':
         return MATCH_EVENT_LABELS.opponent_goal;
       case 'period_start':
@@ -219,6 +244,45 @@ export class MatchDetailComponent {
       },
     });
     this.refreshEventsAndStats();
+    if (this.isAdmin()) {
+      this.matchesService.getTopPlayers(this.matchId).subscribe({
+        next: (res) => this.topPlayerIds.set([0, 1, 2].map((i) => res.playerIds[i] ?? null)),
+        error: (err) => this.showError(err, 'No se pudo cargar el top 3'),
+      });
+    }
+  }
+
+  undo(event: MatchEvent) {
+    if (!confirm(`¿Borrar «${this.eventDescription(event)}» del partido?`)) return;
+    this.matchEventsService.delete(this.matchId, event.id).subscribe({
+      next: () => this.refresh(),
+      error: (err) => this.showError(err, 'No se pudo borrar la acción'),
+    });
+  }
+
+  setTopPlayer(rank: number, playerId: string | null) {
+    this.topPlayerIds.set(this.topPlayerIds().map((id, i) => (i === rank ? playerId : id)));
+  }
+
+  /** Taken by another rank: one player can't hold two medals. */
+  isTopTaken(rank: number, playerId: string): boolean {
+    return this.topPlayerIds().some((id, i) => i !== rank && id === playerId);
+  }
+
+  saveTopPlayers() {
+    this.savingTop.set(true);
+    const playerIds = this.topPlayerIds().filter((id): id is string => id !== null);
+    this.matchesService.setTopPlayers(this.matchId, playerIds).subscribe({
+      next: () => {
+        this.savingTop.set(false);
+        this.snackBar.open('Top 3 guardado', 'Cerrar', { duration: 3000 });
+        this.refreshEventsAndStats();
+      },
+      error: (err) => {
+        this.savingTop.set(false);
+        this.showError(err, 'No se pudo guardar el top 3');
+      },
+    });
   }
 
   /** Live-update ping handler: re-fetches the match (for its score/status)

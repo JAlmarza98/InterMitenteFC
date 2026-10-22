@@ -24,7 +24,8 @@ type SortColumn =
   | 'penaltiesWon'
   | 'yellowCards'
   | 'redCards'
-  | 'ownGoals';
+  | 'ownGoals'
+  | 'keyActions';
 
 @Component({
   selector: 'app-season-stats',
@@ -163,6 +164,8 @@ export class SeasonStatsComponent {
         return row.redCards;
       case 'ownGoals':
         return row.ownGoals;
+      case 'keyActions':
+        return row.keyActions;
     }
   }
 }

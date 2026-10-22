@@ -37,6 +37,8 @@ function statRow(p: Player, overrides: Partial<MatchPlayerStatRow> = {}): MatchP
     ownGoals: 0,
     penaltyGoals: 0,
     penaltiesWon: 0,
+    keyActions: 0,
+    keyErrors: 0,
     rating: null,
     ...overrides,
   };

@@ -308,13 +308,13 @@ describe("matches", () => {
       expect(scorerRow.secondsPlayed).toBeGreaterThan(0);
       expect(scorerRow.rating).not.toBeNull();
 
-      // A teammate with no personal stats still gets rated on match context:
-      // on the pitch for the team's 1 goal (+0.2) and both goals conceded
-      // (-0.2 each) — net -0.2, independent of exactly how long they played
-      // since the context adjustment isn't run through the time normalizer.
+      // A teammate with no personal stats is still rated on the team's
+      // result while they were on the pitch, against a league-average rival
+      // (2.9 goals each way): as a midfielder, 2 conceded is +0.9 x 0.25 and
+      // 1 scored is -1.9 x 0.25, blamed by half — a net -0.0125.
       const quietRow = statsRes.body.players.find((p: { playerId: string }) => p.playerId === players[3].id);
       expect(quietRow.goals).toBe(0);
-      expect(quietRow.rating).toBe(4.8);
+      expect(quietRow.rating).toBe(5.0);
     });
 
     it("logs penalty_goal as a goal too, and penalty_won as its own counter", async () => {
@@ -375,8 +375,8 @@ describe("matches", () => {
       expect(yellowRes.status).toBe(201);
       expect(yellowRes.body.stat.yellowCards).toBe(1);
 
-      // Booked without playing still earns a (harsh) rating, on the same
-      // 10-minute minimum scale as a cameo.
+      // A card from the bench is only given for insults or fights: rated
+      // harshly even without playing.
       const statsRes = await coach.get(`/api/matches/${matchId}/stats`);
       const subRow = statsRes.body.players.find((p: { playerId: string }) => p.playerId === sub.id);
       expect(subRow).toMatchObject({ secondsPlayed: 0, yellowCards: 1, rating: 1.4 });
@@ -537,6 +537,149 @@ describe("matches", () => {
       expect(res.body.formation.slots).toHaveLength(7);
 
       expect(await prisma.matchFormation.count({ where: { matchId } })).toBe(1);
+    });
+  });
+
+  describe("undo, key actions and the top 3", () => {
+    async function liveMatchWithStarters(coach: Awaited<ReturnType<typeof loginAs>>) {
+      const matchId = await createMatchViaApi(coach);
+      const players = await createSevenPlayers();
+      await coach.put(`/api/matches/${matchId}/squad`).send({
+        players: players.map((p) => ({ playerId: p.id, isStarter: true })),
+      });
+      await coach.post(`/api/matches/${matchId}/clock/start-period`).send({ type: "first_half" });
+      return { matchId, players };
+    }
+
+    const statOf = (matchId: string, playerId: string) =>
+      prisma.matchPlayerStat.findUnique({ where: { matchId_playerId: { matchId, playerId } } });
+
+    it("undoes a mis-tapped goal during the live match", async () => {
+      const coach = await coachAgent();
+      const { matchId, players } = await liveMatchWithStarters(coach);
+      const goal = await coach.post(`/api/matches/${matchId}/events`).send({ playerId: players[0].id, type: "goal" });
+
+      const undo = await coach.delete(`/api/matches/${matchId}/events/${goal.body.event.id}`);
+      expect(undo.status).toBe(200);
+      expect(undo.body.match.teamScore).toBe(0);
+      expect((await statOf(matchId, players[0].id))?.goals).toBe(0);
+      const events = await coach.get(`/api/matches/${matchId}/events`);
+      expect(events.body.events.map((e: { type: string }) => e.type)).toEqual(["period_start"]);
+    });
+
+    it("puts a player back on the pitch when their red card is undone", async () => {
+      const coach = await coachAgent();
+      const { matchId, players } = await liveMatchWithStarters(coach);
+      const red = await coach.post(`/api/matches/${matchId}/events`).send({ playerId: players[0].id, type: "red_card" });
+      const openSegments = () =>
+        prisma.playingTimeSegment.count({ where: { matchId, playerId: players[0].id, endSecond: null } });
+      expect(await openSegments()).toBe(0);
+
+      await coach.delete(`/api/matches/${matchId}/events/${red.body.event.id}`);
+
+      expect(await openSegments()).toBe(1);
+      expect((await statOf(matchId, players[0].id))?.redCards).toBe(0);
+    });
+
+    it("only clears from the history an action an admin already corrected by hand", async () => {
+      const coach = await coachAgent();
+      const admin = await adminAgent();
+      const { matchId, players } = await liveMatchWithStarters(coach);
+      // A double tap, fixed in the totals only (the only way before undo).
+      const first = await coach.post(`/api/matches/${matchId}/events`).send({ playerId: players[0].id, type: "goal" });
+      await coach.post(`/api/matches/${matchId}/events`).send({ playerId: players[0].id, type: "goal" });
+      await admin.put(`/api/matches/${matchId}/player-stats/${players[0].id}`).send({ goals: 1 });
+      await admin.patch(`/api/matches/${matchId}`).send({ teamScore: 1 });
+
+      const res = await admin.delete(`/api/matches/${matchId}/events/${first.body.event.id}`);
+      expect(res.status).toBe(200);
+      expect(res.body.match.teamScore).toBe(1);
+      expect((await statOf(matchId, players[0].id))?.goals).toBe(1);
+      expect(await prisma.matchEvent.count({ where: { matchId, type: "goal" } })).toBe(1);
+    });
+
+    it("lets a coach undo only during the live match, and nobody delete clock events", async () => {
+      const coach = await coachAgent();
+      const admin = await adminAgent();
+      const { matchId, players } = await liveMatchWithStarters(coach);
+      const goal = await coach.post(`/api/matches/${matchId}/events`).send({ playerId: players[0].id, type: "goal" });
+      const kickOff = (await coach.get(`/api/matches/${matchId}/events`)).body.events.find(
+        (e: { type: string }) => e.type === "period_start"
+      );
+      expect((await admin.delete(`/api/matches/${matchId}/events/${kickOff.id}`)).status).toBe(400);
+
+      await coach.post(`/api/matches/${matchId}/clock/finish`);
+      expect((await coach.delete(`/api/matches/${matchId}/events/${goal.body.event.id}`)).status).toBe(403);
+      expect((await admin.delete(`/api/matches/${matchId}/events/${goal.body.event.id}`)).status).toBe(200);
+      expect((await admin.delete(`/api/matches/${matchId}/events/${goal.body.event.id}`)).status).toBe(404);
+    });
+
+    it("logs key actions and serious errors as their own counters", async () => {
+      const coach = await coachAgent();
+      const { matchId, players } = await liveMatchWithStarters(coach);
+
+      const star = await coach.post(`/api/matches/${matchId}/events`).send({ playerId: players[0].id, type: "key_action" });
+      expect(star.status).toBe(201);
+      expect(star.body.stat.keyActions).toBe(1);
+      expect(star.body.match).toBeNull();
+      const error = await coach.post(`/api/matches/${matchId}/events`).send({ playerId: players[0].id, type: "key_error" });
+      expect(error.body.stat.keyErrors).toBe(1);
+
+      const stats = await coach.get(`/api/matches/${matchId}/stats`);
+      const row = stats.body.players.find((p: { playerId: string }) => p.playerId === players[0].id);
+      expect(row).toMatchObject({ keyActions: 1, keyErrors: 1 });
+    });
+
+    it("keeps one admin-only top 3 per finished match, of players who played, on top of their rating", async () => {
+      const coach = await coachAgent();
+      const admin = await adminAgent();
+      const { matchId, players } = await liveMatchWithStarters(coach);
+      const neverPlayed = await prisma.player.create({ data: { firstName: "Never", lastName: "Played" } });
+      const top = (playerIds: string[]) => admin.put(`/api/matches/${matchId}/top-players`).send({ playerIds });
+
+      expect((await top([players[0].id])).status).toBe(400); // not finished yet
+      // A second on the pitch, so everyone has a rating to compare.
+      await sleep(1100);
+      await coach.post(`/api/matches/${matchId}/clock/finish`);
+
+      expect((await coach.get(`/api/matches/${matchId}/top-players`)).status).toBe(403);
+      expect((await coach.put(`/api/matches/${matchId}/top-players`).send({ playerIds: [] })).status).toBe(403);
+      expect((await top([neverPlayed.id])).status).toBe(400);
+      expect((await top([players[0].id, players[0].id])).status).toBe(400);
+
+      const ratingOf = (res: { body: { players: { playerId: string; rating: number }[] } }, id: string) =>
+        res.body.players.find((p) => p.playerId === id)!.rating;
+      const before = await admin.get(`/api/matches/${matchId}/stats`);
+      expect((await top([players[1].id, players[0].id])).status).toBe(200);
+      expect((await admin.get(`/api/matches/${matchId}/top-players`)).body.playerIds).toEqual([
+        players[1].id,
+        players[0].id,
+      ]);
+      const after = await admin.get(`/api/matches/${matchId}/stats`);
+      expect(ratingOf(after, players[1].id) - ratingOf(before, players[1].id)).toBeCloseTo(1.5, 5);
+      expect(ratingOf(after, players[0].id) - ratingOf(before, players[0].id)).toBeCloseTo(1.0, 5);
+    });
+
+    it("rates a card shown from the bench just as harshly when the player had played", async () => {
+      const admin = await adminAgent();
+      const [booked, teammate] = await createSevenPlayers();
+      const match = await prisma.match.create({
+        data: { opponent: "CD Rivas", matchDate: new Date("2026-09-05"), homeAway: "home", status: "finished" },
+      });
+      // Both play the first 25 minutes; one is booked from the bench later on.
+      for (const player of [booked, teammate]) {
+        await prisma.playingTimeSegment.create({
+          data: { matchId: match.id, playerId: player.id, periodType: "first_half", startSecond: 0, endSecond: 1500, source: "manual" },
+        });
+      }
+      await prisma.matchPlayerStat.create({ data: { matchId: match.id, playerId: booked.id, yellowCards: 1 } });
+      await prisma.matchEvent.create({
+        data: { matchId: match.id, playerId: booked.id, type: "yellow_card", periodType: "second_half", second: 2400 },
+      });
+
+      const res = await admin.get(`/api/matches/${match.id}/stats`);
+      const ratingOf = (id: string) => res.body.players.find((p: { playerId: string }) => p.playerId === id).rating;
+      expect(ratingOf(teammate.id) - ratingOf(booked.id)).toBeCloseTo(3.6, 5);
     });
   });
 });

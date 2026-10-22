@@ -106,6 +106,15 @@ export class MatchesService {
     return this.http.put<{ squad: MatchSquadEntry[] }>(`/api/matches/${id}/squad`, { players });
   }
 
+  /** Admin only: the match's top 3, best first. */
+  getTopPlayers(id: string) {
+    return this.http.get<{ playerIds: string[] }>(`/api/matches/${id}/top-players`);
+  }
+
+  setTopPlayers(id: string, playerIds: string[]) {
+    return this.http.put<{ playerIds: string[] }>(`/api/matches/${id}/top-players`, { playerIds });
+  }
+
   getFormation(id: string) {
     return this.http.get<{ formation: MatchFormation | null }>(`/api/matches/${id}/formation`);
   }

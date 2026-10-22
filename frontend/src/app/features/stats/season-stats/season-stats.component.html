@@ -58,6 +58,7 @@
             <button class="sort-header" (click)="toggleSort('yellowCards')">TA</button>
             <button class="sort-header" (click)="toggleSort('redCards')">TR</button>
             <button class="sort-header" (click)="toggleSort('ownGoals')">G. propia</button>
+            <button class="sort-header" title="Acciones clave" (click)="toggleSort('keyActions')">⭐</button>
           </div>
           @for (row of sortedPlayers(); track row.playerId) {
             <div class="stats-table-row">
@@ -97,6 +98,7 @@
               <span class="num-cell" [class.stat-zero]="row.yellowCards === 0">{{ row.yellowCards }}</span>
               <span class="num-cell" [class.stat-zero]="row.redCards === 0">{{ row.redCards }}</span>
               <span class="num-cell" [class.stat-zero]="row.ownGoals === 0">{{ row.ownGoals }}</span>
+              <span class="num-cell" [class.stat-zero]="row.keyActions === 0">{{ row.keyActions }}</span>
             </div>
           }
         </div>
@@ -139,8 +141,14 @@
                 <span>{{ formatTime(row.secondsPlayed) }}</span>
               }
             </div>
-            @if (row.penaltyGoals > 0 || row.penaltiesWon > 0) {
+            @if (row.penaltyGoals > 0 || row.penaltiesWon > 0 || row.keyActions > 0) {
               <div class="player-card-line player-card-line-sub">
+                @if (row.keyActions > 0) {
+                  <span class="player-stat-chip">
+                    <app-icon name="star" [size]="12" [strokeWidth]="2" class="event-icon-key_action" />
+                    Acciones clave <b>{{ row.keyActions }}</b>
+                  </span>
+                }
                 @if (row.penaltyGoals > 0) {
                   <span class="player-stat-chip">
                     <app-icon name="penalty" [size]="12" [strokeWidth]="2" class="event-icon-penalty_goal" />

@@ -220,9 +220,45 @@
                   />
                 }
                 <span class="event-desc">{{ eventDescription(event) }}</span>
+                @if (canUndo() && isUndoableEvent(event)) {
+                  <button
+                    type="button"
+                    class="event-undo"
+                    (click)="undo(event)"
+                    [attr.aria-label]="'Borrar: ' + eventDescription(event)"
+                    title="Borrar del partido"
+                  >
+                    <app-icon name="close" [size]="13" [strokeWidth]="2" />
+                  </button>
+                }
               </div>
             }
           </div>
+        </div>
+      }
+
+      @if (isAdmin() && m.status === "finished" && topCandidates().length > 0) {
+        <div class="top-card">
+          <div class="card-title">Top 3 del partido</div>
+          <p class="top-hint">Solo lo ven los admins. Suma a la nota: +1,5, +1 y +0,5.</p>
+          @for (medal of topMedals; track medal; let rank = $index) {
+            <mat-form-field appearance="outline" class="top-field">
+              <span matTextPrefix class="top-medal">{{ medal }}</span>
+              <mat-select
+                [value]="topPlayerIds()[rank]"
+                (selectionChange)="setTopPlayer(rank, $event.value)"
+                [attr.aria-label]="'Puesto ' + (rank + 1) + ' del top 3'"
+              >
+                <mat-option [value]="null">—</mat-option>
+                @for (row of topCandidates(); track row.playerId) {
+                  <mat-option [value]="row.playerId" [disabled]="isTopTaken(rank, row.playerId)">
+                    {{ row.player.firstName }} {{ row.player.lastName }}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+          <button class="outline-button" [disabled]="savingTop()" (click)="saveTopPlayers()">Guardar top 3</button>
         </div>
       }
     </div>
@@ -242,6 +278,8 @@
             <span>TA</span>
             <span>TR</span>
             <span>En propia</span>
+            <span title="Acciones clave">⭐</span>
+            <span title="Errores graves">⚠️</span>
           </div>
           @for (row of playedPlayerStats(); track row.playerId) {
             <div class="player-stats-table-row">
@@ -257,6 +295,8 @@
               <span>{{ row.yellowCards }}</span>
               <span>{{ row.redCards }}</span>
               <span>{{ row.ownGoals }}</span>
+              <span>{{ row.keyActions }}</span>
+              <span>{{ row.keyErrors }}</span>
             </div>
           }
         </div>
@@ -288,8 +328,20 @@
                   </span>
                 }
               </div>
-              @if (row.yellowCards > 0 || row.redCards > 0 || row.ownGoals > 0) {
+              @if (row.yellowCards > 0 || row.redCards > 0 || row.ownGoals > 0 || row.keyActions > 0 || row.keyErrors > 0) {
                 <div class="player-stat-card-line">
+                  @if (row.keyActions > 0) {
+                    <span class="player-stat-chip" title="Acciones clave">
+                      <app-icon name="star" [size]="12" [strokeWidth]="2" class="event-icon-key_action" />
+                      {{ row.keyActions }}
+                    </span>
+                  }
+                  @if (row.keyErrors > 0) {
+                    <span class="player-stat-chip" title="Errores graves">
+                      <app-icon name="alert" [size]="12" [strokeWidth]="2" class="event-icon-key_error" />
+                      {{ row.keyErrors }}
+                    </span>
+                  }
                   @if (row.yellowCards > 0) {
                     <span class="player-stat-chip">
                       <svg width="9" height="12" viewBox="0 0 16 20" class="event-card-icon event-card-yellow">

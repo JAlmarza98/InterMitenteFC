@@ -15,7 +15,9 @@ export type MatchEventType =
   | 'penalty_goal'
   | 'penalty_won'
   | 'period_start'
-  | 'period_end';
+  | 'period_end'
+  | 'key_action'
+  | 'key_error';
 /** Only the clock itself logs substitutions and period start/end. */
 export type LoggableEventType = Exclude<MatchEventType, 'substitution' | 'period_start' | 'period_end'>;
 
@@ -42,6 +44,8 @@ export const MATCH_EVENT_LABELS: Record<MatchEventType, string> = {
   penalty_won: 'Penalti provocado',
   period_start: 'Inicio de periodo',
   period_end: 'Fin de periodo',
+  key_action: 'Acción clave',
+  key_error: 'Error grave',
 };
 
 // Material icon ligature names (not emoji — see craft-floor's ban on
@@ -60,7 +64,15 @@ export const MATCH_EVENT_ICONS: Record<MatchEventType, string> = {
   penalty_won: 'sports',
   period_start: 'schedule',
   period_end: 'schedule',
+  key_action: 'star',
+  key_error: 'warning',
 };
+
+/** Actions a coach can undo during the match (and an admin afterwards):
+ * everything but substitutions and the clock's own period marks. */
+export function isUndoableEvent(event: MatchEvent): boolean {
+  return !['substitution', 'period_start', 'period_end'].includes(event.type);
+}
 
 // Spelled out rather than PERIOD_LABELS' short "Prórroga 1", which reads
 // oddly mid-sentence ("Empieza la Prórroga 1").
@@ -93,6 +105,12 @@ export class MatchEventsService {
       playerId,
       type,
     });
+  }
+
+  /** Undoes a mis-tapped action: removes it from the history and takes it
+   * back off the totals that still include it. */
+  delete(matchId: string, eventId: string) {
+    return this.http.delete<{ match: Match | null }>(`/api/matches/${matchId}/events/${eventId}`);
   }
 
   logOpponentGoal(matchId: string) {

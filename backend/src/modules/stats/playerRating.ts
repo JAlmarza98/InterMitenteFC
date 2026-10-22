@@ -1,116 +1,234 @@
 /**
- * A single match's performance rating: a 0.0-10.0 figure blending goals,
- * assists, penalties won, cards and own goals, weighted by how little time
- * it took to produce them. Two players with identical goals/assists but different
- * minutes played shouldn't score the same — the one who did it in less
- * time gets the higher rating.
+ * A single match's performance rating, 0.0-10.0. Everyone starts at 5 and
+ * is judged by their own job: personal actions are worth the same in every
+ * position, while the team's result during the player's own minutes on the
+ * pitch counts by position — goals conceded for the goalkeeper and
+ * defenders, goals scored for midfielders and forwards — measured against
+ * what's normal versus that rival. Reasoning and calibration (against the
+ * real 2026/27 matches): docs/plans/nota-por-puesto.md.
  */
+export type Role = "GK" | "DEF" | "MID" | "FWD";
+
 export interface RatingInput {
+  role: Role;
+  secondsPlayed: number;
+  /** Real duration of the match so far — what was actually played in each
+   * period, not the configured period length. */
+  matchSeconds: number;
   /** All goals, penalties included. */
   goals: number;
   /** How many of `goals` were penalties — a subset, not extra goals. */
   penaltyGoals: number;
   penaltiesWon: number;
   assists: number;
+  ownGoals: number;
+  keyActions: number;
+  keyErrors: number;
+  /** Cards shown while on the pitch. */
   yellowCards: number;
   redCards: number;
-  ownGoals: number;
-  secondsPlayed: number;
-  /** Team goals scored while this player was on the pitch (own goals they
-   * scored included) — context credit for players who don't score/assist
-   * themselves, independent of their own stat line. */
+  /** Cards shown from the bench (subbed off, or never came on). They're only
+   * given for insults or fights, so they're punished hard regardless of
+   * minutes played. */
+  benchYellowCards: number;
+  benchRedCards: number;
+  /** Team goals while the player was on the pitch. Fractional when the
+   * match has no reliable goal timestamps and the scoreline is prorated. */
   goalsForWhileOnPitch: number;
-  /** Goals conceded while this player was on the pitch. */
   goalsAgainstWhileOnPitch: number;
-  /** Whether this player is the goalkeeper (by primary or secondary
-   * position) — a clean sheet is specifically their job, so it earns a
-   * bonus the generic goalsAgainstWhileOnPitch penalty alone can't give:
-   * avoiding a penalty never lifts a rating above baseline on its own. */
-  isGoalkeeper: boolean;
+  /** Goals a team would be expected to score/concede against this rival
+   * over a whole match. */
+  expectedGoalsFor: number;
+  expectedGoalsAgainst: number;
+  /** Admin-picked top 3 of the match (1 = best), or 0. */
+  topRank: number;
 }
 
 const BASE_RATING = 5.0;
-/** Reference window the weights below are calibrated against: a full,
- * regulation-length appearance. */
-const REFERENCE_SECONDS = 3600; // 60 min
-/** Floor for the normalizing denominator, so a cameo of a couple of
- * minutes doesn't blow a single goal up into an absurd multiplier — the
- * final clamp to [0, 10] bounds it further regardless. */
-const MIN_SECONDS_FLOOR = 600; // 10 min
 const WEIGHTS = {
   goal: 1.2,
-  // A penalty is an easier goal than one from open play, so it's worth
-  // less — but still clearly positive, and still a full goal everywhere
+  // An easier goal than one from open play, still a full goal everywhere
   // else (scoreline, top scorers).
   penaltyGoal: 0.9,
-  // Drawing the foul earns the chance but still leaves it to be scored,
-  // so a bit less than an assist.
+  // Drawing the foul earns the chance but still leaves it to be scored.
   penaltyWon: 0.5,
   assist: 0.7,
   yellowCard: -0.6,
   redCard: -2.0,
   ownGoal: -1.5,
-  // Small plus/minus for match context, same idea as hockey/basketball
-  // plus-minus: being on the pitch for a team goal either way, regardless
-  // of personal involvement. Kept well below the personal weights above so
-  // it nudges rather than dominates.
-  teamGoalFor: 0.2,
-  teamGoalAgainst: -0.2,
-  // The keeper's actual job. Full credit for a full match kept clean;
-  // prorated for a shorter one (coming on as a sub, etc). Weighted high
-  // enough that a full-match clean sheet alone clears a comfortable win
-  // above baseline (0-0 -> 7.0, 5-0 -> 8.0) — otherwise a keeper, who
-  // almost never scores or assists, has no way to post an outstanding
-  // rating the way an outfield player can.
-  goalkeeperCleanSheet: 2.0,
+  keyAction: 0.8,
+  keyError: -0.8,
+  // A yellow from the bench alone leaves a 1.4, a red a 0.
+  benchYellowCard: -3.6,
+  benchRedCard: -10,
 };
+const TOP_RANK_BONUS = [1.5, 1.0, 0.5];
+/** Per goal conceded below (+) or above (-) what's expected, during the
+ * player's own minutes. */
+const DEFENSE_WEIGHT: Record<Role, number> = { GK: 0.8, DEF: 0.5, MID: 0.25, FWD: 0.05 };
+/** Per goal scored above (+) or below (-) what's expected. */
+const ATTACK_WEIGHT: Record<Role, number> = { GK: 0, DEF: 0.05, MID: 0.25, FWD: 0.4 };
+/** The team's result rewards in full but blames by half, and can only sink
+ * a player so far: in fútbol 7 a lot of goals go in and each one is shared
+ * by the whole back line. Individual blame (cards, own goals, ⚠️) counts in
+ * full instead. */
+const NEGATIVE_CONTEXT_SCALE = 0.5;
+const CONTEXT_MIN = -1.5;
+const CONTEXT_MAX = 3;
+/** The same output in fewer minutes is worth more, but by the square root
+ * of the time ratio and at most x2 (a quarter of the match): one goal in a
+ * short spell is mostly one chance falling your way, not a rate to
+ * extrapolate — and with rolling subs, minutes are the coach's call. */
+const MAX_MINUTES_FACTOR = 2;
 
-/** Rating for one match, or `null` if the player neither played (no
- * seconds recorded) nor did anything — someone who stayed on the bench
- * shouldn't show the neutral baseline as if they'd had an unremarkable
- * game. A player booked without ever coming on (a card shown to the bench)
- * does get rated, on the same scale as everyone else: they count as the
- * MIN_SECONDS_FLOOR minimum, so a yellow alone is already a harsh mark. */
+/** Rating for one match, or `null` if the player neither played nor has
+ * anything recorded — someone who stayed on the bench shouldn't show a
+ * neutral baseline as if they'd had an unremarkable game. */
 export function computeMatchRating(input: RatingInput): number | null {
-  const didSomething =
-    input.goals > 0 ||
-    input.penaltiesWon > 0 ||
-    input.assists > 0 ||
-    input.yellowCards > 0 ||
-    input.redCards > 0 ||
-    input.ownGoals > 0;
-  if (input.secondsPlayed <= 0 && !didSomething) return null;
+  const recorded =
+    input.goals +
+    input.penaltiesWon +
+    input.assists +
+    input.ownGoals +
+    input.keyActions +
+    input.keyErrors +
+    input.yellowCards +
+    input.redCards +
+    input.benchYellowCards +
+    input.benchRedCards;
+  if (input.secondsPlayed <= 0 && recorded === 0) return null;
 
-  // `goals` already includes the penalties, so they're taken out before
-  // the open-play weight applies and then counted at their own weight.
   const penaltyGoals = Math.min(input.penaltyGoals, input.goals);
-  const weighted =
+  const personal =
     (input.goals - penaltyGoals) * WEIGHTS.goal +
     penaltyGoals * WEIGHTS.penaltyGoal +
     input.penaltiesWon * WEIGHTS.penaltyWon +
     input.assists * WEIGHTS.assist +
+    input.ownGoals * WEIGHTS.ownGoal +
+    input.keyActions * WEIGHTS.keyAction +
+    input.keyErrors * WEIGHTS.keyError +
     input.yellowCards * WEIGHTS.yellowCard +
-    input.redCards * WEIGHTS.redCard +
-    input.ownGoals * WEIGHTS.ownGoal;
+    input.redCards * WEIGHTS.redCard;
+  const bench = input.benchYellowCards * WEIGHTS.benchYellowCard + input.benchRedCards * WEIGHTS.benchRedCard;
 
-  const normalizer = REFERENCE_SECONDS / Math.max(input.secondsPlayed, MIN_SECONDS_FLOOR);
+  // Stats entered without playing time (an admin correction) count at the
+  // maximum factor, with no minutes for the team context to cover.
+  const played = input.secondsPlayed > 0;
+  const matchSeconds = Math.max(input.matchSeconds, input.secondsPlayed, 1);
+  const factor = played ? Math.min(MAX_MINUTES_FACTOR, Math.sqrt(matchSeconds / input.secondsPlayed)) : MAX_MINUTES_FACTOR;
+  const share = played ? Math.min(1, input.secondsPlayed / matchSeconds) : 0;
 
-  // Context adjustment is NOT run through the per-minute normalizer above:
-  // that normalizer rewards packing personal production into less time,
-  // which makes sense for a goal you scored but not for a goal your team
-  // conceded while you happened to be on for only a few minutes — that
-  // shouldn't get amplified into a huge penalty.
-  const cleanSheetBonus =
-    input.isGoalkeeper && input.goalsAgainstWhileOnPitch === 0
-      ? WEIGHTS.goalkeeperCleanSheet * Math.min(1, input.secondsPlayed / REFERENCE_SECONDS)
-      : 0;
-  const contextAdjustment =
-    input.goalsForWhileOnPitch * WEIGHTS.teamGoalFor +
-    input.goalsAgainstWhileOnPitch * WEIGHTS.teamGoalAgainst +
-    cleanSheetBonus;
+  const soften = (v: number) => (v < 0 ? v * NEGATIVE_CONTEXT_SCALE : v);
+  const defense = (input.expectedGoalsAgainst * share - input.goalsAgainstWhileOnPitch) * DEFENSE_WEIGHT[input.role];
+  const attack = (input.goalsForWhileOnPitch - input.expectedGoalsFor * share) * ATTACK_WEIGHT[input.role];
+  const context = Math.min(CONTEXT_MAX, Math.max(CONTEXT_MIN, (soften(defense) + soften(attack)) * factor));
 
-  const clamped = Math.min(10, Math.max(0, BASE_RATING + weighted * normalizer + contextAdjustment));
-  return Math.round(clamped * 10) / 10;
+  const top = TOP_RANK_BONUS[input.topRank - 1] ?? 0;
+  const rating = BASE_RATING + personal * factor + context + top + bench;
+  return Math.round(Math.min(10, Math.max(0, rating)) * 10) / 10;
+}
+
+/** Mean of per-match ratings, ignoring matches with no rating (unplayed).
+ * `null` if there's nothing to average. */
+export function averageRating(ratings: (number | null)[]): number | null {
+  const valid = ratings.filter((r): r is number => r !== null);
+  if (valid.length === 0) return null;
+  const mean = valid.reduce((sum, r) => sum + r, 0) / valid.length;
+  return Math.round(mean * 10) / 10;
+}
+
+const ROLE_BY_POSITION: Record<string, Role> = {
+  "Defensa central": "DEF",
+  "Lateral derecho": "DEF",
+  "Lateral izquierdo": "DEF",
+  Delantero: "FWD",
+};
+
+/** Outfield role from the profile (midfield when unknown). The goalkeeper
+ * is decided per match instead (see `matchGoalkeeperId`), so a profile
+ * goalkeeper playing outfield takes their secondary position. */
+export function outfieldRole(position: string | null, secondaryPosition: string | null): Role {
+  const effective = position === "Portero" ? secondaryPosition : position;
+  return (effective && ROLE_BY_POSITION[effective]) || "MID";
+}
+
+type Segment = { startSecond: number; endSecond: number | null };
+
+export interface GoalkeeperCandidate {
+  playerId: string;
+  position: string | null;
+  secondaryPosition: string | null;
+  secondsPlayed: number;
+  segments: Segment[];
+}
+
+/** Who played in goal: there's one per match and they're almost never
+ * changed. The formation's goalkeeper if they played; else the profile
+ * goalkeeper who played; else whoever played the whole match without
+ * coming off (preferring a secondary "Portero" if several did); else
+ * nobody, and everyone is rated by their profile. */
+export function matchGoalkeeperId(
+  candidates: GoalkeeperCandidate[],
+  formationGoalkeeperId: string | null,
+  matchSeconds: number
+): string | null {
+  const played = candidates.filter((c) => c.secondsPlayed > 0);
+  if (formationGoalkeeperId && played.some((c) => c.playerId === formationGoalkeeperId)) return formationGoalkeeperId;
+
+  const profileKeeper = played
+    .filter((c) => c.position === "Portero")
+    .sort((a, b) => b.secondsPlayed - a.secondsPlayed)[0];
+  if (profileKeeper) return profileKeeper.playerId;
+
+  // A few seconds of slack: the final whistle and the last segment's end
+  // are stamped by separate requests.
+  const wholeMatch = played.filter(
+    (c) =>
+      c.segments.length === 1 &&
+      c.segments[0].startSecond === 0 &&
+      (c.segments[0].endSecond ?? matchSeconds) >= matchSeconds - 5
+  );
+  if (wholeMatch.length === 1) return wholeMatch[0].playerId;
+  const secondaryKeepers = wholeMatch.filter((c) => c.secondaryPosition === "Portero");
+  return secondaryKeepers.length === 1 ? secondaryKeepers[0].playerId : null;
+}
+
+type TimedEvent = { type: string; second: number; playerId: string | null };
+
+/**
+ * Seconds of the team's goals for/against, reconciled with the corrected
+ * totals: per player, at most as many goal (own goal) events as they have
+ * goals (own goals) after corrections — which drops double taps and phantom
+ * goals that were only fixed in the totals. `null` when the timed goals
+ * still don't add up to the official score; the caller then prorates the
+ * scoreline instead.
+ */
+export function reconcileGoalSeconds(
+  events: TimedEvent[],
+  goalsByPlayer: Map<string, number>,
+  ownGoalsByPlayer: Map<string, number>,
+  teamScore: number | null,
+  opponentScore: number | null
+): { forSeconds: number[] | null; againstSeconds: number[] | null } {
+  const capped = (types: string[], allowed: Map<string, number>) => {
+    const used = new Map<string, number>();
+    return events
+      .filter((e) => types.includes(e.type))
+      .sort((a, b) => a.second - b.second)
+      .filter((e) => {
+        if (!e.playerId) return true;
+        const count = (used.get(e.playerId) ?? 0) + 1;
+        used.set(e.playerId, count);
+        return count <= (allowed.get(e.playerId) ?? 0);
+      })
+      .map((e) => e.second);
+  };
+  const forSeconds = capped(["goal", "penalty_goal"], goalsByPlayer);
+  const againstSeconds = capped(["opponent_goal", "own_goal"], ownGoalsByPlayer);
+  return {
+    forSeconds: teamScore === null || forSeconds.length === teamScore ? forSeconds : null,
+    againstSeconds: opponentScore === null || againstSeconds.length === opponentScore ? againstSeconds : null,
+  };
 }
 
 /** Which of `goalSeconds` happened while the player held at least one
@@ -119,7 +237,7 @@ export function computeMatchRating(input: RatingInput): number | null {
  * still open on a live match; pass `null` for finished matches. */
 export function countGoalsWhileOnPitch(
   goalSeconds: number[],
-  segments: { startSecond: number; endSecond: number | null }[],
+  segments: Segment[],
   liveCurrentSecond: number | null
 ): number {
   return goalSeconds.filter((second) =>
@@ -130,11 +248,61 @@ export function countGoalsWhileOnPitch(
   ).length;
 }
 
-/** Mean of per-match ratings, ignoring matches with no rating (unplayed).
- * `null` if there's nothing to average. */
-export function averageRating(ratings: (number | null)[]): number | null {
-  const valid = ratings.filter((r): r is number => r !== null);
-  if (valid.length === 0) return null;
-  const mean = valid.reduce((sum, r) => sum + r, 0) / valid.length;
-  return Math.round(mean * 10) / 10;
+/**
+ * Splits a player's corrected card total into cards shown on the pitch and
+ * from the bench, by checking each card event's second against their
+ * playing-time segments (end included: a red card closes the segment at
+ * that very second). Cards added by a correction, with no event, count as
+ * bench cards only for a player who never played.
+ */
+export function splitCards(
+  cardSeconds: number[],
+  total: number,
+  segments: Segment[],
+  secondsPlayed: number
+): { onPitch: number; bench: number } {
+  const kept = [...cardSeconds].sort((a, b) => a - b).slice(0, total);
+  const onPitch = kept.filter((second) =>
+    segments.some((s) => second >= s.startSecond && second <= (s.endSecond ?? Infinity))
+  ).length;
+  const bench = kept.length - onPitch;
+  const untimed = total - kept.length;
+  return secondsPlayed > 0 ? { onPitch: onPitch + untimed, bench } : { onPitch, bench: bench + untimed };
+}
+
+/** Goals per team and match assumed when there's no league table to go by. */
+export const DEFAULT_LEAGUE_GOALS = 2.9;
+/** A rival's short record is blended with the league average as if it had
+ * played this many extra average matches. */
+const PRIOR_MATCHES = 2;
+
+export interface RivalRecord {
+  goalsFor: number;
+  goalsAgainst: number;
+  played: number;
+}
+
+/** Goals a team is expected to score/concede over a whole match against
+ * this rival, from its league record (our own games against it already
+ * taken out), shrunk towards the league average while it's short. No
+ * record: the league average. */
+export function expectedGoals(
+  rival: RivalRecord | null,
+  leagueGoals: number
+): { expectedFor: number; expectedAgainst: number } {
+  if (!rival) return { expectedFor: leagueGoals, expectedAgainst: leagueGoals };
+  const weight = Math.max(0, rival.played) + PRIOR_MATCHES;
+  return {
+    expectedFor: (Math.max(0, rival.goalsAgainst) + PRIOR_MATCHES * leagueGoals) / weight,
+    expectedAgainst: (Math.max(0, rival.goalsFor) + PRIOR_MATCHES * leagueGoals) / weight,
+  };
+}
+
+/** "Fontanería R.Rubio" and "FONTANERÍA R. RUBIO" are the same team. */
+export function normalizeTeamName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
 }

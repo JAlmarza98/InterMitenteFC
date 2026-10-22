@@ -15,6 +15,9 @@ import {
   getMatchStats,
   logMatchEvent,
   listMatchEvents,
+  deleteMatchEvent,
+  getTopPlayers,
+  putTopPlayers,
 } from "./matches.controller";
 
 export const matchesRouter = Router();
@@ -37,3 +40,9 @@ matchesRouter.put("/:id/squad", requireRole("coach", "admin"), asyncHandler(putS
 matchesRouter.put("/:id/formation", requireRole("coach", "admin"), asyncHandler(putFormation));
 matchesRouter.put("/:id/player-stats/:playerId", requireRole("admin"), asyncHandler(upsertPlayerStat));
 matchesRouter.post("/:id/events", requireRole("coach", "admin"), asyncHandler(logMatchEvent));
+// Coach can only undo during the live match (checked in the handler);
+// cleaning up the history afterwards is an admin correction.
+matchesRouter.delete("/:id/events/:eventId", requireRole("coach", "admin"), asyncHandler(deleteMatchEvent));
+// The top 3 only feeds the rating and stays hidden from everyone else.
+matchesRouter.get("/:id/top-players", requireRole("admin"), asyncHandler(getTopPlayers));
+matchesRouter.put("/:id/top-players", requireRole("admin"), asyncHandler(putTopPlayers));

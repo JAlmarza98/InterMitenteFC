@@ -622,12 +622,14 @@ mat-card {
 .event-icon-goal,
 .event-icon-assist,
 .event-icon-penalty_goal,
-.event-icon-penalty_won {
+.event-icon-penalty_won,
+.event-icon-key_action {
   color: var(--accent-amber);
 }
 
 .event-icon-own_goal,
-.event-icon-opponent_goal {
+.event-icon-opponent_goal,
+.event-icon-key_error {
   color: var(--mat-sys-error);
 }
 

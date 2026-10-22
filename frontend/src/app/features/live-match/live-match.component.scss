@@ -168,7 +168,7 @@ button {
 .clock-top-row.mobile-only,
 .clock-score-row.mobile-only,
 .roster-tabs.mobile-only,
-.event-teaser.mobile-only {
+.event-teaser-row.mobile-only {
   display: flex;
 }
 
@@ -176,7 +176,7 @@ button {
   .clock-top-row.mobile-only,
   .clock-score-row.mobile-only,
   .roster-tabs.mobile-only,
-  .event-teaser.mobile-only {
+  .event-teaser-row.mobile-only {
     display: none;
   }
 
@@ -440,7 +440,9 @@ button {
 
 .stat-actions {
   display: flex;
-  gap: 6px;
+  // Eight buttons share the row on a phone: a tighter gap keeps each one
+  // as wide as it can be (still 44px tall).
+  gap: 4px;
   margin-top: 8px;
 }
 
@@ -472,6 +474,12 @@ button {
 .stat-btn-sm.stat-btn-assist.stat-btn-active {
   background: oklch(30% 0.04 262 / 60%);
   color: var(--accent-violet);
+}
+
+.stat-btn-error.stat-btn-active,
+.stat-btn-sm.stat-btn-error.stat-btn-active {
+  background: color-mix(in srgb, var(--mat-sys-error) 16%, transparent);
+  color: var(--mat-sys-error);
 }
 
 .event-card-icon {
@@ -586,7 +594,7 @@ button {
 
 .roster-row-desktop {
   padding: 9px 4px;
-  // Six stat buttons don't fit beside the name and time in a half-width
+  // Eight stat buttons don't fit beside the name and time in a half-width
   // column, so they get their own line under them.
   flex-wrap: wrap;
   row-gap: 0;
@@ -636,7 +644,13 @@ button {
   padding: 6px 0;
 }
 
+.event-teaser-row {
+  gap: 8px;
+}
+
 .event-teaser {
+  flex: 1 1 auto;
+  display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
@@ -656,6 +670,33 @@ button {
 .event-teaser-chevron {
   color: oklch(60% 0.02 262);
   transform: rotate(180deg);
+}
+
+.undo-btn {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid oklch(45% 0.03 262 / 40%);
+  border-radius: 14px;
+  background: oklch(20% 0.03 262 / 80%);
+  color: oklch(85% 0.01 90);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.event-undo {
+  margin-left: auto;
+  display: flex;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: oklch(60% 0.02 262);
+
+  &:hover {
+    color: var(--mat-sys-error);
+  }
 }
 
 .events-card {

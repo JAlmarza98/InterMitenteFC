@@ -4,7 +4,7 @@ import { app } from "../../src/app";
 import { prisma } from "../../src/db/prisma";
 import { resetDb } from "../helpers/db";
 import { createApprovedUser, loginAs } from "../helpers/auth";
-import { computeMatchRating } from "../../src/modules/stats/playerRating";
+import { averageRating, computeMatchRating } from "../../src/modules/stats/playerRating";
 
 beforeEach(async () => {
   await resetDb();
@@ -63,19 +63,29 @@ describe("season stats", () => {
     expect(row.goals).toBe(1);
     expect(row.penaltyGoals).toBe(1);
     expect(row.penaltiesWon).toBe(2);
+    // No clock data: the match counts as two configured 30' periods, against
+    // a league-average rival (no league table outside the active season).
     expect(row.avgRating).toBe(
       computeMatchRating({
+        role: "MID",
+        secondsPlayed: 2400,
+        matchSeconds: 3600,
         goals: 1,
         penaltyGoals: 1,
         penaltiesWon: 2,
         assists: 0,
+        ownGoals: 0,
+        keyActions: 0,
+        keyErrors: 0,
         yellowCards: 0,
         redCards: 0,
-        ownGoals: 0,
-        secondsPlayed: 2400,
+        benchYellowCards: 0,
+        benchRedCards: 0,
         goalsForWhileOnPitch: 0,
         goalsAgainstWhileOnPitch: 0,
-        isGoalkeeper: false,
+        expectedGoalsFor: 2.9,
+        expectedGoalsAgainst: 2.9,
+        topRank: 0,
       })
     );
   });
@@ -102,7 +112,7 @@ describe("season stats", () => {
       )
     );
 
-    // A quiet full match (rated 5.0)...
+    // A quiet full match...
     await prisma.playingTimeSegment.create({
       data: {
         matchId: played.id,
@@ -120,7 +130,15 @@ describe("season stats", () => {
 
     const res = await agent.get(`/api/stats/season/${season.id}`);
     const row = res.body.players.find((p: { playerId: string }) => p.playerId === player.id);
-    expect(row).toMatchObject({ appearances: 1, secondsPlayed: 3600, yellowCards: 1, avgRating: 3.2 });
+    const playedRating = (await agent.get(`/api/matches/${played.id}/stats`)).body.players.find(
+      (p: { playerId: string }) => p.playerId === player.id
+    ).rating;
+    expect(row).toMatchObject({
+      appearances: 1,
+      secondsPlayed: 3600,
+      yellowCards: 1,
+      avgRating: averageRating([playedRating, 1.4]),
+    });
   });
 
   it("excludes matches that haven't finished yet", async () => {
