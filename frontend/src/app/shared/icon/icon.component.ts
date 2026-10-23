@@ -30,6 +30,7 @@ const ICONS = {
   minus: '<path d="M5 12h14"/>',
   ball: '<circle cx="12" cy="12" r="9"/><path d="M12 8l3 2-1 3h-4l-1-3z"/>',
   swap: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
   hourglass: '<path d="M6 2h12M6 22h12"/><path d="M6 2c0 6 6 6 6 10s-6 4-6 10M18 2c0 6-6 6-6 10s6 4 6 10"/>',
   refresh: '<path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/>',
   eye: '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/>',

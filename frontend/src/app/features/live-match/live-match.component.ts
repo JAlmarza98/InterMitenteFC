@@ -1,11 +1,24 @@
-import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/services/auth.service';
 import { LiveUpdatesService } from '../../core/services/live-updates.service';
-import { MatchesService, MatchWithSquad } from '../../core/services/matches.service';
+import { MatchFormation, MatchesService, MatchWithSquad } from '../../core/services/matches.service';
+import { FORMATION_PRESETS } from '../matches/formation/formation-presets';
+import { COLOR_GROUP_HEX } from '../matches/formation/pitch-canvas-renderer';
+import { placePlayers, shortNames } from './pitch-slots';
 import { StatsService } from '../../core/services/stats.service';
 import { IconComponent, IconName } from '../../shared/icon/icon.component';
 import { FlashOnChangeDirective } from '../../shared/directives/flash-on-change.directive';
@@ -57,6 +70,32 @@ interface RosterRow {
 }
 
 const STAT_FIELDS = Object.keys(STAT_EVENT_TYPE_BY_FIELD) as StatField[];
+
+/** The tablet pitch's per-player actions, in the same order as the phone's
+ * stat row, laid out on a 220° arc under the shirt (token-local px: arc
+ * centre 110,98, radius 88, 44px buttons). */
+const PITCH_ACTION_DEFS: { field: StatField; label: string; icon: IconName | null; tone: string }[] = [
+  { field: 'goals', label: 'Gol', icon: 'ball', tone: 'amber' },
+  { field: 'penaltyGoals', label: 'Gol de penalti', icon: 'penalty', tone: 'amber' },
+  { field: 'assists', label: 'Asistencia', icon: 'assist', tone: 'violet' },
+  { field: 'penaltiesWon', label: 'Penalti provocado', icon: 'whistle', tone: 'violet' },
+  { field: 'keyActions', label: 'Acción clave', icon: 'star', tone: 'amber' },
+  { field: 'keyErrors', label: 'Error grave', icon: 'alert', tone: 'red' },
+  { field: 'yellowCards', label: 'Amarilla', icon: null, tone: 'yellow' },
+  { field: 'redCards', label: 'Roja', icon: null, tone: 'red' },
+];
+export const PITCH_ACTIONS = PITCH_ACTION_DEFS.map((action, i) => {
+  const phi = ((200 - (i * 220) / (PITCH_ACTION_DEFS.length - 1)) * Math.PI) / 180;
+  return {
+    ...action,
+    left: `${(110 + 88 * Math.cos(phi) - 22).toFixed(1)}px`,
+    top: `${(98 + 88 * Math.sin(phi) - 22).toFixed(1)}px`,
+  };
+});
+/** A player token is 220×206; each formation line gets an equal band of the
+ * field's height and the token shrinks only when the band is shorter than
+ * this, so two lines can never overlap. */
+const PITCH_TOKEN_BAND = 212;
 const EMPTY_STATS = Object.fromEntries(STAT_FIELDS.map((field) => [field, 0])) as LiveStatCounts;
 
 // Same mapping/reasoning as match-detail's EVENT_ICON_NAMES — a stroked
@@ -83,7 +122,8 @@ const EVENT_ICON_NAMES: Partial<Record<MatchEventType, IconName>> = {
   imports: [RouterLink, MatSnackBarModule, MatProgressSpinnerModule, IconComponent, FlashOnChangeDirective],
   templateUrl: './live-match.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './live-match.component.scss',
+  styleUrls: ['./live-match.component.scss', './live-match-pitch.component.scss'],
+  host: { '[class.can-manage]': 'canManage()' },
 })
 export class LiveMatchComponent {
   private readonly route = inject(ActivatedRoute);
@@ -131,6 +171,7 @@ export class LiveMatchComponent {
   readonly statsByPlayer = signal<Map<string, LiveStatCounts>>(new Map());
   readonly selectedIncomingId = signal<string | null>(null);
   readonly events = signal<MatchEvent[]>([]);
+  readonly formation = signal<MatchFormation | null>(null);
 
   readonly recentEvents = computed(() => [...this.events()].reverse());
 
@@ -266,6 +307,91 @@ export class LiveMatchComponent {
     }));
   });
 
+  // ---- Tablet (portrait) pitch view: the iPad the match is logged on. ----
+
+  readonly pitchActions = PITCH_ACTIONS;
+  /** The on-pitch player picked with "Cambio" — the tablet flow starts from
+   * who goes off, then the bench player who comes on. */
+  readonly selectedOutgoingId = signal<string | null>(null);
+  readonly pitchField = viewChild<ElementRef<HTMLElement>>('pitchField');
+  private readonly pitchFieldHeight = signal(0);
+
+  private readonly shortNameById = computed(() => shortNames(this.match()?.squad.map((entry) => entry.player) ?? []));
+
+  shortName(playerId: string): string {
+    return this.shortNameById().get(playerId) ?? '';
+  }
+
+  private readonly preset = computed(
+    () => FORMATION_PRESETS.find((p) => p.id === this.formation()?.presetId) ?? FORMATION_PRESETS[0]
+  );
+
+  private readonly pitchRows = computed(() =>
+    [...new Set(this.preset().slots.map((slot) => slot.y))].sort((a, b) => a - b)
+  );
+
+  readonly pitchScale = computed(() => {
+    const band = this.pitchFieldHeight() / this.pitchRows().length;
+    return band ? Math.min(1, band / PITCH_TOKEN_BAND) : 1;
+  });
+
+  readonly pitchTokens = computed(() => {
+    const rowById = new Map(this.onPitch().map((row) => [row.playerId, row]));
+    const planned = new Map((this.formation()?.slots ?? []).map((s) => [s.slotKey, s.playerId]));
+    const substitutions = this.events()
+      .filter((e) => e.type === 'substitution' && e.player && e.relatedPlayer)
+      .map((e) => ({ inId: e.player!.id, outId: e.relatedPlayer!.id }));
+    const rows = this.pitchRows();
+    return placePlayers(this.preset().slots, planned, substitutions, [...rowById.keys()]).map(({ slot, playerId }) => ({
+      slotKey: slot.key,
+      row: rowById.get(playerId)!,
+      name: this.shortName(playerId),
+      color: COLOR_GROUP_HEX[slot.colorGroup],
+      left: `calc(24px + ${slot.x} * (100% - 48px))`,
+      top: `${((rows.indexOf(slot.y) + 0.5) / rows.length) * 100}%`,
+    }));
+  });
+
+  /** Bench order while a substitution is open: the substitutes planned for
+   * the outgoing player's slot first, flagged "Previsto". */
+  readonly pitchBench = computed(() => {
+    const outgoing = this.selectedOutgoingId();
+    const slotKey = this.pitchTokens().find((t) => t.row.playerId === outgoing)?.slotKey;
+    const planned = new Set(
+      this.formation()
+        ?.slots.find((s) => s.slotKey === slotKey)
+        ?.substitutes.map((sub) => sub.playerId) ?? []
+    );
+    return this.bench()
+      .map((row) => ({ row, name: this.shortName(row.playerId), planned: planned.has(row.playerId) }))
+      .sort((a, b) => Number(b.planned) - Number(a.planned));
+  });
+
+  readonly outgoingName = computed(() => {
+    const outgoing = this.selectedOutgoingId();
+    return outgoing ? this.shortName(outgoing) : '';
+  });
+
+  toggleOutgoing(playerId: string) {
+    this.selectedOutgoingId.set(this.selectedOutgoingId() === playerId ? null : playerId);
+  }
+
+  pickIncoming(row: RosterRow) {
+    const outgoing = this.selectedOutgoingId();
+    if (row.isRedCarded) return;
+    if (!outgoing) {
+      this.snackBar.open('Toca primero «Cambio» en el jugador que sale', 'Cerrar', { duration: 3000 });
+      return;
+    }
+    // Taken off meanwhile (a substitution from another device, a red card).
+    if (!this.onPitch().some((r) => r.playerId === outgoing)) {
+      this.selectedOutgoingId.set(null);
+      this.snackBar.open('Ese jugador ya no está en el campo', 'Cerrar', { duration: 3000 });
+      return;
+    }
+    this.substitute(outgoing, row.playerId);
+  }
+
   // The member read-only view has no on-pitch/bench tabs — one list,
   // on-pitch players first (still playing, so still the most relevant),
   // matching the approved mockup.
@@ -294,6 +420,15 @@ export class LiveMatchComponent {
       .pipe(filter((update) => update.matchId === this.matchId))
       .subscribe(() => this.resync());
 
+    // The field's height decides how big a player token can be (see pitchScale).
+    effect((onCleanup) => {
+      const field = this.pitchField()?.nativeElement;
+      if (!field) return;
+      const observer = new ResizeObserver(([entry]) => this.pitchFieldHeight.set(entry.contentRect.height));
+      observer.observe(field);
+      onCleanup(() => observer.disconnect());
+    });
+
     this.destroyRef.onDestroy(() => {
       clearInterval(tickHandle);
       clearInterval(resyncHandle);
@@ -312,6 +447,7 @@ export class LiveMatchComponent {
         this.loadSegments();
         this.loadStats();
         this.loadEvents();
+        this.loadFormation();
         this.loading.set(false);
       },
       error: (err) => {
@@ -350,6 +486,14 @@ export class LiveMatchComponent {
         this.syncError.set(false);
       },
       error: () => this.syncError.set(true),
+    });
+  }
+
+  private loadFormation() {
+    this.matchesService.getFormation(this.matchId).subscribe({
+      next: (res) => this.formation.set(res.formation),
+      // No plan just means the default 1-2-3-1 layout, filled in order.
+      error: () => this.formation.set(null),
     });
   }
 
@@ -463,9 +607,14 @@ export class LiveMatchComponent {
       this.snackBar.open('Selecciona primero un jugador del banquillo', 'Cerrar', { duration: 3000 });
       return;
     }
+    this.substitute(outPlayerId, inPlayerId);
+  }
+
+  private substitute(outPlayerId: string, inPlayerId: string) {
     this.clockService.substitute(this.matchId, outPlayerId, inPlayerId).subscribe({
       next: () => {
         this.selectedIncomingId.set(null);
+        this.selectedOutgoingId.set(null);
         this.refreshClockAndSegments();
         this.loadEvents();
       },

@@ -52,6 +52,13 @@ export class AppComponent {
 
   readonly isAuthRoute = computed(() => AUTH_ROUTES.has(this.currentUrl().split('?')[0].split('#')[0]));
 
+  /** The coach's live pitch on a portrait tablet needs every pixel of
+   * height, so the toolbar steps aside there (see app.component.scss); the
+   * page's own "Volver al partido" link is the way out. */
+  readonly isLiveMatchManage = computed(
+    () => this.auth.canManage() && /^\/matches\/[^/]+\/live$/.test(this.currentUrl().split('?')[0].split('#')[0])
+  );
+
   constructor() {
     this.auth.fetchMe().subscribe();
 

@@ -1,4 +1,4 @@
-<div class="page live-match-page">
+<div class="page live-match-page" [class.pitch-page]="canManage()">
   <a [routerLink]="['/matches', matchId]" class="back-link">
     <app-icon name="chevron-left" [size]="18" [strokeWidth]="1.9" />
     <span class="back-link-mobile">{{ match()?.opponent }}</span>
@@ -98,6 +98,42 @@
           }
         </div>
         <div class="clock-time">{{ elapsedDisplay() ?? '—' }}</div>
+      </div>
+
+      <!-- tablet portrait pitch view: home team · period + clock · away team -->
+      <div class="clock-pitch-row">
+        <div class="clock-pitch-team">
+          <span class="clock-pitch-label">{{ isHome ? 'Inter Mitente' : m.opponent }}</span>
+          <span
+            class="clock-team-score clock-pitch-score"
+            [class.clock-score-them]="!isHome"
+            [appFlashOnChange]="isHome ? m.teamScore : m.opponentScore"
+          >
+            {{ isHome ? (m.teamScore ?? 0) : (m.opponentScore ?? 0) }}
+          </span>
+        </div>
+        <div class="clock-pitch-center">
+          @if (period) {
+            <span class="period-badge">
+              <span class="pulse-dot" [class.pulse-dot-paused]="paused"></span>
+              {{ periodLabels[period] }}
+            </span>
+            @if (paused) {
+              <span class="paused-badge">Pausado</span>
+            }
+          }
+          <div class="clock-time">{{ elapsedDisplay() ?? '—' }}</div>
+        </div>
+        <div class="clock-pitch-team clock-pitch-team-away">
+          <span
+            class="clock-team-score clock-pitch-score"
+            [class.clock-score-them]="isHome"
+            [appFlashOnChange]="isHome ? m.opponentScore : m.teamScore"
+          >
+            {{ isHome ? (m.opponentScore ?? 0) : (m.teamScore ?? 0) }}
+          </span>
+          <span class="clock-pitch-label">{{ isHome ? m.opponent : 'Inter Mitente' }}</span>
+        </div>
       </div>
 
       @if (canManage()) {
@@ -316,7 +352,7 @@
       </div>
 
       <!-- tablet: on-pitch/bench side by side -->
-      <div class="roster-columns desktop-only">
+      <div class="roster-columns desktop-only not-pitch">
         <div class="roster-card">
           <div class="roster-card-title">En el campo ({{ onPitch().length }})</div>
           @if (onPitch().length === 0) {
@@ -484,7 +520,7 @@
         </div>
 
         <!-- tablet: full history card -->
-        <div class="events-card desktop-only">
+        <div class="events-card desktop-only not-pitch">
           <div class="roster-card-title">Historial del partido</div>
           @for (event of recentEvents(); track event.id) {
             <div class="event-row">
@@ -506,6 +542,217 @@
           }
         </div>
       }
+      <!-- tablet portrait (the iPad the match is logged on): the planned
+           formation on a pitch, bench + history underneath, no page scroll -->
+      <div class="pitch-layout">
+        <section class="pitch-card" aria-label="Campo">
+          <div class="pitch-field" #pitchField [style.--pt-scale]="pitchScale()">
+            <div class="pitch-line pitch-line-border" aria-hidden="true"></div>
+            <div class="pitch-line pitch-line-half" aria-hidden="true"></div>
+            <div class="pitch-line pitch-line-circle" aria-hidden="true"></div>
+            <div class="pitch-line pitch-line-box-top" aria-hidden="true"></div>
+            <div class="pitch-line pitch-line-box-bottom" aria-hidden="true"></div>
+
+            @if (pitchTokens().length === 0) {
+              <p class="empty-state pitch-empty">Nadie en el campo todavía.</p>
+            }
+            @for (token of pitchTokens(); track token.slotKey) {
+              @let row = token.row;
+              @let outgoing = selectedOutgoingId() === row.playerId;
+              <div class="pt-token" [class.pt-token-out]="outgoing" [style.left]="token.left" [style.top]="token.top">
+                <span class="pt-time">
+                  <app-icon name="clock" [size]="15" [strokeWidth]="2.2" />
+                  {{ row.playedDisplay }}
+                </span>
+                <button
+                  type="button"
+                  class="pt-swap"
+                  [class.pt-swap-on]="outgoing"
+                  [attr.aria-pressed]="outgoing"
+                  [attr.aria-label]="'Cambiar a ' + token.name"
+                  (click)="toggleOutgoing(row.playerId)"
+                >
+                  <app-icon name="swap" [size]="18" [strokeWidth]="2.2" />
+                  Cambio
+                </button>
+                <div class="pt-shirt">
+                  <svg viewBox="0 0 100 90" width="76" height="68" aria-hidden="true">
+                    <path
+                      [attr.fill]="token.color"
+                      d="M31 5 L17 10 L2 27 L14 42 L24 35 L24 87 L76 87 L76 35 L86 42 L98 27 L83 10 L69 5 Q62 15 50 15 Q38 15 31 5 Z"
+                    />
+                  </svg>
+                  <span class="pt-number">{{ row.jerseyNumber ?? '–' }}</span>
+                </div>
+                <span class="pt-name">{{ token.name }}</span>
+                @for (action of pitchActions; track action.field) {
+                  <button
+                    type="button"
+                    [class]="'pt-act pt-act-' + action.tone"
+                    [class.pt-act-on]="row.stats[action.field] > 0"
+                    [style.left]="action.left"
+                    [style.top]="action.top"
+                    [attr.aria-label]="action.label + ' de ' + token.name"
+                    (click)="incrementStat($event, row, action.field)"
+                  >
+                    @if (action.icon) {
+                      <app-icon [name]="action.icon" [size]="22" [strokeWidth]="2" />
+                    } @else {
+                      <svg width="14" height="18" viewBox="0 0 16 20" class="pt-card-icon">
+                        <rect width="16" height="20" rx="2.5" />
+                      </svg>
+                    }
+                    @if (row.stats[action.field]) {
+                      <span class="pt-count">{{ row.stats[action.field] }}</span>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          @if (selectedOutgoingId()) {
+            <div class="pitch-footer pitch-footer-swap">
+              Cambio: toca abajo, en el Banquillo, quién entra por {{ outgoingName() }}
+              <button type="button" class="pitch-cancel" (click)="selectedOutgoingId.set(null)">Cancelar</button>
+            </div>
+          } @else {
+            <div class="pitch-footer">
+              @for (action of pitchActions; track action.field) {
+                <span class="pitch-legend-item" [class]="'pt-act-' + action.tone">
+                  @if (action.icon) {
+                    <app-icon [name]="action.icon" [size]="16" [strokeWidth]="2" />
+                  } @else {
+                    <svg width="11" height="14" viewBox="0 0 16 20" class="pt-card-icon">
+                      <rect width="16" height="20" rx="2.5" />
+                    </svg>
+                  }
+                  <span>{{ action.label }}</span>
+                </span>
+              }
+            </div>
+          }
+        </section>
+
+        <div class="pitch-bottom-row">
+          <section class="pitch-panel" [class.pitch-panel-picking]="selectedOutgoingId()" aria-label="Banquillo">
+            <div class="pitch-panel-title">
+              <span>Banquillo · {{ bench().length }}</span>
+              <span class="pitch-panel-sub">Tiempo jugado</span>
+            </div>
+            <div class="pitch-scroll">
+              @if (bench().length === 0) {
+                <p class="empty-state">No hay suplentes convocados.</p>
+              }
+              @for (entry of pitchBench(); track entry.row.playerId) {
+                @let row = entry.row;
+                <div
+                  class="pb-row"
+                  [class.pb-row-pick]="selectedOutgoingId() && !row.isRedCarded"
+                  [class.pb-row-planned]="selectedOutgoingId() && entry.planned"
+                  [class.bench-sent-off]="row.isRedCarded"
+                >
+                  <button
+                    type="button"
+                    class="pb-main"
+                    [disabled]="row.isRedCarded"
+                    [attr.aria-label]="
+                      row.isRedCarded
+                        ? entry.name + ' (expulsado)'
+                        : selectedOutgoingId()
+                          ? 'Entra ' + entry.name
+                          : entry.name
+                    "
+                    (click)="pickIncoming(row)"
+                  >
+                    <span class="jersey-badge">{{ row.jerseyNumber ?? '–' }}</span>
+                    <span class="pb-name">{{ entry.name }}</span>
+                    @if (selectedOutgoingId() && !row.isRedCarded) {
+                      <span [class]="entry.planned ? 'pb-tag pb-tag-planned' : 'pb-tag'">{{
+                        entry.planned ? 'Previsto' : 'Entra'
+                      }}</span>
+                    } @else {
+                      <span class="player-time">{{ row.playedDisplay }}</span>
+                    }
+                  </button>
+                  @if (row.isRedCarded) {
+                    <svg width="10" height="13" viewBox="0 0 16 20" class="event-card-icon event-card-red">
+                      <rect width="16" height="20" rx="2.5" />
+                    </svg>
+                  } @else {
+                    <button
+                      type="button"
+                      class="pb-card"
+                      [attr.aria-label]="'Amarilla a ' + entry.name"
+                      (click)="incrementStat($event, row, 'yellowCards')"
+                    >
+                      <svg width="14" height="18" viewBox="0 0 16 20" class="event-card-icon event-card-yellow">
+                        <rect width="16" height="20" rx="2.5" />
+                      </svg>
+                      @if (row.stats.yellowCards) {
+                        <span class="pt-count">{{ row.stats.yellowCards }}</span>
+                      }
+                    </button>
+                    <button
+                      type="button"
+                      class="pb-card"
+                      [attr.aria-label]="'Roja a ' + entry.name"
+                      (click)="incrementStat($event, row, 'redCards')"
+                    >
+                      <svg width="14" height="18" viewBox="0 0 16 20" class="event-card-icon event-card-red">
+                        <rect width="16" height="20" rx="2.5" />
+                      </svg>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </section>
+
+          <section class="pitch-panel" aria-label="Historial del partido">
+            <div class="pitch-panel-title">
+              <span>Historial del partido</span>
+              <button
+                type="button"
+                class="pitch-undo-last"
+                [disabled]="!undoableLastEvent()"
+                (click)="undo(undoableLastEvent()!)"
+              >
+                <app-icon name="undo" [size]="16" [strokeWidth]="2.2" />
+                Deshacer último
+              </button>
+            </div>
+            <div class="pitch-scroll">
+              @if (events().length === 0) {
+                <p class="empty-state">Todavía no ha pasado nada.</p>
+              }
+              @for (event of recentEvents(); track event.id) {
+                <div class="event-row pitch-event-row">
+                  <span class="event-minute">{{ formatEventTime(event) }}'</span>
+                  <app-icon
+                    [name]="eventIconName(event.type)"
+                    [size]="15"
+                    [strokeWidth]="2"
+                    [class]="'event-icon event-icon-' + event.type"
+                  />
+                  <span class="event-desc">{{ eventDescription(event) }}</span>
+                  @if (isUndoableEvent(event)) {
+                    <button
+                      type="button"
+                      class="event-undo pitch-event-undo"
+                      (click)="undo(event)"
+                      [attr.aria-label]="'Deshacer: ' + eventDescription(event)"
+                      title="Deshacer"
+                    >
+                      <app-icon name="close" [size]="15" [strokeWidth]="2" />
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </section>
+        </div>
+      </div>
     } @else {
       <!-- member: read-only lineup, on-pitch first, no tabs, no stat buttons -->
       <div class="member-lineup-header">

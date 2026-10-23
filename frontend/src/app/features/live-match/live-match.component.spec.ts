@@ -78,11 +78,13 @@ function event(type: MatchEvent['type'], p: Player): MatchEvent {
 
 describe('LiveMatchComponent', () => {
   let eventsSpy: jasmine.SpyObj<MatchEventsService>;
+  let clockSpy: jasmine.SpyObj<MatchClockService>;
 
   function setup() {
-    const matchesSpy = jasmine.createSpyObj<MatchesService>('MatchesService', ['get']);
+    const matchesSpy = jasmine.createSpyObj<MatchesService>('MatchesService', ['get', 'getFormation']);
+    matchesSpy.getFormation.and.returnValue(of({ formation: null }));
     matchesSpy.get.and.returnValue(of({ match: MATCH }));
-    const clockSpy = jasmine.createSpyObj<MatchClockService>('MatchClockService', ['getClock', 'listSegments']);
+    clockSpy = jasmine.createSpyObj<MatchClockService>('MatchClockService', ['getClock', 'listSegments', 'substitute']);
     clockSpy.getClock.and.returnValue(
       of({
         serverNow: new Date().toISOString(),
@@ -178,5 +180,17 @@ describe('LiveMatchComponent', () => {
     (fixture.nativeElement.querySelector('.undo-btn') as HTMLButtonElement).click();
 
     expect(eventsSpy.delete).toHaveBeenCalledWith('m1', 'red_card-sent-off');
+  });
+
+  it('substitutes from the tablet pitch: who goes off first, then who comes on', () => {
+    const fixture = setup();
+    clockSpy.substitute.and.returnValue(of({}) as never);
+
+    button(fixture, 'Cambiar a Titular')!.click();
+    fixture.detectChanges();
+    button(fixture, 'Entra Suplente')!.click();
+
+    expect(clockSpy.substitute).toHaveBeenCalledWith('m1', 'starter', 'sub');
+    expect(fixture.componentInstance.selectedOutgoingId()).toBeNull();
   });
 });

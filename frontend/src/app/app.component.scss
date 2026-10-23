@@ -43,6 +43,12 @@
   }
 }
 
+@media (min-width: 768px) and (orientation: portrait) {
+  .app-toolbar.app-toolbar-live {
+    display: none;
+  }
+}
+
 @media (min-width: 1024px) {
   .app-toolbar {
     margin: 18px 32px 0;
